@@ -1,0 +1,27 @@
+{
+  "name": "example-electron-monorepo",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "nx": "nx",
+    "start": "nx start electron-app",
+    "build": "nx build electron-app"
+  },
+  "private": true,
+  "dependencies": {},
+  "devDependencies": {
+    "@tsconfig/vite-react": "^1.0.1",
+    "@types/node": "^18.16.1",
+    "nx": "15.9.2",
+    "typescript": "^5.0.4"
+  },
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "nohoist": [
+      "**/electron-app/**"
+    ]
+  }
+}

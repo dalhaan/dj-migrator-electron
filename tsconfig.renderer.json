@@ -1,0 +1,20 @@
+{
+  "extends": ["./tsconfig.browser.json"],
+  "include": [
+    "./apps/electron-app/src/renderer/**/*.ts",
+    "./apps/electron-app/src/renderer/**/*.tsx",
+    "./apps/electron-app/package.json",
+    "./lib/common/**/*.ts"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./apps/electron-app/src/renderer/*"],
+      "@org-name/common": ["./lib/common/index.ts"]
+    },
+    "allowJs": true,
+    "incremental": true,
+    "resolveJsonModule": true
+  }
+}

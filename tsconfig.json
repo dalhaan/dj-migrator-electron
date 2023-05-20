@@ -1,0 +1,13 @@
+{
+  "exclude": ["node_modules"],
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./tsconfig.main.json"
+    },
+    {
+      "path": "./tsconfig.renderer.json"
+    }
+  ]
+}

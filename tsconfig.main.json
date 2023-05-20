@@ -1,0 +1,16 @@
+{
+  "extends": ["./tsconfig.node.json"],
+  "include": [
+    "./apps/electron-app/src/main/**/*.ts",
+    "./apps/electron-app/src/main/**/*.tsx",
+    "./apps/electron-app/src/common/**/*.ts",
+    "./lib/node/**/*.ts"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "paths": {
+      "@/*": ["./apps/electron-app/src/main/*"],
+      "@org-name/node": ["./lib/node/index.ts"]
+    }
+  }
+}
