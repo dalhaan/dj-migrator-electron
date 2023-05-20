@@ -1,17 +1,13 @@
+import {
+  IConvertToRekordboxParams,
+  IPlaylist,
+  IProgressCallback,
+  ITrackMap,
+} from "@dj-migrator/common";
 import fs from "fs";
 import path from "path";
 import { create as createXML } from "xmlbuilder2";
-import { ITrackMap, IProgressCallback, IPlaylist } from "../serato-parser";
 import { XMLBuilder } from "xmlbuilder2/lib/interfaces";
-
-interface IConvertToRekordboxParams {
-  playlists: IPlaylist[];
-  trackMap: ITrackMap;
-  outputXMLPath: string;
-  saveCuesAsMemoryCues?: boolean;
-  saveCuesAsHotCues?: boolean;
-  progressCallback: IProgressCallback;
-}
 
 /**
  * Gets today's date in the format YYYY-MM-DD
