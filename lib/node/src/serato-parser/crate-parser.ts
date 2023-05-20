@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import assert from "assert";
 import ByteStream from "../byte-stream";
-import { IPlaylist } from ".";
+import { IPlaylist } from "@dj-migrator/common";
 
 interface ICrate {
   metadata?: MetadataTag;

@@ -2,35 +2,14 @@ import assert from "assert";
 import path from "path";
 import fs from "fs";
 import { parseAsPlaylist } from "./crate-parser";
-import { convertTrack, Track, SUPPORTED_FILE_TYPES } from "./track-parser";
-
-export interface IPlaylist {
-  name: string;
-  tracks: string[];
-}
-
-export interface ITrackMap {
-  [trackPath: string]: {
-    key: number;
-    absolutePath: string;
-    track: Track; // TODO: replace with proper interface once it has been made
-  };
-}
-
-export interface ILibraryData {
-  playlists: IPlaylist[];
-  trackMap: ITrackMap;
-}
-
-export interface IProgressCallback {
-  (progress: number, message: string): void;
-}
-
-interface IConvertFromSeratoParams {
-  seratoDir: string;
-  cratesToConvert: string[];
-  progressCallback: IProgressCallback;
-}
+import { convertTrack, SUPPORTED_FILE_TYPES } from "./track-parser";
+import {
+  IConvertFromSeratoParams,
+  ILibraryData,
+  IPlaylist,
+  IProgressCallback,
+  ITrackMap,
+} from "@dj-migrator/common";
 
 async function buildTrackMap(
   rootDir: string,

@@ -1,0 +1,12 @@
+{
+  "extends": ["./tsconfig.node.json"],
+  "include": ["./lib/node/src/**/*.ts"],
+  "files": ["./lib/common/src/index.ts"],
+  "compilerOptions": {
+    "composite": true,
+    "paths": {
+      "@/*": ["./lib/node/src/*"],
+      "@dj-migrator/common": ["./lib/common/src/index.ts"]
+    }
+  }
+}

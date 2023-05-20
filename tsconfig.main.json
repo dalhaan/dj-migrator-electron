@@ -3,9 +3,9 @@
   "include": [
     "./apps/electron-app/src/main/**/*.ts",
     "./apps/electron-app/src/main/**/*.tsx",
-    "./apps/electron-app/src/common/**/*.ts",
-    "./lib/node/src/**/*.ts"
+    "./apps/electron-app/src/common/**/*.ts"
   ],
+  "files": ["./lib/node/src/index.ts"],
   "compilerOptions": {
     "composite": true,
     "paths": {

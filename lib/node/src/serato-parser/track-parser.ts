@@ -4,72 +4,15 @@ import path from "path";
 import musicMetadata from "music-metadata-browser";
 import ByteStream from "../byte-stream";
 import CuePoint from "../shared/CuePoint";
+import {
+  BPMLockEntry,
+  ColorEntry,
+  CueEntry,
+  IMetadata,
+  Track,
+} from "@dj-migrator/common";
 
 export const SUPPORTED_FILE_TYPES = [".mp3", ".wav", ".flac"];
-
-export interface IMetadata {
-  title?: string;
-  artist?: string;
-  album?: string;
-  genre?: string[];
-  bpm?: string;
-  key?: string;
-  location: string;
-  sampleRate?: number;
-  bitrate?: number;
-  comment?: string[];
-  size?: number;
-  duration?: number;
-  fileExtension: string;
-}
-
-// ==================
-// CLASSES
-// ==================
-
-export class Track {
-  metadata: IMetadata;
-  cuePoints: CuePoint[];
-
-  constructor(metadata: IMetadata, cuePoints: CuePoint[]) {
-    this.metadata = metadata;
-    this.cuePoints = cuePoints;
-  }
-}
-
-class ColorEntry {
-  static NAME = "COLOR";
-
-  color: string;
-
-  constructor(data: Buffer) {
-    this.color = data.toString("hex", 1); // three byte hex colour
-  }
-}
-
-class CueEntry {
-  static NAME = "CUE";
-
-  index: number;
-  position: number;
-  color: string;
-
-  constructor(data: Buffer) {
-    this.index = data.readUIntBE(1, 1); // one byte integer
-    this.position = data.readUInt32BE(2); // four byte integer
-    this.color = data.toString("hex", 7, 10); // three byte hex colour
-  }
-}
-
-class BPMLockEntry {
-  static NAME = "BPMLOCK";
-
-  enabled: boolean;
-
-  constructor(data: Buffer) {
-    this.enabled = !!data.readUIntBE(0, 1); // one byte boolean
-  }
-}
 
 // ====================
 // FUNCTIONS
