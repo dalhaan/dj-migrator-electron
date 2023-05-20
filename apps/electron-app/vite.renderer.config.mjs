@@ -10,7 +10,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "src/renderer"),
-      "@org-name/common": resolve(__dirname, "../../lib/common/index.ts"),
+      "@dj-migrator/common": resolve(
+        __dirname,
+        "../../lib/common/src/index.ts"
+      ),
     },
   },
 });

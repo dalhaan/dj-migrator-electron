@@ -3,15 +3,15 @@
   "include": [
     "./apps/electron-app/src/renderer/**/*.ts",
     "./apps/electron-app/src/renderer/**/*.tsx",
-    "./apps/electron-app/package.json",
-    "./lib/common/**/*.ts"
+    "./apps/electron-app/package.json"
   ],
+  "files": ["./lib/common/src/index.ts"],
   "compilerOptions": {
     "composite": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./apps/electron-app/src/renderer/*"],
-      "@org-name/common": ["./lib/common/index.ts"]
+      "@dj-migrator/common": ["./lib/common/src/index.ts"]
     },
     "allowJs": true,
     "incremental": true,
