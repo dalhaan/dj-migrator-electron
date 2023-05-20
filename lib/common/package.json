@@ -1,3 +1,4 @@
 {
-  "name": "@dj-migrator/common"
+  "name": "@dj-migrator/common",
+  "version": "0.0.0"
 }
