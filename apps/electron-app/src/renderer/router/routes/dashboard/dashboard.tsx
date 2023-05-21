@@ -8,6 +8,7 @@ import { Button } from "rsuite";
 import * as styles from "./dashboard.css";
 
 import { PlaylistPanel } from "@/components/layout/playlist-panel";
+import { TrackDisplay } from "@/components/track-display";
 import { useSerato } from "@/stores/seratoStore";
 import { parseIpcResponse } from "@/utils/ipc";
 
@@ -24,7 +25,7 @@ export const Dashboard = () => {
       if (!foundCrates) return;
 
       // Update crates state
-      useSerato.getState().setCrates(foundCrates);
+      useSerato.getState().setLibrary(foundCrates);
 
       // Reset error
       setError(null);
@@ -45,7 +46,10 @@ export const Dashboard = () => {
 
       <Button onClick={loadCrates}>Load crates</Button>
 
-      <PlaylistPanel />
+      <div className={styles.display}>
+        <PlaylistPanel />
+        <TrackDisplay />
+      </div>
 
       <p>{error}</p>
     </div>

@@ -2,12 +2,20 @@ import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
 
-import { IpcResponse, ipcResponse } from "@dj-migrator/common";
+import {
+  Crate,
+  ILibraryData,
+  IpcResponse,
+  ipcResponse,
+} from "@dj-migrator/common";
+import { SeratoParser } from "@dj-migrator/node";
 import { dialog } from "electron";
 
 import { openDirectoryDialog } from "../file-system";
 
-export async function loadCrates(): Promise<IpcResponse<string[] | undefined>> {
+export async function loadCrates(): Promise<
+  IpcResponse<ILibraryData | undefined>
+> {
   // Prompt for Serato directory (must contain "_Serato_" directory)
   const directoryPath = await openDirectoryDialog();
 
@@ -38,13 +46,26 @@ export async function loadCrates(): Promise<IpcResponse<string[] | undefined>> {
     }
   }
 
-  // Get list of subcrate paths
-  const subcratePaths = await fsPromises.readdir(subcrateDir);
+  const libraryData = await SeratoParser.convertFromSerato({
+    seratoDir: directoryPath,
+  });
 
-  // Extract subcrate names
-  const subcrates = subcratePaths
-    .filter((subcrate) => path.extname(subcrate) === ".crate")
-    .map((subcrate) => path.basename(subcrate, path.extname(subcrate)));
+  return ipcResponse("success", libraryData);
 
-  return ipcResponse("success", subcrates);
+  // // Get list of subcrate paths
+  // const subcratePaths = await fsPromises.readdir(subcrateDir);
+
+  // // Extract subcrate names
+  // const subcrates = subcratePaths
+  //   .filter((subcrate) => path.extname(subcrate) === ".crate")
+  //   .map((subcrate) => {
+  //     const crateName = path.basename(subcrate, path.extname(subcrate));
+
+  //     return {
+  //       filePath: subcrate,
+  //       crateName,
+  //     };
+  //   });
+
+  // return ipcResponse("success", subcrates);
 }

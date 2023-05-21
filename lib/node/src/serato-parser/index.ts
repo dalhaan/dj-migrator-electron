@@ -71,7 +71,7 @@ async function buildTrackMap(
 export async function convertFromSerato({
   seratoDir,
   cratesToConvert,
-  progressCallback = () => {},
+  progressCallback,
 }: IConvertFromSeratoParams): Promise<ILibraryData> {
   // Get crates from '_Serato_/Subcrates' dir
   const subcrateDir = path.resolve(seratoDir, "_Serato_", "Subcrates");
@@ -111,10 +111,10 @@ export async function convertFromSerato({
     const message = `Analysing crate '${playlist.name}' (${i + 1} of ${
       cratePaths.length
     })`;
-    progressCallback(percentage, message);
+    progressCallback?.(percentage, message);
   });
 
-  progressCallback(100, "Finished analysing crates");
+  progressCallback?.(100, "Finished analysing crates");
 
   // Build track map for keeping track of tracks track track tra...
   const trackMap = await buildTrackMap(seratoDir, playlists, progressCallback);

@@ -7,3 +7,8 @@ export const dashboard = style({
   flexDirection: "column",
   alignItems: "flex-start",
 });
+
+export const display = style({
+  display: "grid",
+  gridTemplateColumns: "300px 1fr",
+});

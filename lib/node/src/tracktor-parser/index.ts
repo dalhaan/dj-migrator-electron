@@ -4,9 +4,14 @@ import path from "path";
 import musicMetadata from "music-metadata-browser";
 import xml2js from "xml2js";
 
-import { IProgressCallback, ITrackMap, IPlaylist } from "../serato-parser";
-import { IMetadata, Track } from "../serato-parser/track-parser";
 import CuePoint from "../shared/CuePoint";
+import {
+  IMetadata,
+  IPlaylist,
+  IProgressCallback,
+  ITrackMap,
+  Track,
+} from "@dj-migrator/common";
 
 export const SUPPORTED_FILE_TYPES = [".mp3", ".wav", ".flac"];
 

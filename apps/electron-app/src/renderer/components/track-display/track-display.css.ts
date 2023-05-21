@@ -1,7 +1,5 @@
 import { style } from "@vanilla-extract/css";
 
-export const playlistPanel = style({
+export const trackDisplay = style({
   height: "100%",
-
-  overflow: "auto",
 });

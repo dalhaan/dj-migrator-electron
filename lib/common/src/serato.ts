@@ -58,8 +58,8 @@ export interface IProgressCallback {
 
 export interface IConvertFromSeratoParams {
   seratoDir: string;
-  cratesToConvert: string[];
-  progressCallback: IProgressCallback;
+  cratesToConvert?: string[];
+  progressCallback?: IProgressCallback;
 }
 
 // ====================
@@ -112,3 +112,8 @@ export class InvalidSeratoDirError extends Error {
     this.name = "InvalidSeratoDirError";
   }
 }
+
+export type Crate = {
+  filePath: string;
+  crateName: string;
+};

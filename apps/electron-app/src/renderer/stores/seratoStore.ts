@@ -1,9 +1,10 @@
+import { ILibraryData } from "@dj-migrator/common";
 import { create } from "zustand";
 
 export const useSerato = create<{
-  crates: string[];
-  setCrates: (crates: string[]) => void;
+  library: ILibraryData | null;
+  setLibrary: (library: ILibraryData) => void;
 }>((set) => ({
-  crates: [] as string[],
-  setCrates: (crates: string[]) => set({ crates }),
+  library: null,
+  setLibrary: (library: ILibraryData) => set({ library }),
 }));
