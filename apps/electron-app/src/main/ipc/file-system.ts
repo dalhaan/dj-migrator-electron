@@ -1,8 +1,21 @@
-import { SaveDialogOptions, dialog } from "electron";
+import { OpenDialogOptions, SaveDialogOptions, dialog } from "electron";
 
 export async function handleGetFilePathDialog(): Promise<string | undefined> {
   const { canceled, filePaths } = await dialog.showOpenDialog({
     properties: ["openFile"],
+  });
+
+  if (!canceled) {
+    return filePaths[0];
+  }
+}
+
+export async function openDirectoryDialog(
+  options?: OpenDialogOptions
+): Promise<string | undefined> {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    ...options,
+    properties: [...(options?.properties || []), "openDirectory"],
   });
 
   if (!canceled) {

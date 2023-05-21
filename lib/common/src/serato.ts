@@ -61,3 +61,54 @@ export interface IConvertFromSeratoParams {
   cratesToConvert: string[];
   progressCallback: IProgressCallback;
 }
+
+// ====================
+// Errors
+// ====================
+
+export type IpcErrorTypes = "InvalidSeratoDirError" | "DirectoryNotFound";
+
+export type IpcError = {
+  type: IpcErrorTypes;
+  error?: string;
+};
+
+export type IpcSuccess<ResponseType> = {
+  type: "success";
+  response: ResponseType;
+};
+
+export type IpcResponse<ResponseType> = IpcError | IpcSuccess<ResponseType>;
+
+export function ipcResponse<ResponseType>(
+  type: "success",
+  response: ResponseType
+): IpcSuccess<ResponseType>;
+export function ipcResponse(type: IpcErrorTypes, error?: string): IpcError;
+export function ipcResponse(
+  type: "success" | IpcErrorTypes,
+  value: unknown
+): unknown {
+  return type === "success"
+    ? {
+        type,
+        response: value,
+      }
+    : {
+        type,
+        error: value,
+      };
+}
+
+export class DirectoryNotFoundError extends Error {
+  constructor(message?: string) {
+    super(message);
+  }
+}
+
+export class InvalidSeratoDirError extends Error {
+  constructor(message?: string) {
+    super(message);
+    this.name = "InvalidSeratoDirError";
+  }
+}

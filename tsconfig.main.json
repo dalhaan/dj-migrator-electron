@@ -4,11 +4,12 @@
     "./apps/electron-app/src/main/**/*.ts",
     "./apps/electron-app/src/main/**/*.tsx"
   ],
-  "files": ["./lib/node/src/index.ts"],
+  "files": ["./lib/node/src/index.ts", "./lib/common/src/index.ts"],
   "compilerOptions": {
     "composite": true,
     "paths": {
       "@/*": ["./apps/electron-app/src/main/*"],
+      "@dj-migrator/common": ["./lib/common/src/index.ts"],
       "@dj-migrator/node": ["./lib/node/src/index.ts"]
     }
   }

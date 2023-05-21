@@ -1,6 +1,11 @@
 import { ipcMain } from "electron";
 
-export const IPC = {};
+import { loadCrates } from "./dj-migrator/serato";
+
+export const IPC = {
+  // Serato
+  loadCrates,
+};
 
 export type IpcHandlers = typeof IPC;
 
