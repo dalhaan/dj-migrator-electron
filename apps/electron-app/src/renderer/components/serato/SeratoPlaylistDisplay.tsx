@@ -32,7 +32,7 @@ export function SeratoPlaylistsDisplay() {
         <Nav.Item
           key={`SeratoCrateSidenav:${library.name}`}
           eventKey={library.name}
-          onClick={() => handleCrateClick(library)}
+          onSelect={() => handleCrateClick(library)}
         >
           {library.name} ({library.tracks.length})
         </Nav.Item>

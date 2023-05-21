@@ -2,7 +2,9 @@
   "extends": ["./tsconfig.node.json"],
   "include": [
     "./apps/electron-app/src/main/**/*.ts",
-    "./apps/electron-app/src/main/**/*.tsx"
+    "./apps/electron-app/src/main/**/*.tsx",
+    "./apps/electron-app/src/common/**/*.ts",
+    "./apps/electron-app/src/common/**/*.tsx"
   ],
   "files": ["./lib/node/src/index.ts", "./lib/common/src/index.ts"],
   "compilerOptions": {
