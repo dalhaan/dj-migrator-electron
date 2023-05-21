@@ -5,7 +5,7 @@ import path from "path";
 import { IpcResponse, ipcResponse } from "@dj-migrator/common";
 import { dialog } from "electron";
 
-import { openDirectoryDialog, showMessageBox } from "../file-system";
+import { openDirectoryDialog } from "../file-system";
 
 export async function loadCrates(): Promise<IpcResponse<string[] | undefined>> {
   // Prompt for Serato directory (must contain "_Serato_" directory)

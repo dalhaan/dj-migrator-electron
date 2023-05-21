@@ -5,12 +5,13 @@ import {
 import { useState } from "react";
 import { Button } from "rsuite";
 
-import { SeratoPlaylistsDisplay } from "@/components/serato/SeratoPlaylistDisplay";
+import * as styles from "./dashboard.css";
+
+import { PlaylistPanel } from "@/components/layout/playlist-panel";
 import { useSerato } from "@/stores/seratoStore";
 import { parseIpcResponse } from "@/utils/ipc";
 
 export const Dashboard = () => {
-  const crates = useSerato((state) => state.crates);
   const [error, setError] = useState<string | null>(null);
 
   async function loadCrates() {
@@ -39,12 +40,12 @@ export const Dashboard = () => {
   }
 
   return (
-    <div>
+    <div className={styles.dashboard}>
       <h1>Dashboard</h1>
 
       <Button onClick={loadCrates}>Load crates</Button>
 
-      <SeratoPlaylistsDisplay />
+      <PlaylistPanel />
 
       <p>{error}</p>
     </div>

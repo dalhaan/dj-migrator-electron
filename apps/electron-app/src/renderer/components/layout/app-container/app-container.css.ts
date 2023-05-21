@@ -17,7 +17,7 @@ export const appContainer = style({
 
   paddingTop: 20,
   // paddingRight: APP_PADDING,
-  paddingBottom: 20,
+  // paddingBottom: 20,
   // paddingLeft: APP_PADDING,
 
   overflow: "auto",
