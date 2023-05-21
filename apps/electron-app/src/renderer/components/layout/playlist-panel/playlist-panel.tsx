@@ -6,7 +6,7 @@ import { SeratoPlaylistsDisplay } from "@/components/serato/SeratoPlaylistDispla
 
 export function PlaylistPanel() {
   return (
-    <Panel className={styles.playlistPanel} bordered>
+    <Panel className={styles.playlistPanel} bordered bodyFill>
       <Sidenav defaultOpenKeys={["SeratoCrates"]}>
         <Sidenav.Body>
           <Nav>
