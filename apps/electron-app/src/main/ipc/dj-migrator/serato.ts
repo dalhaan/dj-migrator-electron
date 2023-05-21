@@ -3,10 +3,11 @@ import fsPromises from "fs/promises";
 import path from "path";
 
 import { IpcResponse, ipcResponse } from "@dj-migrator/common";
+import { dialog } from "electron";
 
-import { openDirectoryDialog } from "../file-system";
+import { openDirectoryDialog, showMessageBox } from "../file-system";
 
-export async function loadCrates(): Promise<IpcResponse<string[]>> {
+export async function loadCrates(): Promise<IpcResponse<string[] | undefined>> {
   // Prompt for Serato directory (must contain "_Serato_" directory)
   const directoryPath = await openDirectoryDialog();
 
@@ -19,7 +20,22 @@ export async function loadCrates(): Promise<IpcResponse<string[]>> {
   const isValidDir = Boolean(subcrateDir && fs.existsSync(subcrateDir));
 
   if (!isValidDir) {
-    return ipcResponse("InvalidSeratoDirError", "Invalid Serato directory");
+    const { response } = await dialog.showMessageBox({
+      message: "Could not find crates",
+      detail:
+        'DJ Migrator could not find any crates in that directory.\n\nMake sure the directory has a "_Serato_" directory inside of it.',
+      buttons: ["Try again", "Cancel"],
+      cancelId: 1,
+      defaultId: 0,
+    });
+
+    if (response === 0) {
+      // Pressed "Try again"
+      return loadCrates();
+    } else {
+      // Pressed "Cancel"
+      return ipcResponse("success", undefined);
+    }
   }
 
   // Get list of subcrate paths

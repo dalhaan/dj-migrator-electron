@@ -1,4 +1,9 @@
-import { OpenDialogOptions, SaveDialogOptions, dialog } from "electron";
+import {
+  MessageBoxOptions,
+  OpenDialogOptions,
+  SaveDialogOptions,
+  dialog,
+} from "electron";
 
 export async function handleGetFilePathDialog(): Promise<string | undefined> {
   const { canceled, filePaths } = await dialog.showOpenDialog({
@@ -34,4 +39,8 @@ export async function openSaveFileDialog(
   if (!canceled) {
     return filePath;
   }
+}
+
+export function showMessageBox(options: MessageBoxOptions) {
+  return dialog.showMessageBox(options);
 }

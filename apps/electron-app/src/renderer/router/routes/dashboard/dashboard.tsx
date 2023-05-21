@@ -20,6 +20,8 @@ export const Dashboard = () => {
         await window.electronAPI.loadCrates()
       );
 
+      if (!foundCrates) return;
+
       // Update crates state
       useSerato.getState().setCrates(foundCrates);
 
