@@ -6,6 +6,7 @@ import { vars } from "../../../styles/themes/themeContract.css";
 export const titleBar = style({
   "-webkit-app-region": "drag",
   height: 52,
+  minHeight: 52,
 
   display: "flex",
   justifyContent: "center",

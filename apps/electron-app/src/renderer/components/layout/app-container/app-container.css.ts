@@ -16,9 +16,9 @@ export const appContainer = style({
   flexDirection: "column",
 
   paddingTop: 20,
-  paddingRight: APP_PADDING,
+  // paddingRight: APP_PADDING,
   paddingBottom: 20,
-  paddingLeft: APP_PADDING,
+  // paddingLeft: APP_PADDING,
 
   overflow: "auto",
 });

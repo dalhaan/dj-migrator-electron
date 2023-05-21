@@ -5,6 +5,7 @@ import {
 import { useState } from "react";
 import { Button } from "rsuite";
 
+import { SeratoPlaylistsDisplay } from "@/components/serato/SeratoPlaylistDisplay";
 import { useSerato } from "@/stores/seratoStore";
 import { parseIpcResponse } from "@/utils/ipc";
 
@@ -14,12 +15,15 @@ export const Dashboard = () => {
 
   async function loadCrates() {
     try {
+      // Prompt user to select Serato directory
       const foundCrates = parseIpcResponse(
         await window.electronAPI.loadCrates()
       );
 
+      // Update crates state
       useSerato.getState().setCrates(foundCrates);
 
+      // Reset error
       setError(null);
     } catch (error) {
       if (error instanceof InvalidSeratoDirError) {
@@ -38,7 +42,7 @@ export const Dashboard = () => {
 
       <Button onClick={loadCrates}>Load crates</Button>
 
-      <p>{JSON.stringify(crates)}</p>
+      <SeratoPlaylistsDisplay />
 
       <p>{error}</p>
     </div>
