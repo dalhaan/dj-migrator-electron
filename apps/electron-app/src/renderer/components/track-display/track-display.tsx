@@ -32,7 +32,7 @@ export function TrackDisplay() {
         width={930}
         height={700}
       >
-        <Table.Column width={40} fullText>
+        <Table.Column width={50} fullText>
           <Table.HeaderCell>#</Table.HeaderCell>
           <Table.Cell dataKey="trackNo" />
         </Table.Column>
@@ -47,10 +47,13 @@ export function TrackDisplay() {
           <Table.Cell dataKey="artist" />
         </Table.Column>
 
-        <Table.Column width={150} fullText>
+        <Table.Column width={110} fullText>
           <Table.HeaderCell>Duration (mins)</Table.HeaderCell>
           <Table.Cell>
             {(rowData) => {
+              if (!rowData["duration"]) {
+                return null;
+              }
               const minutes = Math.floor(rowData["duration"] / 60);
               const seconds = Math.floor(rowData["duration"] - minutes * 60);
               return `${minutes}:${seconds.toLocaleString("en-NZ", {

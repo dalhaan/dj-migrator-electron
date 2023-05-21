@@ -46,9 +46,11 @@ export const Dashboard = () => {
 
       <Button onClick={loadCrates}>Load crates</Button>
 
-      <div className={styles.display}>
-        <PlaylistPanel />
-        <TrackDisplay />
+      <div className={styles.displayContainer}>
+        <div className={styles.display}>
+          <PlaylistPanel />
+          <TrackDisplay />
+        </div>
       </div>
 
       <p>{error}</p>
