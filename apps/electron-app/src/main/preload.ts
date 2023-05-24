@@ -23,14 +23,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onWindowVisiblityChange: (callback: (value: "focus" | "blur") => void) =>
     ipcRenderer.on("visibilityChange", (_, value) => callback(value)),
 
+  getStore: (name: string) => {
+    ipcRenderer.send(`SYNCSTORE:${name}:GET`);
+  },
   onStoreChange: (name: string, callback: (libraryState: any) => void) => {
-    console.log("onStoreChange", name);
     ipcRenderer.on(`SYNCSTORE:${name}:ONCHANGE`, (_, libraryState) =>
       callback(libraryState)
     );
   },
   updateStore: (name: string, state: any) => {
-    console.log("updateStore", name);
     ipcRenderer.send(`SYNCSTORE:${name}:UPDATE`, state);
   },
 });

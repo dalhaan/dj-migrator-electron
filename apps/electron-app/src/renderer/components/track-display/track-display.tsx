@@ -1,3 +1,4 @@
+import { Track } from "@dj-migrator/common";
 import { useMemo } from "react";
 import { Table } from "rsuite";
 
@@ -22,7 +23,6 @@ export function TrackDisplay() {
   const playlist = useLibrary((state) => state.selectedPlaylist);
 
   const tableData: TableData[] | undefined = useMemo(() => {
-    console.log(playlist);
     return playlist?.tracks
       .map((trackName, index) => {
         const track = tracks.get(trackName);

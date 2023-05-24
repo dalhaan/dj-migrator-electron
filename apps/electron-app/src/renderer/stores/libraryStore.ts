@@ -12,6 +12,7 @@ export const useLibrary = create<{
   setSelectedPlaylist: (playlist: Playlist | null) => void;
 }>((set) => {
   window.electronAPI.onStoreChange("library", set);
+  window.electronAPI.getStore("library");
 
   return {
     tracks: new Map(),

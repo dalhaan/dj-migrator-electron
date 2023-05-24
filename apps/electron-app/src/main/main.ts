@@ -12,7 +12,7 @@ if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
-const createWindow = () => {
+const createWindow = async () => {
   const lightThemeBackground = "white";
   const darkThemeBackground = colors.almostBlack;
 
@@ -40,7 +40,7 @@ const createWindow = () => {
     show: false,
   });
 
-  libraryStore.addWindow(mainWindow.webContents);
+  // libraryStore.addWindow(mainWindow.webContents);
 
   // Update window background colour on theme change.
   // Prevents seeing white background when resizing in dark mode.
@@ -54,12 +54,12 @@ const createWindow = () => {
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL + "/#/test");
 
     // Open the DevTools.
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(
+    await mainWindow.loadFile(
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
     );
   }

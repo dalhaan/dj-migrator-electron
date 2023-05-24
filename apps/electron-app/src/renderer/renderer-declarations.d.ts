@@ -9,6 +9,7 @@ declare global {
         callback: (value: "focus" | "blur") => void
       ) => void;
 
+      getStore: (name: string) => void;
       onStoreChange: (
         name: string,
         callback: (libraryState: any) => void

@@ -15,26 +15,20 @@ export class Store<T extends Record<string, any>> {
     this.name = options.name;
     this.windows = new Set(options.windows);
 
-    console.log(options.name + " store init.");
-
     // Get
     ipcMain.on(`SYNCSTORE:${this.name}:GET`, (event) => {
-      console.log(options.name + ` SYNCSTORE:${this.name}:GET`);
-
       // Add subscriber
-      this.windows.add(event.sender);
+      this.addWindow(event.sender);
 
-      event.sender.send(`SYNCSTORE:${this.name}:INIT`, this.state);
+      event.sender.send(`SYNCSTORE:${this.name}:ONCHANGE`, this.state);
     });
 
     // Update
     ipcMain.on(
       `SYNCSTORE:${this.name}:UPDATE`,
       (event, partialState: Partial<T>) => {
-        console.log(options.name + ` SYNCSTORE:${this.name}:UPDATE`);
-
         // Add subscriber
-        this.windows.add(event.sender);
+        this.addWindow(event.sender);
 
         this.setState(partialState);
       }
@@ -42,7 +36,6 @@ export class Store<T extends Record<string, any>> {
 
     // Remove subscriber
     ipcMain.on(`SYNCSTORE:${this.name}:UNSUBSCRIBE`, (event) => {
-      console.log(options.name + ` SYNCSTORE:${this.name}:UNSUBSCRIBE`);
       this.windows.delete(event.sender);
     });
   }
@@ -63,5 +56,6 @@ export class Store<T extends Record<string, any>> {
 
   addWindow(window: WebContents) {
     this.windows.add(window);
+    console.log("LibraryStore:addWindow", this.windows);
   }
 }
