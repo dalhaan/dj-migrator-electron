@@ -28,7 +28,7 @@ function buildCollectionTag(
   collectionXML: XMLBuilder,
   saveCuesAsMemoryCues: boolean,
   saveCuesAsHotCues: boolean,
-  progressCallback: IProgressCallback = () => {}
+  progressCallback?: IProgressCallback
 ): XMLBuilder {
   const tracks = Object.keys(trackMap);
 
@@ -43,7 +43,7 @@ function buildCollectionTag(
     const progressMessage = `Building collection tags (track ${i + 1} of ${
       tracks.length
     })`;
-    progressCallback(progress, progressMessage);
+    progressCallback?.(progress, progressMessage);
 
     const trackObject = trackMap.get(track)!;
 
@@ -128,7 +128,7 @@ function buildCollectionTag(
     i++;
   }
 
-  progressCallback(100, "Finished building collection tags");
+  progressCallback?.(100, "Finished building collection tags");
 
   return collectionXML;
 }
@@ -137,7 +137,7 @@ function buildPlaylistsTag(
   playlists: Playlist[],
   trackMap: Tracks,
   collectionXML: XMLBuilder,
-  progressCallback: IProgressCallback = () => {}
+  progressCallback?: IProgressCallback
 ): XMLBuilder {
   collectionXML = collectionXML
     .up()
@@ -151,7 +151,8 @@ function buildPlaylistsTag(
     const progressMessage = `Building playlist tags (playlist ${i + 1} of ${
       playlists.length
     })`;
-    progressCallback(progress, progressMessage);
+
+    progressCallback?.(progress, progressMessage);
 
     const filteredTracks = playlist.tracks;
 
@@ -177,18 +178,18 @@ function buildPlaylistsTag(
     i++;
   }
 
-  progressCallback(100, "Finished building playlist tags");
+  progressCallback?.(100, "Finished building playlist tags");
 
   return collectionXML;
 }
 
 export function convertToRekordbox({
   playlists,
-  trackMap,
+  tracks,
   outputXMLPath,
   saveCuesAsMemoryCues = true,
   saveCuesAsHotCues = false,
-  progressCallback = () => {},
+  progressCallback,
 }: IConvertToRekordboxParams): Promise<void> {
   // Build RekordBox collection XML
   let collectionXML = createXML({ version: "1.0", encoding: "UTF-8" })
@@ -202,7 +203,7 @@ export function convertToRekordbox({
 
   // Add tracks to RekordBox collection XML
   collectionXML = buildCollectionTag(
-    trackMap,
+    tracks,
     collectionXML,
     saveCuesAsMemoryCues,
     saveCuesAsHotCues,
@@ -212,7 +213,7 @@ export function convertToRekordbox({
   // Add playlists to RekordBox collection XML
   collectionXML = buildPlaylistsTag(
     playlists,
-    trackMap,
+    tracks,
     collectionXML,
     progressCallback
   );

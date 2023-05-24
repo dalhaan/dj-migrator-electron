@@ -8,6 +8,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   parseCrates: (directory: string, crates: Crate[]) =>
     ipcRenderer.invoke("parseCrates", directory, crates),
 
+  // Rekordbox events
+  exportPlaylistsToRekordBoxXml: (...args: any) =>
+    ipcRenderer.invoke("exportPlaylistsToRekordBoxXml", ...args),
+
   // File system events
   showMessageBox: (options: MessageBoxOptions) =>
     ipcRenderer.invoke("showMessageBox", options),

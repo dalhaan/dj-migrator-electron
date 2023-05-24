@@ -9,10 +9,12 @@ import * as styles from "./dashboard.css";
 
 import { PlaylistPanel } from "@/components/layout/playlist-panel";
 import { TrackDisplay } from "@/components/track-display";
+import { useLibrary } from "@/stores/libraryStore";
 import { parseIpcResponse } from "@/utils/ipc";
 
 export const Dashboard = () => {
   const [error, setError] = useState<string | null>(null);
+  const selectedPlaylist = useLibrary((state) => state.selectedPlaylist);
 
   async function loadCrates() {
     try {
@@ -38,11 +40,16 @@ export const Dashboard = () => {
     }
   }
 
+  function exportSelectedPlaylist() {
+    console.log(selectedPlaylist);
+  }
+
   return (
     <div className={styles.dashboard}>
       <h1>Dashboard</h1>
 
       <Button onClick={loadCrates}>Load crates</Button>
+      <Button onClick={exportSelectedPlaylist}>Export selected playlist</Button>
       <Button
         onClick={() => {
           window.open("/#/test", "_blank", "titleBarStyle: hidden");

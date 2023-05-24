@@ -1,5 +1,6 @@
 import { ipcMain } from "electron";
 
+import { exportPlaylistsToRekordBoxXml } from "./dj-migrator/rekordbox";
 import { findCrates, parseCrates } from "./dj-migrator/serato";
 import { openDirectoryDialog, showMessageBox } from "./file-system";
 
@@ -7,6 +8,9 @@ export const IPC = {
   // Serato
   findCrates,
   parseCrates,
+
+  // RekordBox,
+  exportPlaylistsToRekordBoxXml,
 
   // File system
   showMessageBox,

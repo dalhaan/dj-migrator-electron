@@ -3,9 +3,9 @@ import { IProgressCallback, Tracks } from "./serato";
 
 export interface IConvertToRekordboxParams {
   playlists: Playlist[];
-  trackMap: Tracks;
+  tracks: Tracks;
   outputXMLPath: string;
   saveCuesAsMemoryCues?: boolean;
   saveCuesAsHotCues?: boolean;
-  progressCallback: IProgressCallback;
+  progressCallback?: IProgressCallback;
 }
