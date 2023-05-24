@@ -24,80 +24,73 @@ function getTodaysDate(): string {
 }
 
 function buildCollectionTag(
-  trackMap: Tracks,
+  tracks: Tracks,
   collectionXML: XMLBuilder,
   saveCuesAsMemoryCues: boolean,
   saveCuesAsHotCues: boolean,
   progressCallback?: IProgressCallback
 ): XMLBuilder {
-  const tracks = Object.keys(trackMap);
-
   collectionXML = collectionXML.ele("COLLECTION", {
-    Entries: `${tracks.length}`,
+    Entries: `${tracks.size}`,
   });
 
   let i = 0;
-  for (const track of tracks) {
+  for (const track of tracks.values()) {
     // Update progress callback
-    const progress = (i / tracks.length) * 100;
+    const progress = (i / tracks.size) * 100;
     const progressMessage = `Building collection tags (track ${i + 1} of ${
-      tracks.length
+      tracks.size
     })`;
     progressCallback?.(progress, progressMessage);
 
-    const trackObject = trackMap.get(track)!;
-
-    const fileExtension = trackObject.track.metadata.fileExtension.replace(
-      ".",
-      ""
-    );
+    const fileExtension = track.track.metadata.fileExtension.replace(".", "");
     const fileKind = `${fileExtension.toUpperCase()} File`;
 
     const bpm =
-      trackObject.track.metadata.bpm &&
-      `${parseFloat(trackObject.track.metadata.bpm).toFixed(2)}`;
-    const encodedLocation = trackObject.track.metadata.location
+      track.track.metadata.bpm &&
+      `${parseFloat(track.track.metadata.bpm).toFixed(2)}`;
+    const encodedLocation = track.track.metadata.location
       .split(path.sep) // TODO: not sure this is necessary as Serato may always use forward slashes even on Windows
       .map((component) => encodeURIComponent(component))
       .join("/");
     const location = `file://localhost${encodedLocation}`;
-    const trackKey = `${trackObject.key}`;
+    const trackKey = String(track.key);
 
     // Add the track to the collection
     collectionXML = collectionXML.ele("TRACK", {
       TrackID: trackKey, // This field only needs to match the playlist track keys as Rekordbox will auto-assign it
-      Name: trackObject.track.metadata.title || "",
-      Artist: trackObject.track.metadata.artist || "",
+      Name: track.track.metadata.title || "",
+      Artist: track.track.metadata.artist || "",
       Composer: "",
-      Album: trackObject.track.metadata.album || "",
+      Album: track.track.metadata.album || "",
       Grouping: "",
-      Genre: trackObject.track.metadata.genre?.[0] || "",
+      Genre: track.track.metadata.genre?.[0] || "",
       Kind: fileKind,
-      Size: `${trackObject.track.metadata.size}`,
-      TotalTime: trackObject.track.metadata.duration
-        ? `${Math.ceil(trackObject.track.metadata.duration)}`
+      Size: `${track.track.metadata.size}`,
+      TotalTime: track.track.metadata.duration
+        ? `${Math.ceil(track.track.metadata.duration)}`
         : "59999", // TODO: this being '0' is preventing the cues from loading
       DiscNumber: "0",
       TrackNumber: "0",
       Year: "0",
       AverageBpm: bpm || "",
       DateAdded: getTodaysDate(),
-      BitRate: trackObject.track.metadata.bitrate
-        ? `${trackObject.track.metadata.bitrate / 1000}`
+      BitRate: track.track.metadata.bitrate
+        ? `${track.track.metadata.bitrate / 1000}`
         : "0",
-      SampleRate: `${trackObject.track.metadata.sampleRate || 0}`,
-      Comments: trackObject.track.metadata.comment?.[0] || "",
+      SampleRate: `${track.track.metadata.sampleRate || 0}`,
+      Comments: track.track.metadata.comment?.[0] || "",
       PlayCount: "0",
       Rating: "0",
       Location: location,
       Remixer: "",
-      Tonality: trackObject.track.metadata.key || "",
+      Tonality: track.track.metadata.key || "",
       Label: "",
       Mix: "",
     });
 
     // Add the track's cue points as memory cues
-    for (const cuePoint of trackObject.track.cuePoints) {
+    for (const cuePoint of track.track.cuePoints) {
       if (saveCuesAsMemoryCues) {
         collectionXML = collectionXML
           .ele("POSITION_MARK", {
@@ -135,7 +128,7 @@ function buildCollectionTag(
 
 function buildPlaylistsTag(
   playlists: Playlist[],
-  trackMap: Tracks,
+  tracks: Tracks,
   collectionXML: XMLBuilder,
   progressCallback?: IProgressCallback
 ): XMLBuilder {
@@ -164,7 +157,7 @@ function buildPlaylistsTag(
     });
 
     for (const track of filteredTracks) {
-      const trackObject = trackMap.get(track);
+      const trackObject = tracks.get(track);
 
       // Track may not be in track map if it does not exist or is not an mp3
       if (trackObject) {

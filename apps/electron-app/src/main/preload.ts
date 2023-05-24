@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   showMessageBox: (options: MessageBoxOptions) =>
     ipcRenderer.invoke("showMessageBox", options),
   openDirectoryDialog: () => ipcRenderer.invoke("openDirectoryDialog"),
+  openSaveFileDialog: (...args: any) =>
+    ipcRenderer.invoke("openSaveFileDialog", ...args),
 
   // IPC one-way main -> renderer events
   onWindowVisiblityChange: (callback: (value: "focus" | "blur") => void) =>

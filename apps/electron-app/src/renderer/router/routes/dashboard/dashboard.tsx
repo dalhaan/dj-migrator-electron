@@ -40,8 +40,40 @@ export const Dashboard = () => {
     }
   }
 
-  function exportSelectedPlaylist() {
-    console.log(selectedPlaylist);
+  async function exportSelectedPlaylist() {
+    if (!selectedPlaylist) return;
+
+    try {
+      const outputPath = await window.electronAPI.openSaveFileDialog({
+        defaultPath: "RekordboxCollection.xml",
+        filters: [
+          {
+            name: "XML",
+            extensions: [".xml"],
+          },
+        ],
+      });
+
+      console.log(outputPath);
+
+      if (!outputPath) return;
+
+      console.log(`Exporting ${selectedPlaylist} to ${outputPath}`);
+
+      await window.electronAPI.exportPlaylistsToRekordBoxXml(
+        [selectedPlaylist?.name],
+        outputPath,
+        {
+          saveCuesAsHotCues: true,
+          saveCuesAsMemoryCues: true,
+        }
+      );
+
+      console.log("Exported successfully");
+    } catch (error) {
+      setError("Unknown error");
+    }
+    // window.electronAPI.exportPlaylistsToRekordBoxXml([selectedPlaylist],)
   }
 
   return (
