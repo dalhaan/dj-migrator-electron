@@ -5,26 +5,44 @@ import * as styles from "./track-display.css";
 
 import { useLibrary } from "@/stores/libraryStore";
 
+type TableData = {
+  trackNo: number;
+  title: string | undefined;
+  artist: string | undefined;
+  duration: number | undefined;
+  bpm: string | undefined;
+  key: string | undefined;
+  type: string | undefined;
+  bitrate: number | undefined;
+  cuePoints: number | undefined;
+};
+
 export function TrackDisplay() {
+  const tracks = useLibrary((state) => state.tracks);
   const playlist = useLibrary((state) => state.selectedPlaylist);
 
-  const tableData = useMemo(() => {
+  const tableData: TableData[] | undefined = useMemo(() => {
+    console.log(playlist);
     return playlist?.tracks
-      .map((track, index) => {
+      .map((trackName, index) => {
+        const track = tracks.get(trackName);
+
+        if (!track) return;
+
         return {
           trackNo: index + 1,
-          title: track.metadata.title,
-          artist: track.metadata.artist,
-          duration: track.metadata.duration,
-          bpm: track.metadata.bpm,
-          key: track.metadata.key,
-          type: track.metadata.fileExtension,
-          bitrate: track.metadata.bitrate,
-          cuePoints: track.cuePoints.length,
+          title: track.track.metadata.title,
+          artist: track.track.metadata.artist,
+          duration: track.track.metadata.duration,
+          bpm: track.track.metadata.bpm,
+          key: track.track.metadata.key,
+          type: track.track.metadata.fileExtension,
+          bitrate: track.track.metadata.bitrate,
+          cuePoints: track.track.cuePoints.length,
         };
       })
-      .filter((track) => Boolean(track));
-  }, [playlist]);
+      .filter((track) => Boolean(track)) as TableData[];
+  }, [playlist, tracks]);
 
   return (
     <Table

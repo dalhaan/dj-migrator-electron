@@ -46,5 +46,5 @@ export class Track {
 
 export type Playlist = {
   name: string;
-  tracks: Track[];
+  tracks: string[];
 };

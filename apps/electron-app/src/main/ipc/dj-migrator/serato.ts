@@ -1,10 +1,8 @@
 import {
   Crate,
-  ILibraryData,
   InvalidSeratoDirError,
   IpcResponse,
   Playlist,
-  Track,
   ipcResponse,
 } from "@dj-migrator/common";
 import { SeratoParser } from "@dj-migrator/node";
@@ -54,10 +52,7 @@ export async function parseCrates(directory: string, crates: Crate[]) {
     };
 
     for (const track of crate.tracks) {
-      const foundTrack = tracks.get(track);
-      if (foundTrack) {
-        playlist.tracks.push(foundTrack.track);
-      }
+      playlist.tracks.push(track);
     }
 
     playlists.push(playlist);

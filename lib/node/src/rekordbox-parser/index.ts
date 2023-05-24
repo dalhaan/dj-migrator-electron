@@ -1,6 +1,5 @@
 import {
   IConvertToRekordboxParams,
-  IPlaylist,
   IProgressCallback,
   Playlist,
   Tracks,
@@ -163,16 +162,14 @@ function buildPlaylistsTag(
       Entries: `${filteredTracks.length}`,
     });
 
-    for (const trackObject of filteredTracks) {
+    for (const track of filteredTracks) {
+      const trackObject = trackMap.get(track);
+
       // Track may not be in track map if it does not exist or is not an mp3
       if (trackObject) {
-        let trackKey;
-
-        for (const track of trackMap.values()) {
-          if (track.track === trackObject) trackKey = track.key;
-        }
-
-        collectionXML = collectionXML.ele("TRACK", { Key: trackKey }).up();
+        collectionXML = collectionXML
+          .ele("TRACK", { Key: trackObject.key })
+          .up();
       }
     }
 
