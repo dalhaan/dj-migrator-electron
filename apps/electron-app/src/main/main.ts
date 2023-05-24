@@ -5,7 +5,6 @@ import { app, BrowserWindow, nativeTheme } from "electron";
 import { colors } from "../common/colors";
 
 import { initIpcHandlers } from "./ipc";
-import { libraryStore } from "./stores/library-store";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -54,13 +53,16 @@ const createWindow = async () => {
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL + "/#/test");
+    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL + "/main-window.html");
 
     // Open the DevTools.
     mainWindow.webContents.openDevTools();
   } else {
     await mainWindow.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
+      path.join(
+        __dirname,
+        `../renderer/${MAIN_WINDOW_VITE_NAME}/main-window.html`
+      )
     );
   }
 

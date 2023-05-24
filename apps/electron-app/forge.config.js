@@ -42,7 +42,7 @@ const config = {
         renderer: [
           {
             name: "main_window",
-            config: "vite.renderer.config.mjs",
+            config: "vite.main-renderer.config.mjs",
           },
         ],
       },

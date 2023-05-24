@@ -1,6 +1,6 @@
 {
   "name": "electron-app",
-  "productName": "Example App Name",
+  "productName": "DJ Migrator",
   "version": "1.0.0",
   "description": "My Electron application description",
   "main": ".vite/build/main.js",
