@@ -1,16 +1,9 @@
-import { Playlist, Track } from "@dj-migrator/common";
+import { Playlist, Tracks } from "@dj-migrator/common";
 
 import { Store } from "./createStore";
 
 export const libraryStore = new Store<{
-  tracks: Map<
-    string,
-    {
-      key: number;
-      absolutePath: string;
-      track: Track;
-    }
-  >;
+  tracks: Tracks;
   playlists: Playlist[];
 }>(
   {

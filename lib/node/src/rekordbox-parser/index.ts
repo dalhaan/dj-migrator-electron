@@ -2,6 +2,7 @@ import {
   IConvertToRekordboxParams,
   IPlaylist,
   IProgressCallback,
+  Playlist,
   Tracks,
 } from "@dj-migrator/common";
 import fs from "fs";
@@ -45,7 +46,7 @@ function buildCollectionTag(
     })`;
     progressCallback(progress, progressMessage);
 
-    const trackObject = trackMap[track];
+    const trackObject = trackMap.get(track)!;
 
     const fileExtension = trackObject.track.metadata.fileExtension.replace(
       ".",
@@ -134,7 +135,7 @@ function buildCollectionTag(
 }
 
 function buildPlaylistsTag(
-  playlists: IPlaylist[],
+  playlists: Playlist[],
   trackMap: Tracks,
   collectionXML: XMLBuilder,
   progressCallback: IProgressCallback = () => {}
@@ -153,7 +154,7 @@ function buildPlaylistsTag(
     })`;
     progressCallback(progress, progressMessage);
 
-    const filteredTracks = playlist.tracks.filter((track) => trackMap[track]);
+    const filteredTracks = playlist.tracks;
 
     collectionXML = collectionXML.ele("NODE", {
       Name: playlist.name,
@@ -162,12 +163,14 @@ function buildPlaylistsTag(
       Entries: `${filteredTracks.length}`,
     });
 
-    for (const track of filteredTracks) {
-      const trackObject = trackMap[track];
-
+    for (const trackObject of filteredTracks) {
       // Track may not be in track map if it does not exist or is not an mp3
       if (trackObject) {
-        const trackKey = `${trackMap[track].key}`;
+        let trackKey;
+
+        for (const track of trackMap.values()) {
+          if (track.track === trackObject) trackKey = track.key;
+        }
 
         collectionXML = collectionXML.ele("TRACK", { Key: trackKey }).up();
       }
