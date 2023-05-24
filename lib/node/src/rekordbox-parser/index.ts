@@ -2,7 +2,7 @@ import {
   IConvertToRekordboxParams,
   IPlaylist,
   IProgressCallback,
-  ITrackMap,
+  Tracks,
 } from "@dj-migrator/common";
 import fs from "fs";
 import path from "path";
@@ -24,7 +24,7 @@ function getTodaysDate(): string {
 }
 
 function buildCollectionTag(
-  trackMap: ITrackMap,
+  trackMap: Tracks,
   collectionXML: XMLBuilder,
   saveCuesAsMemoryCues: boolean,
   saveCuesAsHotCues: boolean,
@@ -135,7 +135,7 @@ function buildCollectionTag(
 
 function buildPlaylistsTag(
   playlists: IPlaylist[],
-  trackMap: ITrackMap,
+  trackMap: Tracks,
   collectionXML: XMLBuilder,
   progressCallback: IProgressCallback = () => {}
 ): XMLBuilder {

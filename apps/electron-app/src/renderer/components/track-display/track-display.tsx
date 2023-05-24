@@ -6,23 +6,25 @@ import * as styles from "./track-display.css";
 import { useLibrary } from "@/stores/libraryStore";
 
 export function TrackDisplay() {
-  const tracks = useLibrary((state) => state.tracks);
+  const playlist = useLibrary((state) => state.selectedPlaylist);
 
   const tableData = useMemo(() => {
-    return tracks.map((track, index) => ({
-      trackNo: index + 1,
-      title: track.metadata.title,
-      artist: track.metadata.artist,
-      duration: track.metadata.duration,
-      bpm: track.metadata.bpm,
-      key: track.metadata.key,
-      type: track.metadata.fileExtension,
-      bitrate: track.metadata.bitrate,
-      cuePoints: track.cuePoints.length,
-    }));
-  }, [tracks]);
-
-  console.log(tableData);
+    return playlist?.tracks
+      .map((track, index) => {
+        return {
+          trackNo: index + 1,
+          title: track.metadata.title,
+          artist: track.metadata.artist,
+          duration: track.metadata.duration,
+          bpm: track.metadata.bpm,
+          key: track.metadata.key,
+          type: track.metadata.fileExtension,
+          bitrate: track.metadata.bitrate,
+          cuePoints: track.cuePoints.length,
+        };
+      })
+      .filter((track) => Boolean(track));
+  }, [playlist]);
 
   return (
     <Panel bordered bodyFill>

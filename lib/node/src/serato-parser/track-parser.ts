@@ -3,7 +3,6 @@ import assert from "assert";
 import path from "path";
 import musicMetadata from "music-metadata-browser";
 import ByteStream from "../byte-stream";
-import CuePoint from "../shared/CuePoint";
 import {
   BPMLockEntry,
   ColorEntry,
@@ -278,7 +277,7 @@ async function parseMp3OrWav(filePath: string) {
   }
 }
 
-export async function convertTrack(filePath: string): Promise<Track> {
+export async function parseTrack(filePath: string): Promise<Track> {
   const fileExtension = path.extname(filePath).toLowerCase();
 
   const absolutePath = path.resolve(filePath);
@@ -311,7 +310,7 @@ export function convertTracks(filePaths: string[]): Promise<Track[]> {
       return isSupportedFile;
     })
     .map((filePath) => {
-      return convertTrack(filePath);
+      return parseTrack(filePath);
     });
 
   // Wait for all tracks to resolve then build track map

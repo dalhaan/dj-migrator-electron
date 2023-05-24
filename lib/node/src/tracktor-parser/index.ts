@@ -9,7 +9,7 @@ import {
   IMetadata,
   IPlaylist,
   IProgressCallback,
-  ITrackMap,
+  Tracks,
   Track,
 } from "@dj-migrator/common";
 
@@ -105,7 +105,7 @@ async function buildTrackMap(
 ) {
   const entries = xml.NML.COLLECTION[0].ENTRY;
 
-  const trackMap: ITrackMap = {};
+  const trackMap: Tracks = {};
 
   let i = 0;
   for (const entry of entries) {

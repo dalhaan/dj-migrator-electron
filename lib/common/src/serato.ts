@@ -39,17 +39,18 @@ export interface IPlaylist {
   tracks: string[];
 }
 
-export interface ITrackMap {
-  [trackPath: string]: {
+export type Tracks = Map<
+  string,
+  {
     key: number;
     absolutePath: string;
     track: Track; // TODO: replace with proper interface once it has been made
-  };
-}
+  }
+>;
 
 export interface ILibraryData {
   playlists: IPlaylist[];
-  trackMap: ITrackMap;
+  trackMap: Tracks;
 }
 
 export interface IProgressCallback {
@@ -114,6 +115,7 @@ export class InvalidSeratoDirError extends Error {
 }
 
 export type Crate = {
+  name: string;
   filePath: string;
-  crateName: string;
+  tracks: string[];
 };

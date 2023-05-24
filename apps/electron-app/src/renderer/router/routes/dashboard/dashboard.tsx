@@ -9,7 +9,6 @@ import * as styles from "./dashboard.css";
 
 import { PlaylistPanel } from "@/components/layout/playlist-panel";
 import { TrackDisplay } from "@/components/track-display";
-import { useSerato } from "@/stores/seratoStore";
 import { parseIpcResponse } from "@/utils/ipc";
 
 export const Dashboard = () => {
@@ -17,18 +16,17 @@ export const Dashboard = () => {
 
   async function loadCrates() {
     try {
-      // Prompt user to select Serato directory
-      const foundCrates = parseIpcResponse(
-        await window.electronAPI.loadCrates()
+      const directory = await window.electronAPI.openDirectoryDialog();
+
+      if (!directory) return;
+
+      const crates = parseIpcResponse(
+        await window.electronAPI.findCrates(directory)
       );
 
-      if (!foundCrates) return;
+      console.log(crates);
 
-      // Update crates state
-      useSerato.getState().setLibrary(foundCrates);
-
-      // Reset error
-      setError(null);
+      await window.electronAPI.parseCrates(directory, crates);
     } catch (error) {
       if (error instanceof InvalidSeratoDirError) {
         setError(error.message);
@@ -45,6 +43,13 @@ export const Dashboard = () => {
       <h1>Dashboard</h1>
 
       <Button onClick={loadCrates}>Load crates</Button>
+      <Button
+        onClick={() => {
+          window.open("/#/test", "_blank", "titleBarStyle: hidden");
+        }}
+      >
+        Open window
+      </Button>
 
       <div className={styles.displayContainer}>
         <div className={styles.display}>

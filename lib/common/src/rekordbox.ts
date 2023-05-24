@@ -1,8 +1,8 @@
-import { IPlaylist, IProgressCallback, ITrackMap } from "./serato";
+import { IPlaylist, IProgressCallback, Tracks } from "./serato";
 
 export interface IConvertToRekordboxParams {
   playlists: IPlaylist[];
-  trackMap: ITrackMap;
+  trackMap: Tracks;
   outputXMLPath: string;
   saveCuesAsMemoryCues?: boolean;
   saveCuesAsHotCues?: boolean;

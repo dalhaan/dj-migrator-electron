@@ -5,6 +5,7 @@ import { app, BrowserWindow, nativeTheme } from "electron";
 import { colors } from "../common/colors";
 
 import { initIpcHandlers } from "./ipc";
+import { libraryStore } from "./stores/library-store";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -38,6 +39,8 @@ const createWindow = () => {
     },
     show: false,
   });
+
+  libraryStore.addWindow(mainWindow.webContents);
 
   // Update window background colour on theme change.
   // Prevents seeing white background when resizing in dark mode.

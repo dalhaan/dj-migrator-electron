@@ -8,6 +8,12 @@ declare global {
       onWindowVisiblityChange: (
         callback: (value: "focus" | "blur") => void
       ) => void;
+
+      onStoreChange: (
+        name: string,
+        callback: (libraryState: any) => void
+      ) => void;
+      updateStore: (name: string, state: any) => void;
     };
   }
 }

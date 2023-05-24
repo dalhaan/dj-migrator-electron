@@ -17,6 +17,10 @@ export const router = createHashRouter([
         path: "/dashboard",
         element: <Dashboard />,
       },
+      {
+        path: "/test",
+        element: <h1>TEST</h1>,
+      },
     ],
   },
 ]);

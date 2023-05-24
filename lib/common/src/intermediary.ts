@@ -43,3 +43,8 @@ export class Track {
     this.cuePoints = cuePoints;
   }
 }
+
+export type Playlist = {
+  name: string;
+  tracks: Track[];
+};
