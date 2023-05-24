@@ -11,7 +11,7 @@ if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
-const createWindow = async () => {
+const createMainWindow = async () => {
   const lightThemeBackground = "white";
   const darkThemeBackground = colors.almostBlack;
 
@@ -38,8 +38,6 @@ const createWindow = async () => {
     },
     show: false,
   });
-
-  // libraryStore.addWindow(mainWindow.webContents);
 
   // Update window background colour on theme change.
   // Prevents seeing white background when resizing in dark mode.
@@ -78,6 +76,74 @@ const createWindow = async () => {
   mainWindow.on("blur", () => {
     mainWindow.webContents.send("visibilityChange", "blur");
   });
+
+  return mainWindow;
+};
+
+const createImportWindow = async () => {
+  const lightThemeBackground = "white";
+  const darkThemeBackground = colors.almostBlack;
+
+  // Create the import window
+  const importWindow = new BrowserWindow({
+    width: 1280,
+    height: 888,
+    resizable: true,
+    backgroundColor: nativeTheme.shouldUseDarkColors
+      ? darkThemeBackground
+      : lightThemeBackground,
+    titleBarStyle: "hidden",
+    trafficLightPosition: {
+      x: 19,
+      y: 18,
+    },
+    // transparent: true,
+    // frame: false,
+    // backgroundColor: "#00000000",
+    // vibrancy: "under-window",
+    // visualEffectState: "followWindow",
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+    },
+    show: false,
+  });
+
+  // Update window background colour on theme change.
+  // Prevents seeing white background when resizing in dark mode.
+  nativeTheme.on("updated", () => {
+    importWindow.setBackgroundColor(
+      nativeTheme.shouldUseDarkColors
+        ? darkThemeBackground
+        : lightThemeBackground
+    );
+  });
+
+  // and load the import window
+  if (IMPORT_WINDOW_VITE_DEV_SERVER_URL) {
+    importWindow.loadURL(
+      IMPORT_WINDOW_VITE_DEV_SERVER_URL + "/import-window.html"
+    );
+
+    // Open the DevTools.
+    importWindow.webContents.openDevTools();
+  } else {
+    await importWindow.loadFile(
+      path.join(
+        __dirname,
+        `../renderer/${IMPORT_WINDOW_VITE_NAME}/import-window.html`
+      )
+    );
+  }
+
+  importWindow.on("focus", () => {
+    importWindow.webContents.send("visibilityChange", "focus");
+  });
+
+  importWindow.on("blur", () => {
+    importWindow.webContents.send("visibilityChange", "blur");
+  });
+
+  return importWindow;
 };
 
 // This method will be called when Electron has finished
@@ -86,7 +152,8 @@ const createWindow = async () => {
 app.on("ready", async () => {
   initIpcHandlers();
 
-  createWindow();
+  const mainWindow = await createMainWindow();
+  const importWindow = await createImportWindow();
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -102,7 +169,7 @@ app.on("activate", () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
+    createMainWindow();
   }
 });
 

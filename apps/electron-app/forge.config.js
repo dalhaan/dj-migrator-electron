@@ -44,6 +44,10 @@ const config = {
             name: "main_window",
             config: "vite.main-renderer.config.mjs",
           },
+          {
+            name: "import_window",
+            config: "vite.import-renderer.config.mjs",
+          },
         ],
       },
     },
