@@ -62,7 +62,7 @@ export async function findCrates(directory: string): Promise<Crate[]> {
   const isSeratoDirectory = fs.existsSync(subcrateDir);
 
   if (!isSeratoDirectory) {
-    throw new InvalidSeratoDirError();
+    throw new InvalidSeratoDirError("No crates found");
   }
 
   const files = await fsPromises.readdir(subcrateDir);

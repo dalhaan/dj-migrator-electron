@@ -51,14 +51,13 @@ export const Dashboard = () => {
         Open window
       </Button>
 
+      <p>{error}</p>
       <div className={styles.displayContainer}>
         <div className={styles.display}>
           <PlaylistPanel />
           <TrackDisplay />
         </div>
       </div>
-
-      <p>{error}</p>
     </div>
   );
 };
