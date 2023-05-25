@@ -1,7 +1,8 @@
-import { Stack } from "rsuite";
+import { ButtonToolbar, Stack } from "rsuite";
 
 import * as styles from "./import-screen.css";
 
+import { CancelButton } from "@/import-window/components/cancel-button";
 import { DirectorySelect } from "@/import-window/components/directory-select";
 import { ImportButton } from "@/import-window/components/import-button";
 import { ImportCrateTree } from "@/import-window/components/import-crate-tree";
@@ -14,7 +15,10 @@ export function ImportScreen() {
           <DirectorySelect />
           <ImportCrateTree />
           <Stack.Item alignSelf="center">
-            <ImportButton />
+            <ButtonToolbar>
+              <ImportButton />
+              <CancelButton />
+            </ButtonToolbar>
           </Stack.Item>
         </Stack>
       </div>

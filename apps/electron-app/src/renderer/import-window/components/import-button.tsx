@@ -19,7 +19,11 @@ export function ImportButton() {
   }
 
   return (
-    <Button disabled={!selectedCratesPaths.length} onClick={handleClick}>
+    <Button
+      appearance="primary"
+      disabled={!selectedCratesPaths.length}
+      onClick={handleClick}
+    >
       Import
     </Button>
   );
