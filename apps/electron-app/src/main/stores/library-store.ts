@@ -1,16 +1,23 @@
 import { Playlist, Tracks } from "@dj-migrator/common";
 
-import { Store } from "./createStore";
+import { Store, StoreOptions } from "./store";
 
-export const libraryStore = new Store<{
+class LibraryStore extends Store<{
   tracks: Tracks;
   playlists: Playlist[];
-}>(
-  {
-    tracks: new Map(),
-    playlists: [],
-  },
-  {
-    name: "library",
+}> {
+  constructor(options?: Pick<StoreOptions, "listeners">) {
+    super(
+      {
+        tracks: new Map(),
+        playlists: [],
+      },
+      {
+        name: "library",
+        ...options,
+      }
+    );
   }
-);
+}
+
+export const libraryStore = new LibraryStore();

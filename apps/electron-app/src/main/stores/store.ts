@@ -1,6 +1,6 @@
 import { WebContents, ipcMain } from "electron";
 
-type StoreOptions = {
+export type StoreOptions = {
   name: string;
   listeners?: WebContents[];
 };
