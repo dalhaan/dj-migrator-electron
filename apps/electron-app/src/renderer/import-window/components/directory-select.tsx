@@ -1,4 +1,5 @@
 import { Icon } from "@rsuite/icons";
+import { useState } from "react";
 import { ImFolderOpen } from "react-icons/im";
 import { Input, InputGroup } from "rsuite";
 
@@ -7,6 +8,8 @@ import { useImport } from "../stores/import-store";
 import { parseIpcResponse } from "@/utils/ipc";
 
 export function DirectorySelect() {
+  const [directory, setDirectory] = useState<string | null>(null);
+
   /**
    * Prompt user to select Serato dir and update store with the found crates
    */
@@ -24,13 +27,16 @@ export function DirectorySelect() {
 
       // Update store with found crates
       useImport.getState().setCrates(crateNames);
+      setDirectory(directory);
     } catch (error) {
-      console.log(error);
+      // Reset state on error
+      useImport.getState().setCrates([]);
+      setDirectory(null);
     }
   }
   return (
     <InputGroup>
-      <Input />
+      <Input value={directory || ""} />
       <InputGroup.Button onClick={onSelect}>
         <Icon as={ImFolderOpen} />
       </InputGroup.Button>
