@@ -1,5 +1,5 @@
-import { Track } from "@dj-migrator/common";
-import { useMemo } from "react";
+import { Playlist, Tracks } from "@dj-migrator/common";
+import { useEffect, useState, useTransition } from "react";
 import { Table } from "rsuite";
 
 import * as styles from "./track-display.css";
@@ -18,30 +18,43 @@ type TableData = {
   cuePoints: number | undefined;
 };
 
+function transformPlaylistToTableData(
+  playlist: Playlist | null,
+  tracks: Tracks
+) {
+  return playlist?.tracks
+    .map((trackName, index) => {
+      const track = tracks.get(trackName);
+
+      if (!track) return;
+
+      return {
+        trackNo: index + 1,
+        title: track.track.metadata.title,
+        artist: track.track.metadata.artist,
+        duration: track.track.metadata.duration,
+        bpm: track.track.metadata.bpm,
+        key: track.track.metadata.key,
+        type: track.track.metadata.fileExtension,
+        bitrate: track.track.metadata.bitrate,
+        cuePoints: track.track.cuePoints.length,
+      };
+    })
+    .filter((track) => Boolean(track)) as TableData[];
+}
+
 export function TrackDisplay() {
   const tracks = useLibrary((state) => state.tracks);
   const playlist = useLibrary((state) => state.selectedPlaylist);
+  const [tableData, setTableData] = useState<TableData[] | undefined>();
 
-  const tableData: TableData[] | undefined = useMemo(() => {
-    return playlist?.tracks
-      .map((trackName, index) => {
-        const track = tracks.get(trackName);
+  const [isPending, startTransition] = useTransition();
 
-        if (!track) return;
-
-        return {
-          trackNo: index + 1,
-          title: track.track.metadata.title,
-          artist: track.track.metadata.artist,
-          duration: track.track.metadata.duration,
-          bpm: track.track.metadata.bpm,
-          key: track.track.metadata.key,
-          type: track.track.metadata.fileExtension,
-          bitrate: track.track.metadata.bitrate,
-          cuePoints: track.track.cuePoints.length,
-        };
-      })
-      .filter((track) => Boolean(track)) as TableData[];
+  // Mark transforming table data as a transition to unblock UI
+  useEffect(() => {
+    startTransition(() => {
+      setTableData(transformPlaylistToTableData(playlist, tracks));
+    });
   }, [playlist, tracks]);
 
   return (
@@ -51,6 +64,7 @@ export function TrackDisplay() {
       bordered
       cellBordered
       fillHeight
+      loading={isPending}
     >
       <Table.Column width={50} fullText>
         <Table.HeaderCell>#</Table.HeaderCell>
