@@ -42,13 +42,15 @@ const createMainWindow = async () => {
 
   // Update window background colour on theme change.
   // Prevents seeing white background when resizing in dark mode.
-  nativeTheme.on("updated", () => {
+  function updateTheme() {
     mainWindow.setBackgroundColor(
       nativeTheme.shouldUseDarkColors
         ? darkThemeBackground
         : lightThemeBackground
     );
-  });
+  }
+
+  nativeTheme.on("updated", updateTheme);
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
@@ -84,6 +86,7 @@ const createMainWindow = async () => {
   // Remove LibraryStore listener on close
   mainWindow.webContents.on("destroyed", () => {
     libraryStore.removeListener(mainWindowWebContents);
+    nativeTheme.off("updated", updateTheme);
   });
 
   return mainWindow;
@@ -122,13 +125,15 @@ const createImportWindow = async (mainWindow: BrowserWindow) => {
 
   // Update window background colour on theme change.
   // Prevents seeing white background when resizing in dark mode.
-  nativeTheme.on("updated", () => {
+  function updateTheme() {
     importWindow.setBackgroundColor(
       nativeTheme.shouldUseDarkColors
         ? darkThemeBackground
         : lightThemeBackground
     );
-  });
+  }
+
+  nativeTheme.on("updated", updateTheme);
 
   // and load the import window
   if (IMPORT_WINDOW_VITE_DEV_SERVER_URL) {
@@ -166,6 +171,7 @@ const createImportWindow = async (mainWindow: BrowserWindow) => {
   // Remove LibraryStore listener on close
   importWindow.webContents.on("destroyed", () => {
     libraryStore.removeListener(importWindowWebContents);
+    nativeTheme.off("updated", updateTheme);
   });
 
   return importWindow;
