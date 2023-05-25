@@ -1,8 +1,10 @@
 import { Icon } from "@rsuite/icons";
 import { ImFolderOpen } from "react-icons/im";
-import { Input, InputGroup } from "rsuite";
+import { IconButton } from "rsuite";
 
-import { useImport } from "../stores/import-store";
+import { useImport } from "../../stores/import-store";
+
+import * as styles from "./directory-select.css";
 
 import { parseIpcResponse } from "@/utils/ipc";
 
@@ -32,11 +34,15 @@ export function DirectorySelect() {
     }
   }
   return (
-    <InputGroup>
-      <Input value={directory || ""} placeholder="Select directory" />
-      <InputGroup.Button onClick={onSelect}>
-        <Icon as={ImFolderOpen} />
-      </InputGroup.Button>
-    </InputGroup>
+    <IconButton
+      className={styles.directorySelect}
+      icon={<Icon as={ImFolderOpen} />}
+      appearance="ghost"
+      placement="right"
+      block
+      onClick={onSelect}
+    >
+      <span>{directory || "Select directory"}</span>
+    </IconButton>
   );
 }
