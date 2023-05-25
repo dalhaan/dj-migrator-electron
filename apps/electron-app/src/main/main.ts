@@ -78,9 +78,12 @@ const createMainWindow = async () => {
     mainWindow.webContents.send("visibilityChange", "blur");
   });
 
+  // Save reference to webContents to prevent it from being lost when it is destroyed
+  const mainWindowWebContents = mainWindow.webContents;
+
   // Remove LibraryStore listener on close
-  mainWindow.on("close", () => {
-    libraryStore.removeListener(mainWindow.webContents);
+  mainWindow.webContents.on("destroyed", () => {
+    libraryStore.removeListener(mainWindowWebContents);
   });
 
   return mainWindow;
@@ -155,9 +158,12 @@ const createImportWindow = async (mainWindow: BrowserWindow) => {
     importWindow.webContents.send("visibilityChange", "blur");
   });
 
+  // Save reference to webContents to prevent it from being lost when it is destroyed
+  const importWindowWebContents = importWindow.webContents;
+
   // Remove LibraryStore listener on close
-  importWindow.on("close", () => {
-    libraryStore.removeListener(importWindow.webContents);
+  importWindow.webContents.on("destroyed", () => {
+    libraryStore.removeListener(importWindowWebContents);
   });
 
   return importWindow;

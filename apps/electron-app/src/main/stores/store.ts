@@ -49,8 +49,8 @@ export class Store<T extends Record<string, any>> {
       this.state[key as keyof T] = partialState[key] as T[keyof T];
     }
 
-    for (const window of this.listeners) {
-      window.send(`SYNCSTORE:${this.name}:ONCHANGE`, partialState);
+    for (const listener of this.listeners) {
+      listener.send(`SYNCSTORE:${this.name}:ONCHANGE`, partialState);
     }
   }
 
