@@ -16,8 +16,8 @@ export function ImportCrateCheckTree() {
         value: "ALL",
         label: "All",
         children: crates.map((crate) => ({
-          value: crate,
-          label: crate,
+          value: crate.filePath,
+          label: crate.name,
         })),
       },
     ];

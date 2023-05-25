@@ -1,13 +1,18 @@
+import { Crate } from "@dj-migrator/common";
 import { create } from "zustand";
 
 export const useImport = create<{
-  crates: string[];
+  directory: string | null;
+  crates: Crate[];
   selectedCrates: string[];
-  setCrates: (crates: string[]) => void;
+  setDirectory: (directory: string | null) => void;
+  setCrates: (crates: Crate[]) => void;
   setSelectedCrates: (crates: string[]) => void;
 }>((set) => ({
+  directory: null,
   crates: [],
   selectedCrates: [],
-  setCrates: (crates: string[]) => set({ crates }),
+  setDirectory: (directory: string | null) => set({ directory }),
+  setCrates: (crates: Crate[]) => set({ crates }),
   setSelectedCrates: (crates: string[]) => set({ selectedCrates: crates }),
 }));

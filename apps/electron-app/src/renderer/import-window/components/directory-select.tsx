@@ -1,5 +1,4 @@
 import { Icon } from "@rsuite/icons";
-import { useState } from "react";
 import { ImFolderOpen } from "react-icons/im";
 import { Input, InputGroup } from "rsuite";
 
@@ -8,7 +7,7 @@ import { useImport } from "../stores/import-store";
 import { parseIpcResponse } from "@/utils/ipc";
 
 export function DirectorySelect() {
-  const [directory, setDirectory] = useState<string | null>(null);
+  const directory = useImport((state) => state.directory);
 
   /**
    * Prompt user to select Serato dir and update store with the found crates
@@ -23,15 +22,13 @@ export function DirectorySelect() {
         await window.electronAPI.findCrates(directory)
       );
 
-      const crateNames = crates.map((crate) => crate.name);
-
       // Update store with found crates
-      useImport.getState().setCrates(crateNames);
-      setDirectory(directory);
+      useImport.getState().setCrates(crates);
+      useImport.getState().setDirectory(directory);
     } catch (error) {
       // Reset state on error
       useImport.getState().setCrates([]);
-      setDirectory(null);
+      useImport.getState().setDirectory(null);
     }
   }
   return (
