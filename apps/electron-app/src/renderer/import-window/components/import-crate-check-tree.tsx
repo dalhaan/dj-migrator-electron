@@ -22,7 +22,7 @@ export function ImportCrateCheckTree() {
         },
       ]}
       onChange={(playlists) =>
-        useImport.getState().setSelectedPlaylists(playlists as string[])
+        useImport.getState().setSelectedCrates(playlists as string[])
       }
       defaultExpandAll
     />

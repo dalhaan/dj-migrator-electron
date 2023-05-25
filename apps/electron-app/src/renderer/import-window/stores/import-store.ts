@@ -1,10 +1,11 @@
 import { create } from "zustand";
 
 export const useImport = create<{
-  selectedPlaylists: string[];
-  setSelectedPlaylists: (playlists: string[]) => void;
+  crates: string[];
+  selectedCrates: string[];
+  setSelectedCrates: (crates: string[]) => void;
 }>((set) => ({
-  selectedPlaylists: [],
-  setSelectedPlaylists: (playlists: string[]) =>
-    set({ selectedPlaylists: playlists }),
+  crates: [],
+  selectedCrates: [],
+  setSelectedCrates: (crates: string[]) => set({ selectedCrates: crates }),
 }));
