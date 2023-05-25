@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export const useExport = create<{
+export const useImport = create<{
   selectedPlaylists: string[];
   setSelectedPlaylists: (playlists: string[]) => void;
 }>((set) => ({

@@ -1,6 +1,6 @@
 import { CheckTree } from "rsuite";
 
-import { useExport } from "@/import-window/stores/export-store";
+import { useImport } from "@/import-window/stores/import-store";
 
 export function ImportCrateCheckTree() {
   return (
@@ -22,7 +22,7 @@ export function ImportCrateCheckTree() {
         },
       ]}
       onChange={(playlists) =>
-        useExport.getState().setSelectedPlaylists(playlists as string[])
+        useImport.getState().setSelectedPlaylists(playlists as string[])
       }
       defaultExpandAll
     />
