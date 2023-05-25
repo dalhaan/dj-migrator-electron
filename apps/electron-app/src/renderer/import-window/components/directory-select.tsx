@@ -33,7 +33,7 @@ export function DirectorySelect() {
   }
   return (
     <InputGroup>
-      <Input value={directory || ""} />
+      <Input value={directory || ""} placeholder="Select directory" />
       <InputGroup.Button onClick={onSelect}>
         <Icon as={ImFolderOpen} />
       </InputGroup.Button>
