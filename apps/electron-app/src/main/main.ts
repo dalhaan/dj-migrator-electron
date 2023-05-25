@@ -55,7 +55,7 @@ const createMainWindow = async () => {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL + "/main-window.html");
 
     // Open the DevTools.
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
   } else {
     await mainWindow.loadFile(
       path.join(
@@ -137,7 +137,7 @@ const createImportWindow = async (mainWindow: BrowserWindow) => {
     );
 
     // Open the DevTools.
-    importWindow.webContents.openDevTools();
+    // importWindow.webContents.openDevTools();
   } else {
     await importWindow.loadFile(
       path.join(
