@@ -73,7 +73,6 @@ export const Dashboard = () => {
     } catch (error) {
       setError("Unknown error");
     }
-    // window.electronAPI.exportPlaylistsToRekordBoxXml([selectedPlaylist],)
   }
 
   return (
