@@ -84,10 +84,10 @@ export const Dashboard = () => {
       <Button onClick={exportSelectedPlaylist}>Export selected playlist</Button>
       <Button
         onClick={() => {
-          window.open("/#/test", "_blank", "titleBarStyle: hidden");
+          window.electronAPI.openImportWindow();
         }}
       >
-        Open window
+        Open import window
       </Button>
 
       <p>{error}</p>

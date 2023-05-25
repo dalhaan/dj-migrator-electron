@@ -1,10 +1,11 @@
 import path from "path";
 
-import { app, BrowserWindow, nativeTheme } from "electron";
+import { app, BrowserWindow, ipcMain, nativeTheme } from "electron";
 
 import { colors } from "../common/colors";
 
 import { initIpcHandlers } from "./ipc";
+import { libraryStore } from "./stores/library-store";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -77,15 +78,21 @@ const createMainWindow = async () => {
     mainWindow.webContents.send("visibilityChange", "blur");
   });
 
+  // Remove LibraryStore listener on close
+  mainWindow.on("close", () => {
+    libraryStore.removeListener(mainWindow.webContents);
+  });
+
   return mainWindow;
 };
 
-const createImportWindow = async () => {
+const createImportWindow = async (mainWindow: BrowserWindow) => {
   const lightThemeBackground = "white";
   const darkThemeBackground = colors.almostBlack;
 
   // Create the import window
   const importWindow = new BrowserWindow({
+    parent: mainWindow,
     width: 1280,
     height: 888,
     resizable: true,
@@ -135,12 +142,22 @@ const createImportWindow = async () => {
     );
   }
 
+  // Trick to prevent Electron from showing a blank screen at the start.
+  importWindow.on("ready-to-show", () => {
+    importWindow.show();
+  });
+
   importWindow.on("focus", () => {
     importWindow.webContents.send("visibilityChange", "focus");
   });
 
   importWindow.on("blur", () => {
     importWindow.webContents.send("visibilityChange", "blur");
+  });
+
+  // Remove LibraryStore listener on close
+  importWindow.on("close", () => {
+    libraryStore.removeListener(importWindow.webContents);
   });
 
   return importWindow;
@@ -153,7 +170,11 @@ app.on("ready", async () => {
   initIpcHandlers();
 
   const mainWindow = await createMainWindow();
-  const importWindow = await createImportWindow();
+
+  // openImportWindow event handler
+  ipcMain.on("OPEN_IMPORT_WINDOW", async () => {
+    const importWindow = await createImportWindow(mainWindow);
+  });
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common

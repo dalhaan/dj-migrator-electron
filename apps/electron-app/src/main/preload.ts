@@ -2,6 +2,11 @@ import { Crate } from "@dj-migrator/common";
 import { MessageBoxOptions, contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("electronAPI", {
+  // Window events
+  openImportWindow: () => {
+    ipcRenderer.send("OPEN_IMPORT_WINDOW");
+  },
+
   // Serato events
   findCrates: (directory: string) =>
     ipcRenderer.invoke("findCrates", directory),

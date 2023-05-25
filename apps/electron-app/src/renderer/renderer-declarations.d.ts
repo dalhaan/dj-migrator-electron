@@ -4,6 +4,9 @@ declare global {
   interface Window {
     electronAPI: // IPC invoke handler types
     IpcHandlers & {
+      // Window events
+      openImportWindow: () => void;
+
       // IPC one-way listener types
       onWindowVisiblityChange: (
         callback: (value: "focus" | "blur") => void
