@@ -5,7 +5,6 @@ export const dashboard = style({
 
   display: "flex",
   flexDirection: "column",
-  alignItems: "flex-start",
 });
 
 export const displayContainer = style({
@@ -23,4 +22,9 @@ export const display = style({
 
   display: "grid",
   gridTemplateColumns: "300px 1fr",
+});
+
+export const buttonToolbar = style({
+  display: "flex",
+  justifyContent: "space-between",
 });
