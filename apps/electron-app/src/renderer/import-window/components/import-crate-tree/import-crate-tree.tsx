@@ -5,6 +5,8 @@ import * as styles from "./import-crate-tree.css";
 
 import { useImport } from "@/import-window/stores/import-store";
 
+export const ALL_CRATES_SELECTED = "ALL";
+
 export function ImportCrateTree() {
   const crates = useImport((state) => state.crates);
   const selectedCrates = useImport((state) => state.selectedCrates);
@@ -16,7 +18,7 @@ export function ImportCrateTree() {
 
     return [
       {
-        value: "ALL",
+        value: ALL_CRATES_SELECTED,
         label: "All",
         children: crates.map((crate) => ({
           value: crate.filePath,
@@ -35,7 +37,7 @@ export function ImportCrateTree() {
           useImport.getState().setSelectedCrates(playlists as string[])
         }
         height={360}
-        expandItemValues={["ALL"]} // Always expand tree
+        expandItemValues={[ALL_CRATES_SELECTED]} // Always expand tree
       />
     </Panel>
   );

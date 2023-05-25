@@ -4,6 +4,8 @@ import { Button } from "rsuite";
 
 import { useImport } from "../stores/import-store";
 
+import { ALL_CRATES_SELECTED } from "./import-crate-tree";
+
 export function ImportButton() {
   const [isLoading, setIsLoading] = useState(false);
   const directory = useImport((state) => state.directory);
@@ -15,9 +17,12 @@ export function ImportButton() {
 
     setIsLoading(true);
 
-    const selectedCrates = selectedCratesPaths
-      .map((path) => crates.find((crate) => crate.filePath === path))
-      .filter((crate) => Boolean(crate)) as Crate[];
+    const selectedCrates =
+      selectedCratesPaths[0] === ALL_CRATES_SELECTED
+        ? crates
+        : (selectedCratesPaths
+            .map((path) => crates.find((crate) => crate.filePath === path))
+            .filter((crate) => Boolean(crate)) as Crate[]);
 
     try {
       await window.electronAPI.parseCrates(directory, selectedCrates);
