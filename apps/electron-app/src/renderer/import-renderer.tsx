@@ -9,7 +9,7 @@ import "@/styles/colors.css";
 
 import { useWindow } from "./stores/windowStore";
 
-import { router } from "@/router/router";
+import { router } from "@/import-window/router/router";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
