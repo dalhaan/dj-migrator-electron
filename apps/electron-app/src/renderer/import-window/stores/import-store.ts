@@ -8,6 +8,7 @@ export const useImport = create<{
   setDirectory: (directory: string | null) => void;
   setCrates: (crates: Crate[]) => void;
   setSelectedCrates: (crates: string[]) => void;
+  reset: () => void;
 }>((set) => ({
   directory: null,
   crates: [],
@@ -15,4 +16,11 @@ export const useImport = create<{
   setDirectory: (directory: string | null) => set({ directory }),
   setCrates: (crates: Crate[]) => set({ crates }),
   setSelectedCrates: (crates: string[]) => set({ selectedCrates: crates }),
+  reset: () => {
+    set({
+      directory: null,
+      crates: [],
+      selectedCrates: [],
+    });
+  },
 }));

@@ -7,6 +7,7 @@ import { useImport } from "@/import-window/stores/import-store";
 
 export function ImportCrateTree() {
   const crates = useImport((state) => state.crates);
+  const selectedCrates = useImport((state) => state.selectedCrates);
 
   const data = useMemo(() => {
     if (crates.length === 0) {
@@ -29,12 +30,12 @@ export function ImportCrateTree() {
     <Panel className={styles.panel} bordered bodyFill>
       <CheckTree
         data={data}
-        height={360}
-        // Always expand tree
-        expandItemValues={["ALL"]}
+        value={selectedCrates}
         onChange={(playlists) =>
           useImport.getState().setSelectedCrates(playlists as string[])
         }
+        height={360}
+        expandItemValues={["ALL"]} // Always expand tree
       />
     </Panel>
   );

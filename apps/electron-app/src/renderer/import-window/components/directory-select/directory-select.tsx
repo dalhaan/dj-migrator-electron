@@ -29,8 +29,7 @@ export function DirectorySelect() {
       useImport.getState().setDirectory(directory);
     } catch (error) {
       // Reset state on error
-      useImport.getState().setCrates([]);
-      useImport.getState().setDirectory(null);
+      useImport.getState().reset();
     }
   }
   return (
