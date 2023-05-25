@@ -96,8 +96,10 @@ const createImportWindow = async (mainWindow: BrowserWindow) => {
   // Create the import window
   const importWindow = new BrowserWindow({
     parent: mainWindow,
-    width: 1280,
-    height: 888,
+    width: 660,
+    height: 611,
+    minWidth: 660,
+    minHeight: 611,
     resizable: true,
     backgroundColor: nativeTheme.shouldUseDarkColors
       ? darkThemeBackground

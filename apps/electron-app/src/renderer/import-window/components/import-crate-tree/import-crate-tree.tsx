@@ -1,9 +1,11 @@
 import { useMemo } from "react";
-import { CheckTree } from "rsuite";
+import { CheckTree, Panel } from "rsuite";
+
+import * as styles from "./import-crate-tree.css";
 
 import { useImport } from "@/import-window/stores/import-store";
 
-export function ImportCrateCheckTree() {
+export function ImportCrateTree() {
   const crates = useImport((state) => state.crates);
 
   const data = useMemo(() => {
@@ -24,13 +26,16 @@ export function ImportCrateCheckTree() {
   }, [crates]);
 
   return (
-    <CheckTree
-      data={data}
-      // Always expand tree
-      expandItemValues={["ALL"]}
-      onChange={(playlists) =>
-        useImport.getState().setSelectedCrates(playlists as string[])
-      }
-    />
+    <Panel className={styles.panel} bordered bodyFill>
+      <CheckTree
+        data={data}
+        height={360}
+        // Always expand tree
+        expandItemValues={["ALL"]}
+        onChange={(playlists) =>
+          useImport.getState().setSelectedCrates(playlists as string[])
+        }
+      />
+    </Panel>
   );
 }
