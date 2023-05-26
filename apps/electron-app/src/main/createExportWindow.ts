@@ -61,7 +61,7 @@ export const createExportWindow = async (mainWindow: BrowserWindow) => {
     await exportWindow.loadFile(
       path.join(
         __dirname,
-        `../renderer/${EXPORT_WINDOW_VITE_NAME}/import-window.html`
+        `../renderer/${EXPORT_WINDOW_VITE_NAME}/export-window.html`
       )
     );
   }
