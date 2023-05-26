@@ -12,6 +12,7 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
+      "~/common/*": ["./apps/electron-app/src/common/*"],
       "@/*": ["./apps/electron-app/src/renderer/*"],
       "@dj-migrator/common": ["./lib/common/src/index.ts"]
     },

@@ -10,6 +10,7 @@
   "compilerOptions": {
     "composite": true,
     "paths": {
+      "~/common/*": ["./apps/electron-app/src/common/*"],
       "@/*": ["./apps/electron-app/src/main/*"],
       "@dj-migrator/common": ["./lib/common/src/index.ts"],
       "@dj-migrator/node": ["./lib/node/src/index.ts"]

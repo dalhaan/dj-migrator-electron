@@ -2,9 +2,8 @@ import path from "path";
 
 import { BrowserWindow, nativeTheme } from "electron";
 
-import { colors } from "../common/colors";
-
 import { libraryStore } from "@/stores/library-store";
+import { colors } from "~/common/colors";
 
 export const createMainWindow = async () => {
   const lightThemeBackground = "white";
