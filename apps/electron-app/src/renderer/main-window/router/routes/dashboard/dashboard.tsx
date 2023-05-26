@@ -9,42 +9,42 @@ import { useLibrary } from "@/stores/libraryStore";
 
 export const Dashboard = () => {
   const [error, setError] = useState<string | null>(null);
-  const selectedPlaylist = useLibrary((state) => state.selectedPlaylist);
+  const playlists = useLibrary((state) => state.playlists);
 
-  async function exportSelectedPlaylist() {
-    if (!selectedPlaylist) return;
+  // async function exportSelectedPlaylist() {
+  //   if (!selectedPlaylist) return;
 
-    try {
-      const outputPath = await window.electronAPI.openSaveFileDialog({
-        defaultPath: "RekordboxCollection.xml",
-        filters: [
-          {
-            name: "XML",
-            extensions: [".xml"],
-          },
-        ],
-      });
+  //   try {
+  //     const outputPath = await window.electronAPI.openSaveFileDialog({
+  //       defaultPath: "RekordboxCollection.xml",
+  //       filters: [
+  //         {
+  //           name: "XML",
+  //           extensions: [".xml"],
+  //         },
+  //       ],
+  //     });
 
-      console.log(outputPath);
+  //     console.log(outputPath);
 
-      if (!outputPath) return;
+  //     if (!outputPath) return;
 
-      console.log(`Exporting ${selectedPlaylist} to ${outputPath}`);
+  //     console.log(`Exporting ${selectedPlaylist} to ${outputPath}`);
 
-      await window.electronAPI.exportPlaylistsToRekordBoxXml(
-        [selectedPlaylist?.name],
-        outputPath,
-        {
-          saveCuesAsHotCues: true,
-          saveCuesAsMemoryCues: true,
-        }
-      );
+  //     await window.electronAPI.exportPlaylistsToRekordBoxXml(
+  //       [selectedPlaylist?.name],
+  //       outputPath,
+  //       {
+  //         saveCuesAsHotCues: true,
+  //         saveCuesAsMemoryCues: true,
+  //       }
+  //     );
 
-      console.log("Exported successfully");
-    } catch (error) {
-      setError("Unknown error");
-    }
-  }
+  //     console.log("Exported successfully");
+  //   } catch (error) {
+  //     setError("Unknown error");
+  //   }
+  // }
 
   return (
     <div className={styles.dashboard}>
@@ -55,10 +55,15 @@ export const Dashboard = () => {
             window.electronAPI.openImportWindow();
           }}
         >
-          Open import window
+          Import
         </Button>
-        <Button disabled={!selectedPlaylist} onClick={exportSelectedPlaylist}>
-          Export selected playlist
+        <Button
+          disabled={playlists.length === 0}
+          onClick={() => {
+            window.electronAPI.openExportWindow();
+          }}
+        >
+          Export
         </Button>
       </div>
 

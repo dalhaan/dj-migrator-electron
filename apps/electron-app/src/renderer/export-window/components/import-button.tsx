@@ -4,7 +4,7 @@ import { Button } from "rsuite";
 
 import { useExport } from "../stores/export-store";
 
-import { ALL_CRATES_SELECTED } from "./import-crate-tree";
+import { ALL_PLAYLISTS_SELECTED } from "./export-crate-tree";
 
 export function ImportButton() {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +18,7 @@ export function ImportButton() {
     setIsLoading(true);
 
     const selectedCrates =
-      selectedCratesPaths[0] === ALL_CRATES_SELECTED
+      selectedCratesPaths[0] === ALL_PLAYLISTS_SELECTED
         ? crates
         : (selectedCratesPaths
             .map((path) => crates.find((crate) => crate.filePath === path))
