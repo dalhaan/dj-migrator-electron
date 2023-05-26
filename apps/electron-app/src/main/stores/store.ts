@@ -56,11 +56,9 @@ export class Store<T extends Record<string, any>> {
 
   addListener(webContents: WebContents) {
     this.listeners.add(webContents);
-    console.log("LibraryStore:addListener", this.listeners);
   }
 
   removeListener(webContents: WebContents) {
     this.listeners.delete(webContents);
-    console.log("LibraryStore:removeListener", this.listeners);
   }
 }
