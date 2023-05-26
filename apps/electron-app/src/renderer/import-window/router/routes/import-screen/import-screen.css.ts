@@ -1,6 +1,6 @@
 import { style } from "@vanilla-extract/css";
 
-export const importScreen = style({
+export const screen = style({
   height: "100%",
 
   display: "flex",

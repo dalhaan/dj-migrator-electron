@@ -9,7 +9,7 @@ import { ImportCrateTree } from "@/import-window/components/import-crate-tree";
 
 export function ImportScreen() {
   return (
-    <div className={styles.importScreen}>
+    <div className={styles.screen}>
       <div className={styles.inner}>
         <Stack direction="column" alignItems="stretch" spacing={30}>
           <DirectorySelect />
