@@ -118,7 +118,7 @@ export function TrackDisplay() {
         <Table.Cell>{(rowData) => rowData["bitrate"] / 1000}</Table.Cell>
       </Table.Column>
 
-      <Table.Column flexGrow={1} fullText resizable>
+      <Table.Column flexGrow={1} fullText>
         <Table.HeaderCell>Cue points</Table.HeaderCell>
         <Table.Cell dataKey="cuePoints" />
       </Table.Column>
