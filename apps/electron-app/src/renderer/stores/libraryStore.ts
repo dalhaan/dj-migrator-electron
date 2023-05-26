@@ -23,11 +23,9 @@ export const useLibrary = create<{
     selectedPlaylist: null,
     setTracks: (tracks: Tracks) => {
       window.electronAPI.updateStore(LIBRARY_STORE_NAME, { tracks });
-      set({ tracks });
     },
     setPlaylists: (playlists: Playlist[]) => {
       window.electronAPI.updateStore(LIBRARY_STORE_NAME, { playlists });
-      set({ playlists });
     },
     setSelectedTrack: (track: Track | null) => {
       set({ selectedTrack: track });
