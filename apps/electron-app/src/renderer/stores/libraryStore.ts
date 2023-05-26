@@ -1,6 +1,8 @@
 import { Playlist, Track, Tracks } from "@dj-migrator/common";
 import { create } from "zustand";
 
+import { LIBRARY_STORE_NAME } from "~/common/store-names";
+
 export const useLibrary = create<{
   tracks: Tracks;
   playlists: Playlist[];
@@ -11,8 +13,8 @@ export const useLibrary = create<{
   setSelectedTrack: (track: Track | null) => void;
   setSelectedPlaylist: (playlist: Playlist | null) => void;
 }>((set) => {
-  window.electronAPI.onStoreChange("library", set);
-  window.electronAPI.getStore("library");
+  window.electronAPI.onStoreChange(LIBRARY_STORE_NAME, set);
+  window.electronAPI.getStore(LIBRARY_STORE_NAME);
 
   return {
     tracks: new Map(),
@@ -20,11 +22,11 @@ export const useLibrary = create<{
     selectedTrack: null,
     selectedPlaylist: null,
     setTracks: (tracks: Tracks) => {
-      window.electronAPI.updateStore("library", { tracks });
+      window.electronAPI.updateStore(LIBRARY_STORE_NAME, { tracks });
       set({ tracks });
     },
     setPlaylists: (playlists: Playlist[]) => {
-      window.electronAPI.updateStore("library", { playlists });
+      window.electronAPI.updateStore(LIBRARY_STORE_NAME, { playlists });
       set({ playlists });
     },
     setSelectedTrack: (track: Track | null) => {
