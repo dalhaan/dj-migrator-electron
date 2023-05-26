@@ -6,6 +6,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   openImportWindow: () => {
     ipcRenderer.send("OPEN_IMPORT_WINDOW");
   },
+  openExportWindow: () => {
+    ipcRenderer.send("OPEN_EXPORT_WINDOW");
+  },
 
   // Serato events
   findCrates: (directory: string) =>

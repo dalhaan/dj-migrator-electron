@@ -6,6 +6,7 @@ declare global {
     IpcHandlers & {
       // Window events
       openImportWindow: () => void;
+      openExportWindow: () => void;
 
       // IPC one-way listener types
       onWindowVisiblityChange: (
