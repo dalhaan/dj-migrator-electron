@@ -1,6 +1,8 @@
 import { Crate } from "@dj-migrator/common";
+import { Icon } from "@rsuite/icons";
 import { useState } from "react";
-import { Button } from "rsuite";
+import { MdDownload } from "react-icons/md";
+import { IconButton } from "rsuite";
 
 import { useImport } from "../stores/import-store";
 
@@ -35,13 +37,15 @@ export function ImportButton() {
   }
 
   return (
-    <Button
-      loading={isLoading}
+    <IconButton
+      icon={<Icon as={MdDownload} />}
+      placement="right"
       appearance="primary"
+      loading={isLoading}
       disabled={!selectedCratesPaths.length}
       onClick={handleClick}
     >
       Import
-    </Button>
+    </IconButton>
   );
 }

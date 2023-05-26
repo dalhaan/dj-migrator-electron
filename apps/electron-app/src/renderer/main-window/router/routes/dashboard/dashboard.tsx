@@ -1,33 +1,16 @@
-import { Button } from "rsuite";
-
 import * as styles from "./dashboard.css";
 
 import { PlaylistPanel } from "@/components/layout/playlist-panel";
 import { TrackDisplay } from "@/components/track-display";
-import { useLibrary } from "@/stores/libraryStore";
+import { ExportButton } from "@/main-window/components/export-button";
+import { ImportButton } from "@/main-window/components/import-button";
 
 export const Dashboard = () => {
-  const playlists = useLibrary((state) => state.playlists);
-
   return (
     <div className={styles.dashboard}>
       <div className={styles.buttonToolbar}>
-        <Button
-          appearance="primary"
-          onClick={() => {
-            window.electronAPI.openImportWindow();
-          }}
-        >
-          Import
-        </Button>
-        <Button
-          disabled={playlists.length === 0}
-          onClick={() => {
-            window.electronAPI.openExportWindow();
-          }}
-        >
-          Export
-        </Button>
+        <ImportButton />
+        <ExportButton />
       </div>
 
       <div className={styles.displayContainer}>

@@ -1,6 +1,7 @@
-import { Crate } from "@dj-migrator/common";
+import { Icon } from "@rsuite/icons";
 import { useState } from "react";
-import { Button } from "rsuite";
+import { MdUpload } from "react-icons/md";
+import { IconButton } from "rsuite";
 
 import { useExport } from "../stores/export-store";
 
@@ -53,13 +54,15 @@ export function ExportButton() {
   }
 
   return (
-    <Button
-      loading={isLoading}
+    <IconButton
+      icon={<Icon as={MdUpload} />}
+      placement="right"
       appearance="primary"
+      loading={isLoading}
       disabled={selectedPlaylists.length === 0}
       onClick={handleClick}
     >
       Export
-    </Button>
+    </IconButton>
   );
 }
