@@ -66,22 +66,22 @@ export function TrackDisplay() {
       fillHeight
       loading={isPending}
     >
-      <Table.Column width={50} fullText>
+      <Table.Column width={50} fullText resizable>
         <Table.HeaderCell>#</Table.HeaderCell>
         <Table.Cell dataKey="trackNo" />
       </Table.Column>
 
-      <Table.Column width={200} fullText>
+      <Table.Column width={200} fullText resizable>
         <Table.HeaderCell>Title</Table.HeaderCell>
         <Table.Cell dataKey="title" />
       </Table.Column>
 
-      <Table.Column width={150} fullText>
+      <Table.Column width={150} fullText resizable>
         <Table.HeaderCell>Artist</Table.HeaderCell>
         <Table.Cell dataKey="artist" />
       </Table.Column>
 
-      <Table.Column width={110} fullText>
+      <Table.Column width={110} fullText resizable>
         <Table.HeaderCell>Duration (mins)</Table.HeaderCell>
         <Table.Cell>
           {(rowData) => {
@@ -98,27 +98,27 @@ export function TrackDisplay() {
         </Table.Cell>
       </Table.Column>
 
-      <Table.Column width={60} fullText>
+      <Table.Column width={60} fullText resizable>
         <Table.HeaderCell>BPM</Table.HeaderCell>
         <Table.Cell dataKey="bpm" />
       </Table.Column>
 
-      <Table.Column width={60} fullText>
+      <Table.Column width={60} fullText resizable>
         <Table.HeaderCell>Key</Table.HeaderCell>
         <Table.Cell dataKey="key" />
       </Table.Column>
 
-      <Table.Column width={60} fullText>
+      <Table.Column width={60} fullText resizable>
         <Table.HeaderCell>Type</Table.HeaderCell>
         <Table.Cell dataKey="type" />
       </Table.Column>
 
-      <Table.Column width={100} fullText>
+      <Table.Column width={100} fullText resizable>
         <Table.HeaderCell>Bitrate (kb/s)</Table.HeaderCell>
         <Table.Cell>{(rowData) => rowData["bitrate"] / 1000}</Table.Cell>
       </Table.Column>
 
-      <Table.Column flexGrow={1} fullText>
+      <Table.Column flexGrow={1} fullText resizable>
         <Table.HeaderCell>Cue points</Table.HeaderCell>
         <Table.Cell dataKey="cuePoints" />
       </Table.Column>
