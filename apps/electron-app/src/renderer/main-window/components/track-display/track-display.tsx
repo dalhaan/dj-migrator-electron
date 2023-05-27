@@ -66,6 +66,7 @@ export function TrackDisplay() {
       cellBordered
       fillHeight
       loading={isPending}
+      virtualized
     >
       <Table.Column width={50} fullText resizable>
         <Table.HeaderCell>#</Table.HeaderCell>
@@ -80,23 +81,6 @@ export function TrackDisplay() {
       <Table.Column width={150} fullText resizable>
         <Table.HeaderCell>Artist</Table.HeaderCell>
         <Table.Cell dataKey="artist" />
-      </Table.Column>
-
-      <Table.Column width={110} fullText resizable>
-        <Table.HeaderCell>Duration (mins)</Table.HeaderCell>
-        <Table.Cell>
-          {(rowData) => {
-            if (!rowData["duration"]) {
-              return null;
-            }
-            const minutes = Math.floor(rowData["duration"] / 60);
-            const seconds = Math.floor(rowData["duration"] - minutes * 60);
-            return `${minutes}:${seconds.toLocaleString("en-NZ", {
-              minimumIntegerDigits: 2,
-              useGrouping: false,
-            })}`;
-          }}
-        </Table.Cell>
       </Table.Column>
 
       <Table.Column width={60} fullText resizable>
@@ -116,6 +100,23 @@ export function TrackDisplay() {
               {KEY_TO_CAMELOT[rowData.key] || rowData.key}
             </span>
           )}
+        </Table.Cell>
+      </Table.Column>
+
+      <Table.Column width={110} fullText resizable>
+        <Table.HeaderCell>Duration (mins)</Table.HeaderCell>
+        <Table.Cell>
+          {(rowData) => {
+            if (!rowData["duration"]) {
+              return null;
+            }
+            const minutes = Math.floor(rowData["duration"] / 60);
+            const seconds = Math.floor(rowData["duration"] - minutes * 60);
+            return `${minutes}:${seconds.toLocaleString("en-NZ", {
+              minimumIntegerDigits: 2,
+              useGrouping: false,
+            })}`;
+          }}
         </Table.Cell>
       </Table.Column>
 
