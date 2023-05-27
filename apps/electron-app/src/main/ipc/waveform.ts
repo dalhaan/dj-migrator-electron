@@ -1,4 +1,4 @@
-import { parseWaveformData } from "@dj-migrator/node";
+import { parseWaveformData, generateWaveform } from "@dj-migrator/node";
 
 import { getFilePathDialog } from "./file-system";
 
@@ -7,5 +7,7 @@ export async function getWaveformData(): Promise<number[] | undefined> {
 
   if (!filePath) return;
 
-  return parseWaveformData(filePath);
+  const waveformData = await generateWaveform(filePath);
+
+  return parseWaveformData(Buffer.from(waveformData));
 }

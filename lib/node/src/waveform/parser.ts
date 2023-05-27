@@ -1,10 +1,8 @@
 import fs from "fs/promises";
 import { WaveformReader } from "./reader";
 
-export async function parseWaveformData(filePath: string): Promise<number[]> {
-  const file = await fs.readFile(filePath);
-
-  const reader = new WaveformReader(file);
+export async function parseWaveformData(buffer: Buffer): Promise<number[]> {
+  const reader = new WaveformReader(buffer);
 
   const result: number[] = [];
 
