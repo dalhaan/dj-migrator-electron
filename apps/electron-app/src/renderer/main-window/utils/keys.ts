@@ -36,7 +36,7 @@ export const KEY_COLOURS = {
   "12B": `hsl(${12 * spacing + offset}deg ${saturationB}% ${lightnessB}%)`,
 };
 
-export const KEY_TO_CAMELOT = {
+export const KEY_TO_CAMELOT: Record<string, string> = {
   Abm: "1A",
   "G#m": "1A",
   Ebm: "2A",
