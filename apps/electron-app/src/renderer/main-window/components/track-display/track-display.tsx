@@ -7,6 +7,7 @@ import * as styles from "./track-display.css";
 
 import { KEY_COLOURS, KEY_TO_CAMELOT } from "@/main-window/utils/keys";
 import { useLibrary } from "@/stores/libraryStore";
+import { defaultSort, sortCamelotKeys } from "@/utils/sorting-utils";
 
 type TableData = {
   trackNo: number;
@@ -64,8 +65,7 @@ function sortTracks(
         }),
       ];
     }
-    // Sort by camelot number
-    // If they're the same, sort by their camelot letter
+
     case "key": {
       return [
         ...tableData.sort((rowDataA, rowDataB) => {
@@ -75,37 +75,7 @@ function sortTracks(
           const keyA = KEY_TO_CAMELOT[rowDataA.key] || rowDataA.key;
           const keyB = KEY_TO_CAMELOT[rowDataB.key] || rowDataB.key;
 
-          // Extract camelot number & letter from string
-          // "12A" => ["12A", "12", "A"]
-          const matchesA = keyA.match(/^(\d{1,2})([AB])$/);
-          const matchesB = keyB.match(/^(\d{1,2})([AB])$/);
-
-          const camelotNumberA = matchesA?.[1];
-          const camelotLetterA = matchesA?.[2];
-          const camelotNumberB = matchesB?.[1];
-          const camelotLetterB = matchesB?.[2];
-
-          if (!camelotNumberA || !camelotNumberB) return 0;
-
-          if (sortType === "asc") {
-            const numberCompareValue =
-              Number(camelotNumberA) - Number(camelotNumberB);
-
-            if (numberCompareValue === 0 && camelotLetterA && camelotLetterB) {
-              return camelotLetterA.localeCompare(camelotLetterB);
-            }
-
-            return numberCompareValue;
-          } else {
-            const numberCompareValue =
-              Number(camelotNumberB) - Number(camelotNumberA);
-
-            if (numberCompareValue === 0 && camelotLetterA && camelotLetterB) {
-              return camelotLetterB.localeCompare(camelotLetterA);
-            }
-
-            return numberCompareValue;
-          }
+          return sortCamelotKeys(keyA, keyB, sortType);
         }),
       ];
     }
@@ -118,17 +88,7 @@ function sortTracks(
 
           if (!valueA || !valueB) return 0;
 
-          if (typeof valueA !== typeof valueB) return 0;
-
-          if (typeof valueA === "number" && typeof valueB === "number") {
-            return sortType === "asc" ? valueA - valueB : valueB - valueA;
-          } else if (typeof valueA === "string" && typeof valueB === "string") {
-            return sortType === "asc"
-              ? valueA.localeCompare(valueB)
-              : valueB.localeCompare(valueA);
-          }
-
-          return 0;
+          return defaultSort(valueA, valueB, sortType);
         }),
       ];
     }
