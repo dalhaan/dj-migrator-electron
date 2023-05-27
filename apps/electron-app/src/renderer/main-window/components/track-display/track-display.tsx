@@ -144,6 +144,39 @@ function sortTracks(
         }),
       ];
     }
+    case "type": {
+      return [
+        ...tableData.sort((rowDataA, rowDataB) => {
+          if (!rowDataA.type || !rowDataB.type) return 0;
+
+          return sortType === "asc"
+            ? rowDataA.type?.localeCompare(rowDataB.type)
+            : rowDataB.type?.localeCompare(rowDataA.type);
+        }),
+      ];
+    }
+    case "bitrate": {
+      return [
+        ...tableData.sort((rowDataA, rowDataB) => {
+          if (!rowDataA.bitrate || !rowDataB.bitrate) return 0;
+
+          return sortType === "asc"
+            ? Number(rowDataA.bitrate) - Number(rowDataB.bitrate)
+            : Number(rowDataB.bitrate) - Number(rowDataA.bitrate);
+        }),
+      ];
+    }
+    case "cuePoints": {
+      return [
+        ...tableData.sort((rowDataA, rowDataB) => {
+          if (!rowDataA.cuePoints || !rowDataB.cuePoints) return 0;
+
+          return sortType === "asc"
+            ? Number(rowDataA.cuePoints) - Number(rowDataB.cuePoints)
+            : Number(rowDataB.cuePoints) - Number(rowDataA.cuePoints);
+        }),
+      ];
+    }
     default: {
       return tableData;
     }
@@ -252,7 +285,9 @@ export function TrackDisplay() {
 
       <Table.Column width={100} fullText resizable sortable>
         <Table.HeaderCell>Bitrate (kb/s)</Table.HeaderCell>
-        <Table.Cell>{(rowData) => rowData["bitrate"] / 1000}</Table.Cell>
+        <Table.Cell dataKey="bitrate">
+          {(rowData) => rowData["bitrate"] / 1000}
+        </Table.Cell>
       </Table.Column>
 
       <Table.Column flexGrow={1} fullText sortable>
