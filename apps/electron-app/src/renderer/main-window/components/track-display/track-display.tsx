@@ -23,7 +23,7 @@ type TableData = {
 function transformPlaylistToTableData(
   playlist: Playlist | null,
   tracks: Tracks
-) {
+): TableData[] | undefined {
   return playlist?.tracks
     .map((trackName, index) => {
       const track = tracks.get(trackName);
@@ -46,42 +46,13 @@ function transformPlaylistToTableData(
 }
 
 function sortTracks(
-  tableData: TableData[],
+  tableData: TableData[] | undefined,
   sortColumn: keyof TableData,
   sortType: SortType
-): TableData[] {
+): TableData[] | undefined {
+  if (!tableData) return;
+
   switch (sortColumn) {
-    case "trackNo": {
-      return [
-        ...tableData.sort((rowDataA, rowDataB) =>
-          sortType === "asc"
-            ? rowDataA.trackNo - rowDataB.trackNo
-            : rowDataB.trackNo - rowDataA.trackNo
-        ),
-      ];
-    }
-    case "title": {
-      return [
-        ...tableData.sort((rowDataA, rowDataB) => {
-          if (!rowDataA.title || !rowDataB.title) return 0;
-
-          return sortType === "asc"
-            ? rowDataA.title?.localeCompare(rowDataB.title)
-            : rowDataB.title?.localeCompare(rowDataA.title);
-        }),
-      ];
-    }
-    case "artist": {
-      return [
-        ...tableData.sort((rowDataA, rowDataB) => {
-          if (!rowDataA.artist || !rowDataB.artist) return 0;
-
-          return sortType === "asc"
-            ? rowDataA.artist?.localeCompare(rowDataB.artist)
-            : rowDataB.artist?.localeCompare(rowDataA.artist);
-        }),
-      ];
-    }
     case "bpm": {
       return [
         ...tableData.sort((rowDataA, rowDataB) => {
@@ -133,52 +104,28 @@ function sortTracks(
         }),
       ];
     }
-    case "duration": {
-      return [
-        ...tableData.sort((rowDataA, rowDataB) => {
-          if (!rowDataA.duration || !rowDataB.duration) return 0;
 
-          return sortType === "asc"
-            ? Number(rowDataA.duration) - Number(rowDataB.duration)
-            : Number(rowDataB.duration) - Number(rowDataA.duration);
-        }),
-      ];
-    }
-    case "type": {
-      return [
-        ...tableData.sort((rowDataA, rowDataB) => {
-          if (!rowDataA.type || !rowDataB.type) return 0;
-
-          return sortType === "asc"
-            ? rowDataA.type?.localeCompare(rowDataB.type)
-            : rowDataB.type?.localeCompare(rowDataA.type);
-        }),
-      ];
-    }
-    case "bitrate": {
-      return [
-        ...tableData.sort((rowDataA, rowDataB) => {
-          if (!rowDataA.bitrate || !rowDataB.bitrate) return 0;
-
-          return sortType === "asc"
-            ? Number(rowDataA.bitrate) - Number(rowDataB.bitrate)
-            : Number(rowDataB.bitrate) - Number(rowDataA.bitrate);
-        }),
-      ];
-    }
-    case "cuePoints": {
-      return [
-        ...tableData.sort((rowDataA, rowDataB) => {
-          if (!rowDataA.cuePoints || !rowDataB.cuePoints) return 0;
-
-          return sortType === "asc"
-            ? Number(rowDataA.cuePoints) - Number(rowDataB.cuePoints)
-            : Number(rowDataB.cuePoints) - Number(rowDataA.cuePoints);
-        }),
-      ];
-    }
     default: {
-      return tableData;
+      return [
+        ...tableData.sort((rowDataA, rowDataB) => {
+          const valueA = rowDataA[sortColumn as keyof TableData];
+          const valueB = rowDataB[sortColumn as keyof TableData];
+
+          if (!valueA || !valueB) return 0;
+
+          if (typeof valueA !== typeof valueB) return 0;
+
+          if (typeof valueA === "number" && typeof valueB === "number") {
+            return sortType === "asc" ? valueA - valueB : valueB - valueA;
+          } else if (typeof valueA === "string" && typeof valueB === "string") {
+            return sortType === "asc"
+              ? valueA.localeCompare(valueB)
+              : valueB.localeCompare(valueA);
+          }
+
+          return 0;
+        }),
+      ];
     }
   }
 }
@@ -193,7 +140,6 @@ export function TrackDisplay() {
   const [isPending, startTransition] = useTransition();
 
   function onSortColumn(dataKey: string, sortType?: SortType) {
-    console.log(dataKey, sortType);
     if (sortType) {
       setSortType(sortType);
       setSortColumn(dataKey as keyof TableData);

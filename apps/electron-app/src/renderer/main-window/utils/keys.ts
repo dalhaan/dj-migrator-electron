@@ -8,7 +8,7 @@ const lightnessA = 70;
 const lightnessB = 50;
 const spacing = -30;
 
-export const KEY_COLOURS = {
+export const KEY_COLOURS: Record<string, string> = {
   "1A": `hsl(${1 * spacing + offset}deg ${saturationA}% ${lightnessA}%)`,
   "2A": `hsl(${2 * spacing + offset}deg ${saturationA}% ${lightnessA}%)`,
   "3A": `hsl(${3 * spacing + offset}deg ${saturationA}% ${lightnessA}%)`,
