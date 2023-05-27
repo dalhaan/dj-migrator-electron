@@ -64,14 +64,19 @@ function sortTracks(
         }),
       ];
     }
+    // Sort by camelot number
+    // If they're the same, sort by their camelot letter
     case "key": {
       return [
         ...tableData.sort((rowDataA, rowDataB) => {
           if (!rowDataA.key || !rowDataB.key) return 0;
 
+          // Get camelot key of track
           const keyA = KEY_TO_CAMELOT[rowDataA.key] || rowDataA.key;
           const keyB = KEY_TO_CAMELOT[rowDataB.key] || rowDataB.key;
 
+          // Extract camelot number & letter from string
+          // "12A" => ["12A", "12", "A"]
           const matchesA = keyA.match(/^(\d{1,2})([AB])$/);
           const matchesB = keyB.match(/^(\d{1,2})([AB])$/);
 
