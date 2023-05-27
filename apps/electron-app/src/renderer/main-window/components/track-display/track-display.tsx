@@ -133,6 +133,17 @@ function sortTracks(
         }),
       ];
     }
+    case "duration": {
+      return [
+        ...tableData.sort((rowDataA, rowDataB) => {
+          if (!rowDataA.duration || !rowDataB.duration) return 0;
+
+          return sortType === "asc"
+            ? Number(rowDataA.duration) - Number(rowDataB.duration)
+            : Number(rowDataB.duration) - Number(rowDataA.duration);
+        }),
+      ];
+    }
     default: {
       return tableData;
     }
@@ -219,7 +230,7 @@ export function TrackDisplay() {
 
       <Table.Column width={110} fullText resizable sortable>
         <Table.HeaderCell>Duration (mins)</Table.HeaderCell>
-        <Table.Cell>
+        <Table.Cell dataKey="duration">
           {(rowData) => {
             if (!rowData["duration"]) {
               return null;
