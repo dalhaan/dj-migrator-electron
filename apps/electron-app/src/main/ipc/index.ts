@@ -7,6 +7,7 @@ import {
   openSaveFileDialog,
   showMessageBox,
 } from "./file-system";
+import { getWaveformData } from "./waveform";
 
 export const IPC = {
   // Serato
@@ -15,6 +16,9 @@ export const IPC = {
 
   // RekordBox,
   exportPlaylistsToRekordBoxXml,
+
+  // Waveform
+  getWaveformData,
 
   // File system
   showMessageBox,

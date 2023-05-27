@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   exportPlaylistsToRekordBoxXml: (...args: any) =>
     ipcRenderer.invoke("exportPlaylistsToRekordBoxXml", ...args),
 
+  // Waveform events
+  getWaveformData: () => ipcRenderer.invoke("getWaveformData"),
+
   // File system events
   showMessageBox: (options: MessageBoxOptions) =>
     ipcRenderer.invoke("showMessageBox", options),

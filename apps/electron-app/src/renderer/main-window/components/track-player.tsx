@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Stack } from "rsuite";
 
+import { WaveformPlayer } from "./waveform-player";
+
 export function TrackPlayer() {
   const audioElement = useRef<HTMLAudioElement>(null);
   const audioContext = useRef(new AudioContext());
@@ -41,6 +43,8 @@ export function TrackPlayer() {
     <div>
       <Stack direction="column" spacing={10} alignItems="stretch">
         <Button onClick={handlePlayPause}>Play</Button>
+
+        <WaveformPlayer />
 
         <audio
           ref={audioElement}

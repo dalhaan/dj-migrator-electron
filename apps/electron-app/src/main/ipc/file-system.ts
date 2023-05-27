@@ -5,7 +5,7 @@ import {
   dialog,
 } from "electron";
 
-export async function handleGetFilePathDialog(): Promise<string | undefined> {
+export async function getFilePathDialog(): Promise<string | undefined> {
   const { canceled, filePaths } = await dialog.showOpenDialog({
     properties: ["openFile"],
   });
