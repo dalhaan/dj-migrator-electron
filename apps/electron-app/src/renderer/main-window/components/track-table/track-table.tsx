@@ -95,7 +95,7 @@ function sortTracks(
   }
 }
 
-export function TrackDisplay() {
+export function TrackTable() {
   const tracks = useLibrary((state) => state.tracks);
   const playlist = useLibrary((state) => state.selectedPlaylist);
   const [tableData, setTableData] = useState<TableData[] | undefined>();

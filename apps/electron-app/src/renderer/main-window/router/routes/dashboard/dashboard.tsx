@@ -3,7 +3,7 @@ import * as styles from "./dashboard.css";
 import { ExportButton } from "@/main-window/components/export-button";
 import { ImportButton } from "@/main-window/components/import-button";
 import { PlaylistPanel } from "@/main-window/components/playlist-panel";
-import { TrackDisplay } from "@/main-window/components/track-display";
+import { TrackTable } from "@/main-window/components/track-table";
 
 export const Dashboard = () => {
   return (
@@ -16,7 +16,7 @@ export const Dashboard = () => {
       <div className={styles.displayContainer}>
         <div className={styles.display}>
           <PlaylistPanel />
-          <TrackDisplay />
+          <TrackTable />
         </div>
       </div>
     </div>
