@@ -4,6 +4,7 @@ import { Table } from "rsuite";
 
 import * as styles from "./track-display.css";
 
+import { KEY_COLOURS, KEY_TO_CAMELOT } from "@/main-window/utils/keys";
 import { useLibrary } from "@/stores/libraryStore";
 
 type TableData = {
@@ -105,7 +106,17 @@ export function TrackDisplay() {
 
       <Table.Column width={60} fullText resizable>
         <Table.HeaderCell>Key</Table.HeaderCell>
-        <Table.Cell dataKey="key" />
+        <Table.Cell>
+          {(rowData) => (
+            <span
+              style={{
+                color: KEY_COLOURS[KEY_TO_CAMELOT[rowData.key] || rowData.key],
+              }}
+            >
+              {KEY_TO_CAMELOT[rowData.key] || rowData.key}
+            </span>
+          )}
+        </Table.Cell>
       </Table.Column>
 
       <Table.Column width={60} fullText resizable>
