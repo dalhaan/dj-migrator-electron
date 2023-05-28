@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Button, Stack } from "rsuite";
 
-export function WaveformPlayer() {
+export function CanvasWaveformPlayer() {
   const canvasElement = useRef<HTMLCanvasElement>(null);
 
   async function handleLoadWaveformData() {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Stack } from "rsuite";
 
-import { WaveformPlayer } from "./waveform-player";
+import { CanvasWaveformPlayer } from "./canvas-waveform-player";
 
 export function TrackPlayer() {
   const audioElement = useRef<HTMLAudioElement>(null);
@@ -44,7 +44,7 @@ export function TrackPlayer() {
       <Stack direction="column" spacing={10} alignItems="stretch">
         <Button onClick={handlePlayPause}>Play</Button>
 
-        <WaveformPlayer />
+        <CanvasWaveformPlayer />
 
         <audio
           ref={audioElement}

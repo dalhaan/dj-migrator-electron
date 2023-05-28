@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
-import { Stack, Button } from "rsuite";
+import { Stack, Button, ButtonToolbar } from "rsuite";
+
+const ZOOM_SCALE = 1;
 
 function compileShader(gl: WebGL2RenderingContext, type: number, code: string) {
   const shader = gl.createShader(type);
@@ -112,19 +114,23 @@ function draw({
   vertexBuffer,
   bufferLength,
   aspectRatio,
+  zoom,
 }: {
   gl: WebGL2RenderingContext;
   shaderProgram: WebGLProgram;
   vertexBuffer: WebGLBuffer;
   bufferLength: number;
   aspectRatio: number;
+  zoom: number;
 }) {
+  console.time("paint");
+
   const currentAngle = 0;
 
   // gl.clearColor(0.8, 0.9, 1.0, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  const currentScale: [number, number] = [1, 1.0];
+  const currentScale: [number, number] = [zoom, 1.0];
   // const currentScale: [number, number] = [1 / aspectRatio, 1.0];
 
   const radians = (currentAngle * Math.PI) / 180.0;
@@ -156,6 +162,8 @@ function draw({
 
   gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
 
+  console.timeEnd("paint");
+
   // requestAnimationFrame((currentTime) => {
   //   const deltaAngle = ((currentTime - previousTime) / 1000.0) * 90;
 
@@ -177,10 +185,13 @@ function draw({
   // });
 }
 
-export function TestWebGL() {
+export function WebGLWaveformPlayer() {
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const gl = useRef<WebGL2RenderingContext | null>(null);
   const shaderProgram = useRef<WebGLProgram | null>(null);
+  const vertexArrayBuffer = useRef<WebGLBuffer | null>(null);
+  const vertexArrayBufferLength = useRef<number | null>(null);
+  const zoom = useRef<number>(1);
 
   useEffect(() => {
     if (canvasElement.current) {
@@ -192,21 +203,6 @@ export function TestWebGL() {
 
       if (gl.current) {
         shaderProgram.current = createShaderProgram(gl.current);
-
-        // const vertexBuffer = createArrayBuffer(
-        //   gl.current,
-        //   [-0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, -0.5]
-        // );
-
-        // if (shaderProgram.current && vertexBuffer) {
-        //   draw({
-        //     gl: gl.current,
-        //     shaderProgram: shaderProgram.current,
-        //     vertexBuffer,
-        //     bufferLength: 8,
-        //     aspectRatio,
-        //   });
-        // }
       }
     }
   }, []);
@@ -221,7 +217,6 @@ export function TestWebGL() {
 
     if (!waveformData) return;
 
-    console.time("paint");
     console.time("transform");
     // Transform waveformData
     const transformedData = [];
@@ -233,6 +228,9 @@ export function TestWebGL() {
 
     const vertexBuffer = createArrayBuffer(gl.current, transformedData);
 
+    vertexArrayBuffer.current = vertexBuffer;
+    vertexArrayBufferLength.current = transformedData.length;
+
     if (shaderProgram.current && vertexBuffer) {
       draw({
         gl: gl.current,
@@ -240,14 +238,69 @@ export function TestWebGL() {
         vertexBuffer,
         bufferLength: transformedData.length,
         aspectRatio,
+        zoom: zoom.current,
       });
     }
-    console.timeEnd("paint");
+  }
+
+  function zoomIn() {
+    if (
+      canvasElement.current &&
+      gl.current &&
+      shaderProgram.current &&
+      vertexArrayBuffer.current &&
+      vertexArrayBufferLength.current
+    ) {
+      const aspectRatio =
+        canvasElement.current.width / canvasElement.current.height;
+
+      zoom.current++;
+
+      draw({
+        gl: gl.current,
+        shaderProgram: shaderProgram.current,
+        vertexBuffer: vertexArrayBuffer.current,
+        bufferLength: vertexArrayBufferLength.current,
+        aspectRatio,
+        zoom: zoom.current * ZOOM_SCALE,
+      });
+    }
+  }
+
+  function zoomOut() {
+    if (
+      canvasElement.current &&
+      gl.current &&
+      shaderProgram.current &&
+      vertexArrayBuffer.current &&
+      vertexArrayBufferLength.current
+    ) {
+      const aspectRatio =
+        canvasElement.current.width / canvasElement.current.height;
+
+      zoom.current--;
+      if (zoom.current < 1) {
+        zoom.current = 1;
+      }
+
+      draw({
+        gl: gl.current,
+        shaderProgram: shaderProgram.current,
+        vertexBuffer: vertexArrayBuffer.current,
+        bufferLength: vertexArrayBufferLength.current,
+        aspectRatio,
+        zoom: zoom.current * ZOOM_SCALE,
+      });
+    }
   }
 
   return (
-    <Stack direction="column" alignItems="stretch">
+    <Stack direction="column" alignItems="stretch" spacing={10}>
       <Button onClick={handleLoadWaveformData}>Get waveform data</Button>
+      <ButtonToolbar>
+        <Button onClick={zoomOut}>-</Button>
+        <Button onClick={zoomIn}>+</Button>
+      </ButtonToolbar>
       <canvas
         ref={canvasElement}
         width="400"
