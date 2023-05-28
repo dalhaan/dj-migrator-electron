@@ -296,17 +296,17 @@ export function WebGLWaveformPlayer() {
 
   return (
     <Stack direction="column" alignItems="stretch" spacing={10}>
+      <canvas
+        ref={canvasElement}
+        // width="400"
+        // height="400"
+        style={{ width: "100%", height: 150, minHeight: 150 }}
+      />
       <Button onClick={handleLoadWaveformData}>Get waveform data</Button>
       <ButtonToolbar>
         <Button onClick={zoomOut}>-</Button>
         <Button onClick={zoomIn}>+</Button>
       </ButtonToolbar>
-      <canvas
-        ref={canvasElement}
-        width="400"
-        height="400"
-        style={{ width: "100%", height: 300, minHeight: 300 }}
-      />
     </Stack>
   );
 }

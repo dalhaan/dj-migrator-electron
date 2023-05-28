@@ -16,7 +16,7 @@ export const Dashboard = () => {
       </div>
 
       <WebGLWaveformPlayer />
-      <TrackPlayer />
+      {/* <TrackPlayer /> */}
       <div className={styles.displayContainer}>
         <div className={styles.display}>
           <PlaylistPanel />
