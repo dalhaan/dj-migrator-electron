@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Stack, Button, ButtonToolbar } from "rsuite";
 
 const ZOOM_SCALE = 1;
@@ -60,18 +60,17 @@ function createShaderProgram(gl: WebGL2RenderingContext) {
       code: `
           attribute vec2 aVertexPosition;
 
+          uniform vec2 uTransformFactor;
           uniform vec2 uScalingFactor;
           uniform vec2 uRotationVector;
 
           void main() {
-            vec2 rotatedPosition = vec2(
-              aVertexPosition.x * uRotationVector.y +
-                    aVertexPosition.y * uRotationVector.x,
-              aVertexPosition.y * uRotationVector.y -
-                    aVertexPosition.x * uRotationVector.x
+            vec2 translatedPosition = vec2(
+              aVertexPosition.x + uTransformFactor.x,
+              aVertexPosition.y + uTransformFactor.y
             );
 
-            gl_Position = vec4(rotatedPosition * uScalingFactor, 0.0, 1.0);
+            gl_Position = vec4(translatedPosition * uScalingFactor, 0.0, 1.0);
           }
         `,
     },
@@ -115,6 +114,7 @@ function draw({
   bufferLength,
   aspectRatio,
   zoom,
+  translate,
 }: {
   gl: WebGL2RenderingContext;
   shaderProgram: WebGLProgram;
@@ -122,6 +122,7 @@ function draw({
   bufferLength: number;
   aspectRatio: number;
   zoom: number;
+  translate: [number, number];
 }) {
   console.time("paint");
 
@@ -145,9 +146,14 @@ function draw({
     shaderProgram,
     "uRotationVector"
   );
+  const uTransformFactor = gl.getUniformLocation(
+    shaderProgram,
+    "uTransformFactor"
+  );
 
   gl.uniform2fv(uScalingFactor, currentScale);
   gl.uniform2fv(uRotationVector, currentRotation);
+  gl.uniform2fv(uTransformFactor, translate);
   gl.uniform4fv(uGlobalColor, [0.1, 0.7, 0.2, 1.0]);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
@@ -192,6 +198,8 @@ export function WebGLWaveformPlayer() {
   const vertexArrayBuffer = useRef<WebGLBuffer | null>(null);
   const vertexArrayBufferLength = useRef<number | null>(null);
   const zoom = useRef<number>(1);
+  const time = useRef<number>(0.5);
+  const [timeDisplay, setTimeDisplay] = useState<number>(time.current);
 
   useEffect(() => {
     if (canvasElement.current) {
@@ -239,6 +247,7 @@ export function WebGLWaveformPlayer() {
         bufferLength: transformedData.length,
         aspectRatio,
         zoom: zoom.current,
+        translate: [time.current, 0],
       });
     }
   }
@@ -263,6 +272,7 @@ export function WebGLWaveformPlayer() {
         bufferLength: vertexArrayBufferLength.current,
         aspectRatio,
         zoom: zoom.current * ZOOM_SCALE,
+        translate: [time.current, 0],
       });
     }
   }
@@ -290,6 +300,59 @@ export function WebGLWaveformPlayer() {
         bufferLength: vertexArrayBufferLength.current,
         aspectRatio,
         zoom: zoom.current * ZOOM_SCALE,
+        translate: [time.current, 0],
+      });
+    }
+  }
+
+  function jumpForward() {
+    if (
+      canvasElement.current &&
+      gl.current &&
+      shaderProgram.current &&
+      vertexArrayBuffer.current &&
+      vertexArrayBufferLength.current
+    ) {
+      const aspectRatio =
+        canvasElement.current.width / canvasElement.current.height;
+
+      time.current += 0.1;
+      setTimeDisplay(time.current);
+
+      draw({
+        gl: gl.current,
+        shaderProgram: shaderProgram.current,
+        vertexBuffer: vertexArrayBuffer.current,
+        bufferLength: vertexArrayBufferLength.current,
+        aspectRatio,
+        zoom: zoom.current * ZOOM_SCALE,
+        translate: [-time.current, 0],
+      });
+    }
+  }
+
+  function jumpBack() {
+    if (
+      canvasElement.current &&
+      gl.current &&
+      shaderProgram.current &&
+      vertexArrayBuffer.current &&
+      vertexArrayBufferLength.current
+    ) {
+      const aspectRatio =
+        canvasElement.current.width / canvasElement.current.height;
+
+      time.current -= 0.1;
+      setTimeDisplay(time.current);
+
+      draw({
+        gl: gl.current,
+        shaderProgram: shaderProgram.current,
+        vertexBuffer: vertexArrayBuffer.current,
+        bufferLength: vertexArrayBufferLength.current,
+        aspectRatio,
+        zoom: zoom.current * ZOOM_SCALE,
+        translate: [-time.current, 0],
       });
     }
   }
@@ -306,6 +369,9 @@ export function WebGLWaveformPlayer() {
       <ButtonToolbar>
         <Button onClick={zoomOut}>-</Button>
         <Button onClick={zoomIn}>+</Button>
+        <Button onClick={jumpBack}>&lt;</Button>
+        <Button onClick={jumpForward}>&gt;</Button>
+        <span>{timeDisplay}</span>
       </ButtonToolbar>
     </Stack>
   );
