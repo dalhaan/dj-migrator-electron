@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Stack, Button, ButtonToolbar } from "rsuite";
 
-import { useMainStore } from "@/stores/libraryStore";
+import { useLibrary, useMainStore } from "@/stores/libraryStore";
 import { formatTime } from "@/utils/formatters";
 
 const ZOOM_SCALE = 1;
@@ -126,8 +126,6 @@ function drawWaveform({
   time: number;
   duration: number;
 }) {
-  console.time("paintWaveform");
-
   const currentScale: [number, number] = [zoom, 1];
 
   // 1. call `gl.useProgram` for the program needed to draw.
@@ -161,8 +159,6 @@ function drawWaveform({
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
   gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
-
-  console.timeEnd("paintWaveform");
 }
 
 function drawPlayhead({
@@ -176,8 +172,6 @@ function drawPlayhead({
   vertexBuffer: WebGLBuffer;
   bufferLength: number;
 }) {
-  console.time("paintPlayhead");
-
   const currentScale: [number, number] = [1, 1];
 
   // gl.clearColor(0.8, 0.9, 1.0, 1.0);
@@ -214,8 +208,6 @@ function drawPlayhead({
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
   gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
-
-  console.timeEnd("paintPlayhead");
 }
 
 function timeToX(time: number, duration: number) {
@@ -247,11 +239,12 @@ export function WebGLWaveformPlayer() {
   const animationStartTime = useRef<DOMHighResTimeStamp | undefined>();
 
   const selectedTrackId = useMainStore((state) => state.selectedTrackId);
+  const tracks = useLibrary((state) => state.tracks);
 
-  const loadTrack = useCallback(async (trackId: string) => {
+  const loadTrack = useCallback(async (filePath: string) => {
     if (!gl.current || !canvasElement.current) return;
 
-    const data = await window.electronAPI.getWaveformData(trackId);
+    const data = await window.electronAPI.getWaveformData(filePath);
 
     if (!data?.waveformData) return;
 
@@ -268,10 +261,13 @@ export function WebGLWaveformPlayer() {
 
   useEffect(() => {
     if (selectedTrackId) {
-      console.log(selectedTrackId);
-      // loadTrack(selectedTrackId);
+      const filePath = tracks.get(selectedTrackId)?.absolutePath;
+
+      if (filePath) {
+        loadTrack(filePath);
+      }
     }
-  }, [selectedTrackId, loadTrack]);
+  }, [selectedTrackId, loadTrack, tracks]);
 
   useEffect(() => {
     if (canvasElement.current) {

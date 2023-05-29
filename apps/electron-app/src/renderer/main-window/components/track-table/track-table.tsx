@@ -17,6 +17,7 @@ import { defaultSort, sortCamelotKeys } from "@/utils/sorting-utils";
 
 type TableData = {
   id: string;
+  location: string;
   trackNo: number;
   title: string | undefined;
   artist: string | undefined;
@@ -40,6 +41,7 @@ function transformPlaylistToTableData(
 
       return {
         id: trackName,
+        location: track.track.metadata.location,
         trackNo: index + 1,
         title: track.track.metadata.title,
         artist: track.track.metadata.artist,
