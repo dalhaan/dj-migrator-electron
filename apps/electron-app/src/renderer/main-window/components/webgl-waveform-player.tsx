@@ -331,6 +331,8 @@ export function WebGLWaveformPlayer() {
 
       // Cue point buffers
       if (audioDuration) {
+        cuePointVertexBuffers.current = [];
+
         for (const cuePoint of cuePoints) {
           const xPos = timeToX(cuePoint.position, audioDuration);
 
@@ -461,6 +463,7 @@ export function WebGLWaveformPlayer() {
     // // Set background colour
     // gl.current.clearColor(0.8, 0.9, 1.0, 1.0);
     // gl.current.clear(gl.current.COLOR_BUFFER_BIT);
+    gl.current.clear(gl.current.COLOR_BUFFER_BIT);
 
     drawWaveform({
       gl: gl.current,
