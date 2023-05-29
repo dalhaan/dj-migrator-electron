@@ -6,7 +6,7 @@ import { SortType } from "rsuite/esm/Table";
 import * as styles from "./track-display.css";
 
 import { KEY_COLOURS, KEY_TO_CAMELOT } from "@/main-window/utils/keys";
-import { useLibrary } from "@/stores/libraryStore";
+import { useLibrary, useMainStore } from "@/stores/libraryStore";
 import { formatTime } from "@/utils/formatters";
 import { defaultSort, sortCamelotKeys } from "@/utils/sorting-utils";
 
@@ -98,7 +98,7 @@ function sortTracks(
 
 export function TrackTable() {
   const tracks = useLibrary((state) => state.tracks);
-  const playlist = useLibrary((state) => state.selectedPlaylist);
+  const playlist = useMainStore((state) => state.selectedPlaylist);
   const [tableData, setTableData] = useState<TableData[] | undefined>();
   const [sortType, setSortType] = useState<SortType>("asc");
   const [sortColumn, setSortColumn] = useState<keyof TableData>("trackNo");
