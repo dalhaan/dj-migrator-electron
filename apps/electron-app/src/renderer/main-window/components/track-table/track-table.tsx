@@ -79,11 +79,15 @@ function sortTracks(
     case "key": {
       return [
         ...tableData.sort((rowDataA, rowDataB) => {
-          if (!rowDataA.key || !rowDataB.key) return 0;
-
+          // if (!rowDataA.key) return -1;
+          // if (!rowDataB.key) return 1;
           // Get camelot key of track
-          const keyA = KEY_TO_CAMELOT[rowDataA.key] || rowDataA.key;
-          const keyB = KEY_TO_CAMELOT[rowDataB.key] || rowDataB.key;
+          const keyA = rowDataA.key
+            ? KEY_TO_CAMELOT[rowDataA.key] || rowDataA.key
+            : undefined;
+          const keyB = rowDataB.key
+            ? KEY_TO_CAMELOT[rowDataB.key] || rowDataB.key
+            : undefined;
 
           return sortCamelotKeys(keyA, keyB, sortType);
         }),
@@ -95,8 +99,6 @@ function sortTracks(
         ...tableData.sort((rowDataA, rowDataB) => {
           const valueA = rowDataA[sortColumn as keyof TableData];
           const valueB = rowDataB[sortColumn as keyof TableData];
-
-          if (!valueA || !valueB) return 0;
 
           return defaultSort(valueA, valueB, sortType);
         }),
