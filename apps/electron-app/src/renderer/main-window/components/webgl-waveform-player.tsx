@@ -64,7 +64,6 @@ function createShaderProgram(gl: WebGL2RenderingContext) {
 
           uniform vec2 uTransformFactor;
           uniform vec2 uScalingFactor;
-          uniform vec2 uRotationVector;
 
           void main() {
             vec2 translatedPosition = vec2(
@@ -128,33 +127,22 @@ function draw({
 }) {
   console.time("paint");
 
-  const currentAngle = 0;
-
   // gl.clearColor(0.8, 0.9, 1.0, 1.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
+  // gl.clear(gl.COLOR_BUFFER_BIT);
 
-  const currentScale: [number, number] = [zoom, 1.0];
+  const currentScale: [number, number] = [zoom, 1];
   // const currentScale: [number, number] = [1 / aspectRatio, 1.0];
-
-  const radians = (currentAngle * Math.PI) / 180.0;
-
-  const currentRotation = [Math.sin(radians), Math.cos(radians)];
 
   gl.useProgram(shaderProgram);
 
   const uScalingFactor = gl.getUniformLocation(shaderProgram, "uScalingFactor");
   const uGlobalColor = gl.getUniformLocation(shaderProgram, "uGlobalColor");
-  const uRotationVector = gl.getUniformLocation(
-    shaderProgram,
-    "uRotationVector"
-  );
   const uTransformFactor = gl.getUniformLocation(
     shaderProgram,
     "uTransformFactor"
   );
 
   gl.uniform2fv(uScalingFactor, currentScale);
-  gl.uniform2fv(uRotationVector, currentRotation);
   gl.uniform2fv(uTransformFactor, translate);
   gl.uniform4fv(uGlobalColor, [0.1, 0.7, 0.2, 1.0]);
 
