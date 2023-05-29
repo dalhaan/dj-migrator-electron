@@ -8,6 +8,8 @@ import { useWindow } from "@/stores/windowStore";
 import * as styles from "@/styles/app.css";
 import { darkTheme } from "@/styles/themes/darkTheme.css";
 
+import "./styles/colors.css";
+
 export const App = () => {
   const isWindowBlurred = useWindow((state) => !state.isWindowFocused);
 

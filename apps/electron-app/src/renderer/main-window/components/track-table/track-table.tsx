@@ -1,5 +1,10 @@
 import { Playlist, Tracks } from "@dj-migrator/common";
-import { useEffect, useState, useTransition } from "react";
+import {
+  ComponentPropsWithoutRef,
+  useEffect,
+  useState,
+  useTransition,
+} from "react";
 import { Table } from "rsuite";
 import { SortType } from "rsuite/esm/Table";
 
@@ -11,6 +16,7 @@ import { formatTime } from "@/utils/formatters";
 import { defaultSort, sortCamelotKeys } from "@/utils/sorting-utils";
 
 type TableData = {
+  id: string;
   trackNo: number;
   title: string | undefined;
   artist: string | undefined;
@@ -33,6 +39,7 @@ function transformPlaylistToTableData(
       if (!track) return;
 
       return {
+        id: trackName,
         trackNo: index + 1,
         title: track.track.metadata.title,
         artist: track.track.metadata.artist,
@@ -96,6 +103,85 @@ function sortTracks(
   }
 }
 
+function ClickableCell({
+  rowData,
+  ...props
+}: ComponentPropsWithoutRef<typeof Table.Cell>) {
+  const selectedTrackId = useMainStore((state) => state.selectedTrackId);
+
+  const trackData = rowData as TableData;
+
+  function handleDoubleClick() {
+    useMainStore.getState().setSelectedTrackId(trackData.id);
+  }
+
+  return (
+    <Table.Cell
+      onDoubleClick={handleDoubleClick}
+      className={
+        selectedTrackId === trackData.id ? styles.selectedTrack : undefined
+      }
+      {...props}
+    />
+  );
+}
+
+function TrackCell({
+  rowData,
+  dataKey,
+  ...props
+}: ComponentPropsWithoutRef<typeof Table.Cell>) {
+  return (
+    <ClickableCell rowData={rowData} dataKey={dataKey} {...props}>
+      {dataKey ? rowData[dataKey] : ""}
+    </ClickableCell>
+  );
+}
+
+function KeyCell({
+  rowData,
+  dataKey,
+  ...props
+}: ComponentPropsWithoutRef<typeof Table.Cell>) {
+  return (
+    <ClickableCell rowData={rowData} dataKey={dataKey} {...props}>
+      {rowData.key ? (
+        <span
+          style={{
+            color: KEY_COLOURS[KEY_TO_CAMELOT[rowData.key] || rowData.key],
+          }}
+        >
+          {KEY_TO_CAMELOT[rowData.key] || rowData.key}
+        </span>
+      ) : null}
+    </ClickableCell>
+  );
+}
+
+function DurationCell({
+  rowData,
+  dataKey,
+  ...props
+}: ComponentPropsWithoutRef<typeof Table.Cell>) {
+  return (
+    <ClickableCell rowData={rowData} dataKey={dataKey} {...props}>
+      {rowData["duration"] ? formatTime(rowData["duration"]) : null}
+    </ClickableCell>
+  );
+}
+
+function BitrateCell({
+  rowData,
+  dataKey,
+  ...props
+}: ComponentPropsWithoutRef<typeof Table.Cell>) {
+  return (
+    <ClickableCell rowData={rowData} dataKey={dataKey} {...props}>
+      {rowData["bitrate"] ? rowData["bitrate"] / 1000 : null}
+    </ClickableCell>
+  );
+}
+
 export function TrackTable() {
   const tracks = useLibrary((state) => state.tracks);
   const playlist = useMainStore((state) => state.selectedPlaylist);
@@ -140,67 +226,47 @@ export function TrackTable() {
     >
       <Table.Column width={50} fullText resizable sortable>
         <Table.HeaderCell>#</Table.HeaderCell>
-        <Table.Cell dataKey="trackNo" />
+        <TrackCell dataKey="trackNo" />
       </Table.Column>
 
       <Table.Column width={200} fullText resizable sortable>
         <Table.HeaderCell>Title</Table.HeaderCell>
-        <Table.Cell dataKey="title" />
+        <TrackCell dataKey="title" />
       </Table.Column>
 
       <Table.Column width={150} fullText resizable sortable>
         <Table.HeaderCell>Artist</Table.HeaderCell>
-        <Table.Cell dataKey="artist" />
+        <TrackCell dataKey="artist" />
       </Table.Column>
 
       <Table.Column width={60} fullText resizable sortable>
         <Table.HeaderCell>BPM</Table.HeaderCell>
-        <Table.Cell dataKey="bpm" />
+        <TrackCell dataKey="bpm" />
       </Table.Column>
 
       <Table.Column width={60} fullText resizable sortable>
         <Table.HeaderCell>Key</Table.HeaderCell>
-        <Table.Cell dataKey="key">
-          {(rowData) => (
-            <span
-              style={{
-                color: KEY_COLOURS[KEY_TO_CAMELOT[rowData.key] || rowData.key],
-              }}
-            >
-              {KEY_TO_CAMELOT[rowData.key] || rowData.key}
-            </span>
-          )}
-        </Table.Cell>
+        <KeyCell dataKey="key" />
       </Table.Column>
 
       <Table.Column width={110} fullText resizable sortable>
         <Table.HeaderCell>Duration (mins)</Table.HeaderCell>
-        <Table.Cell dataKey="duration">
-          {(rowData) => {
-            if (!rowData["duration"]) {
-              return null;
-            }
-
-            return formatTime(rowData["duration"]);
-          }}
-        </Table.Cell>
+        <DurationCell dataKey="duration" />
       </Table.Column>
 
       <Table.Column width={60} fullText resizable sortable>
         <Table.HeaderCell>Type</Table.HeaderCell>
-        <Table.Cell dataKey="type" />
+        <TrackCell dataKey="type" />
       </Table.Column>
 
       <Table.Column width={100} fullText resizable sortable>
         <Table.HeaderCell>Bitrate (kb/s)</Table.HeaderCell>
-        <Table.Cell dataKey="bitrate">
-          {(rowData) => rowData["bitrate"] / 1000}
-        </Table.Cell>
+        <BitrateCell dataKey="bitrate" />
       </Table.Column>
 
       <Table.Column flexGrow={1} fullText sortable>
         <Table.HeaderCell>Cue points</Table.HeaderCell>
-        <Table.Cell dataKey="cuePoints" />
+        <TrackCell dataKey="cuePoints" />
       </Table.Column>
     </Table>
   );

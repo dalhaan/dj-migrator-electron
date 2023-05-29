@@ -25,16 +25,16 @@ export const useLibrary = create<{
 });
 
 export const useMainStore = create<{
-  selectedTrack: Track | null;
+  selectedTrackId: string | null;
   selectedPlaylist: Playlist | null;
-  setSelectedTrack: (track: Track | null) => void;
+  setSelectedTrackId: (trackId: string | null) => void;
   setSelectedPlaylist: (playlist: Playlist | null) => void;
 }>((set) => {
   return {
-    selectedTrack: null,
+    selectedTrackId: null,
     selectedPlaylist: null,
-    setSelectedTrack: (track: Track | null) => {
-      set({ selectedTrack: track });
+    setSelectedTrackId: (trackId: string | null) => {
+      set({ selectedTrackId: trackId });
     },
     setSelectedPlaylist: (playlist: Playlist | null) =>
       set({ selectedPlaylist: playlist }),
