@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Stack, Button, ButtonToolbar } from "rsuite";
 
+import { useMainStore } from "@/stores/libraryStore";
 import { formatTime } from "@/utils/formatters";
 
 const ZOOM_SCALE = 1;
@@ -245,6 +246,33 @@ export function WebGLWaveformPlayer() {
   const animationHandle = useRef<number | undefined>();
   const animationStartTime = useRef<DOMHighResTimeStamp | undefined>();
 
+  const selectedTrackId = useMainStore((state) => state.selectedTrackId);
+
+  const loadTrack = useCallback(async (trackId: string) => {
+    if (!gl.current || !canvasElement.current) return;
+
+    const data = await window.electronAPI.getWaveformData(trackId);
+
+    if (!data?.waveformData) return;
+
+    const { waveformData, duration: audioDuration } = data;
+
+    waveformVertexBuffer.current = createArrayBuffer(gl.current, waveformData);
+    playheadVertexBuffer.current = createArrayBuffer(gl.current, [0, -1, 0, 1]);
+
+    waveformVertexBufferLength.current = waveformData.length;
+    duration.current = audioDuration;
+
+    update();
+  }, []);
+
+  useEffect(() => {
+    if (selectedTrackId) {
+      console.log(selectedTrackId);
+      // loadTrack(selectedTrackId);
+    }
+  }, [selectedTrackId, loadTrack]);
+
   useEffect(() => {
     if (canvasElement.current) {
       const dpr = window.devicePixelRatio || 1;
@@ -260,21 +288,11 @@ export function WebGLWaveformPlayer() {
   }, []);
 
   async function handleLoadWaveformData() {
-    if (!gl.current || !canvasElement.current) return;
+    const filePath = await window.electronAPI.openFileDialog();
 
-    const data = await window.electronAPI.getWaveformData();
+    if (!filePath) return;
 
-    if (!data?.waveformData) return;
-
-    const { waveformData, duration: audioDuration } = data;
-
-    waveformVertexBuffer.current = createArrayBuffer(gl.current, waveformData);
-    playheadVertexBuffer.current = createArrayBuffer(gl.current, [0, -1, 0, 1]);
-
-    waveformVertexBufferLength.current = waveformData.length;
-    duration.current = audioDuration;
-
-    update();
+    loadTrack(filePath);
   }
 
   function zoomIn() {

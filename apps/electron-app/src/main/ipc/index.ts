@@ -3,6 +3,7 @@ import { ipcMain } from "electron";
 import { exportPlaylistsToRekordBoxXml } from "./dj-migrator/rekordbox";
 import { findCrates, parseCrates } from "./dj-migrator/serato";
 import {
+  openFileDialog,
   openDirectoryDialog,
   openSaveFileDialog,
   showMessageBox,
@@ -22,6 +23,7 @@ export const IPC = {
 
   // File system
   showMessageBox,
+  openFileDialog,
   openDirectoryDialog,
   openSaveFileDialog,
 };

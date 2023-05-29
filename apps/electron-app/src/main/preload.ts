@@ -21,11 +21,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("exportPlaylistsToRekordBoxXml", ...args),
 
   // Waveform events
-  getWaveformData: () => ipcRenderer.invoke("getWaveformData"),
+  getWaveformData: (...args: any) =>
+    ipcRenderer.invoke("getWaveformData", ...args),
 
   // File system events
   showMessageBox: (options: MessageBoxOptions) =>
     ipcRenderer.invoke("showMessageBox", options),
+  openFileDialog: () => ipcRenderer.invoke("openFileDialog"),
   openDirectoryDialog: () => ipcRenderer.invoke("openDirectoryDialog"),
   openSaveFileDialog: (...args: any) =>
     ipcRenderer.invoke("openSaveFileDialog", ...args),
