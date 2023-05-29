@@ -237,9 +237,6 @@ export function WebGLWaveformPlayer() {
   async function handleLoadWaveformData() {
     if (!gl.current || !canvasElement.current) return;
 
-    const aspectRatio =
-      canvasElement.current.width / canvasElement.current.height;
-
     const data = await window.electronAPI.getWaveformData();
 
     if (!data?.waveformData) return;
@@ -252,42 +249,13 @@ export function WebGLWaveformPlayer() {
     vertexArrayBufferLength.current = waveformData.length;
     duration.current = audioDuration;
 
-    if (shaderProgram.current && vertexBuffer) {
-      draw({
-        gl: gl.current,
-        shaderProgram: shaderProgram.current,
-        vertexBuffer,
-        bufferLength: waveformData.length,
-        aspectRatio,
-        zoom: zoom.current,
-        translate: [time.current, 0],
-      });
-    }
+    update();
   }
 
   function zoomIn() {
-    if (
-      canvasElement.current &&
-      gl.current &&
-      shaderProgram.current &&
-      vertexArrayBuffer.current &&
-      vertexArrayBufferLength.current
-    ) {
-      const aspectRatio =
-        canvasElement.current.width / canvasElement.current.height;
+    zoom.current++;
 
-      zoom.current++;
-
-      draw({
-        gl: gl.current,
-        shaderProgram: shaderProgram.current,
-        vertexBuffer: vertexArrayBuffer.current,
-        bufferLength: vertexArrayBufferLength.current,
-        aspectRatio,
-        zoom: zoom.current * ZOOM_SCALE,
-        translate: [time.current, 0],
-      });
-    }
+    update();
   }
 
   function zoomOut() {
@@ -298,122 +266,81 @@ export function WebGLWaveformPlayer() {
       vertexArrayBuffer.current &&
       vertexArrayBufferLength.current
     ) {
-      const aspectRatio =
-        canvasElement.current.width / canvasElement.current.height;
-
       zoom.current--;
       if (zoom.current < 1) {
         zoom.current = 1;
       }
 
-      draw({
-        gl: gl.current,
-        shaderProgram: shaderProgram.current,
-        vertexBuffer: vertexArrayBuffer.current,
-        bufferLength: vertexArrayBufferLength.current,
-        aspectRatio,
-        zoom: zoom.current * ZOOM_SCALE,
-        translate: [time.current, 0],
-      });
+      update();
     }
   }
 
   function jumpForward() {
-    if (
-      canvasElement.current &&
-      gl.current &&
-      shaderProgram.current &&
-      vertexArrayBuffer.current &&
-      vertexArrayBufferLength.current
-    ) {
-      if (!duration.current) return;
+    time.current += 10; // jump forward 10 secs
+    setTimeDisplay(formatTime(time.current));
 
-      const aspectRatio =
-        canvasElement.current.width / canvasElement.current.height;
-
-      time.current += 10; // jump forward 10 secs
-      setTimeDisplay(formatTime(time.current));
-
-      const xRange = 2;
-      const seconds = xRange / duration.current;
-      const translateX = time.current * seconds;
-
-      draw({
-        gl: gl.current,
-        shaderProgram: shaderProgram.current,
-        vertexBuffer: vertexArrayBuffer.current,
-        bufferLength: vertexArrayBufferLength.current,
-        aspectRatio,
-        zoom: zoom.current * ZOOM_SCALE,
-        translate: [-translateX, 0],
-      });
-    }
+    update();
   }
 
   function jumpBack() {
-    if (
-      canvasElement.current &&
-      gl.current &&
-      shaderProgram.current &&
-      vertexArrayBuffer.current &&
-      vertexArrayBufferLength.current
-    ) {
-      if (!duration.current) return;
-      const aspectRatio =
-        canvasElement.current.width / canvasElement.current.height;
+    time.current -= 10;
+    setTimeDisplay(formatTime(time.current));
 
-      time.current -= 10;
-      setTimeDisplay(formatTime(time.current));
-
-      const xRange = 2;
-      const seconds = xRange / duration.current;
-      const translateX = time.current * seconds;
-
-      draw({
-        gl: gl.current,
-        shaderProgram: shaderProgram.current,
-        vertexBuffer: vertexArrayBuffer.current,
-        bufferLength: vertexArrayBufferLength.current,
-        aspectRatio,
-        zoom: zoom.current * ZOOM_SCALE,
-        translate: [-translateX, 0],
-      });
-    }
+    update();
   }
 
   function handlePlayPauseToggle() {
+    if (!isPlaying) {
+      play();
+    } else {
+      pause();
+    }
+
+    setIsPlaying((playing) => !playing);
+  }
+
+  function play() {
+    update();
+
+    animationHandle.current = requestAnimationFrame((time) => {
+      update();
+    });
+  }
+
+  function pause() {
+    if (animationHandle.current !== undefined) {
+      cancelAnimationFrame(animationHandle.current);
+    }
+  }
+
+  function update() {
     if (
       !canvasElement.current ||
       !gl.current ||
       !shaderProgram.current ||
       !vertexArrayBuffer.current ||
-      !vertexArrayBufferLength.current
+      !vertexArrayBufferLength.current ||
+      !duration.current
     )
       return;
 
     const aspectRatio =
       canvasElement.current.width / canvasElement.current.height;
 
-    // play();
+    const xRange = 2;
+    const seconds = xRange / duration.current;
+    const translateX = time.current * seconds;
 
-    setIsPlaying((playing) => !playing);
+    draw({
+      gl: gl.current,
+      shaderProgram: shaderProgram.current,
+      vertexBuffer: vertexArrayBuffer.current,
+      bufferLength: vertexArrayBufferLength.current,
+      aspectRatio,
+      zoom: zoom.current * ZOOM_SCALE,
+      translate: [-translateX, 0],
+    });
   }
-
-  // function play() {
-  //   draw({
-  //     gl: gl.current,
-  //     shaderProgram: shaderProgram.current,
-  //     vertexBuffer: vertexArrayBuffer.current,
-  //     bufferLength: vertexArrayBufferLength.current,
-  //     aspectRatio,
-  //     zoom: zoom.current * ZOOM_SCALE,
-  //     translate: [-translateX, 0],
-  //   });
-
-  //   const animationHandle = requestAnimationFrame((time) => {
-  //     play();
-  //   });
-  // }
 
   return (
     <Stack direction="column" alignItems="stretch" spacing={10}>
