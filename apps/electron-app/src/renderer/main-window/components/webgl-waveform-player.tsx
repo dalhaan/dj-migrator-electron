@@ -248,6 +248,13 @@ export function WebGLWaveformPlayer() {
 
     if (!data?.waveformData) return;
 
+    if (audioElement.current) {
+      audioElement.current.src = "local://" + filePath;
+    }
+
+    // reset time on load
+    time.current = 0;
+
     const { waveformData, duration: audioDuration } = data;
 
     waveformVertexBuffer.current = createArrayBuffer(gl.current, waveformData);
@@ -283,14 +290,6 @@ export function WebGLWaveformPlayer() {
     }
   }, []);
 
-  async function handleLoadWaveformData() {
-    const filePath = await window.electronAPI.openFileDialog();
-
-    if (!filePath) return;
-
-    loadTrack(filePath);
-  }
-
   function zoomIn() {
     zoom.current++;
 
@@ -312,20 +311,6 @@ export function WebGLWaveformPlayer() {
 
       update();
     }
-  }
-
-  function jumpForward() {
-    time.current += 10 * 1000; // jump forward 10 secs
-    setTimeDisplay(formatTime(time.current / 1000));
-
-    update();
-  }
-
-  function jumpBack() {
-    time.current -= 10 * 1000;
-    setTimeDisplay(formatTime(time.current / 1000));
-
-    update();
   }
 
   function handlePlayPauseToggle() {
@@ -424,26 +409,24 @@ export function WebGLWaveformPlayer() {
         // height="400"
         style={{ width: "100%", height: 150, minHeight: 150 }}
       />
-      <Button onClick={handleLoadWaveformData}>Get waveform data</Button>
       <ButtonToolbar>
         <Button onClick={handlePlayPauseToggle}>
           {isPlaying ? "Pause" : "Play"}
         </Button>
         <Button onClick={zoomOut}>-</Button>
         <Button onClick={zoomIn}>+</Button>
-        <Button onClick={jumpBack}>&lt;</Button>
-        <Button onClick={jumpForward}>&gt;</Button>
         <span>{timeDisplay}</span>
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <audio
           ref={audioElement}
-          src="local:///Users/dallanfreemantle/Desktop/DALLANS HDD BACKUP/Big Salami (Vocals).wav"
+          // src="local:///Users/dallanfreemantle/Desktop/DALLANS HDD BACKUP/Big Salami (Vocals).wav"
           controls
           onLoadedData={() => {
             if (audioElement.current) {
               console.log(audioElement.current.duration);
             }
           }}
+          style={{ display: "none" }}
         />
       </ButtonToolbar>
     </Stack>
