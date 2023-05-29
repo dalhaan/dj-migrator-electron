@@ -108,7 +108,7 @@ function createArrayBuffer(gl: WebGL2RenderingContext, data: number[]) {
   return vertexBuffer;
 }
 
-function draw({
+function drawWaveform({
   gl,
   shaderProgram,
   vertexBuffer,
@@ -125,15 +125,30 @@ function draw({
   zoom: number;
   translate: [number, number];
 }) {
-  console.time("paint");
+  console.time("paintWaveform");
+
+  const currentScale: [number, number] = [zoom, 1];
 
   // gl.clearColor(0.8, 0.9, 1.0, 1.0);
   // gl.clear(gl.COLOR_BUFFER_BIT);
 
-  const currentScale: [number, number] = [zoom, 1];
   // const currentScale: [number, number] = [1 / aspectRatio, 1.0];
 
+  // 1. call `gl.useProgram` for the program needed to draw.
+
   gl.useProgram(shaderProgram);
+
+  // 2. setup attributes
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  const aVertexPosition = gl.getAttribLocation(
+    shaderProgram,
+    "aVertexPosition"
+  );
+  gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(aVertexPosition);
+
+  // 3. setup uniforms
 
   const uScalingFactor = gl.getUniformLocation(shaderProgram, "uScalingFactor");
   const uGlobalColor = gl.getUniformLocation(shaderProgram, "uGlobalColor");
@@ -146,50 +161,63 @@ function draw({
   gl.uniform2fv(uTransformFactor, translate);
   gl.uniform4fv(uGlobalColor, [0.1, 0.7, 0.2, 1.0]);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  // 4. call `gl.drawArrays` or `gl.drawElements`
+  gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
 
+  console.timeEnd("paintWaveform");
+}
+
+function drawPlayhead({
+  gl,
+  shaderProgram,
+  vertexBuffer,
+  bufferLength,
+}: {
+  gl: WebGL2RenderingContext;
+  shaderProgram: WebGLProgram;
+  vertexBuffer: WebGLBuffer;
+  bufferLength: number;
+}) {
+  console.time("paintPlayhead");
+
+  const currentScale: [number, number] = [1, 1];
+
+  // gl.clearColor(0.8, 0.9, 1.0, 1.0);
+  // gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // const currentScale: [number, number] = [1 / aspectRatio, 1.0];
+
+  // 1. call `gl.useProgram` for the program needed to draw.
+
+  gl.useProgram(shaderProgram);
+
+  // 2. setup attributes
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
   const aVertexPosition = gl.getAttribLocation(
     shaderProgram,
     "aVertexPosition"
   );
-
-  gl.enableVertexAttribArray(aVertexPosition);
   gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(aVertexPosition);
 
+  // 3. setup uniforms
+
+  const uScalingFactor = gl.getUniformLocation(shaderProgram, "uScalingFactor");
+  const uGlobalColor = gl.getUniformLocation(shaderProgram, "uGlobalColor");
+  const uTransformFactor = gl.getUniformLocation(
+    shaderProgram,
+    "uTransformFactor"
+  );
+
+  gl.uniform2fv(uScalingFactor, currentScale);
+  gl.uniform2fv(uTransformFactor, [0, 0]);
+  gl.uniform4fv(uGlobalColor, [1, 0, 0, 1.0]);
+
+  // 4. call `gl.drawArrays` or `gl.drawElements`
   gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
 
-  // Paint playhead
-  // const playheadBuffer = gl.createBuffer();
-  // gl.bufferData(
-  //   gl.ARRAY_BUFFER,
-  //   new Float32Array([0.5, 0, 0.5, 1]),
-  //   gl.STATIC_DRAW
-  // );
-
-  // gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  // gl.drawArrays(gl.LINE_STRIP, 0, 2);
-
-  console.timeEnd("paint");
-
-  // requestAnimationFrame((currentTime) => {
-  //   const deltaAngle = ((currentTime - previousTime) / 1000.0) * 90;
-
-  //   currentAngle = (currentAngle + deltaAngle) % 360;
-
-  //   animateScene(
-  //     gl,
-  //     width,
-  //     height,
-  //     currentScale,
-  //     currentAngle,
-  //     currentRotation,
-  //     shaderProgram,
-  //     vertexBuffer,
-  //     vertexCount,
-  //     vertexNumComponents,
-  //     currentTime
-  //   );
-  // });
+  console.timeEnd("paintPlayhead");
 }
 
 export function WebGLWaveformPlayer() {
@@ -199,9 +227,10 @@ export function WebGLWaveformPlayer() {
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const gl = useRef<WebGL2RenderingContext | null>(null);
   const shaderProgram = useRef<WebGLProgram | null>(null);
-  const vertexArrayBuffer = useRef<WebGLBuffer | null>(null);
-  const vertexArrayBufferLength = useRef<number | null>(null);
-  const zoom = useRef<number>(1);
+  const waveformVertexBuffer = useRef<WebGLBuffer | null>(null);
+  const waveformVertexBufferLength = useRef<number | null>(null);
+  const playheadVertexBuffer = useRef<WebGLBuffer | null>(null);
+  const zoom = useRef<number>(12);
   const time = useRef<number>(0);
   const [timeDisplay, setTimeDisplay] = useState<string>(
     formatTime(time.current / 1000)
@@ -235,10 +264,10 @@ export function WebGLWaveformPlayer() {
 
     const { waveformData, duration: audioDuration } = data;
 
-    const vertexBuffer = createArrayBuffer(gl.current, waveformData);
+    waveformVertexBuffer.current = createArrayBuffer(gl.current, waveformData);
+    playheadVertexBuffer.current = createArrayBuffer(gl.current, [0, -1, 0, 1]);
 
-    vertexArrayBuffer.current = vertexBuffer;
-    vertexArrayBufferLength.current = waveformData.length;
+    waveformVertexBufferLength.current = waveformData.length;
     duration.current = audioDuration;
 
     update();
@@ -255,8 +284,8 @@ export function WebGLWaveformPlayer() {
       canvasElement.current &&
       gl.current &&
       shaderProgram.current &&
-      vertexArrayBuffer.current &&
-      vertexArrayBufferLength.current
+      waveformVertexBuffer.current &&
+      waveformVertexBufferLength.current
     ) {
       zoom.current--;
       if (zoom.current < 1) {
@@ -326,9 +355,10 @@ export function WebGLWaveformPlayer() {
       !canvasElement.current ||
       !gl.current ||
       !shaderProgram.current ||
-      !vertexArrayBuffer.current ||
-      !vertexArrayBufferLength.current ||
-      !duration.current
+      !waveformVertexBuffer.current ||
+      !waveformVertexBufferLength.current ||
+      !duration.current ||
+      !playheadVertexBuffer.current
     )
       return;
 
@@ -339,14 +369,20 @@ export function WebGLWaveformPlayer() {
     const seconds = xRange / duration.current;
     const translateX = (time.current / 1000) * seconds;
 
-    draw({
+    drawWaveform({
       gl: gl.current,
       shaderProgram: shaderProgram.current,
-      vertexBuffer: vertexArrayBuffer.current,
-      bufferLength: vertexArrayBufferLength.current,
+      vertexBuffer: waveformVertexBuffer.current,
+      bufferLength: waveformVertexBufferLength.current,
       aspectRatio,
       zoom: zoom.current * ZOOM_SCALE,
       translate: [-translateX, 0],
+    });
+    drawPlayhead({
+      gl: gl.current,
+      shaderProgram: shaderProgram.current,
+      vertexBuffer: playheadVertexBuffer.current,
+      bufferLength: 4,
     });
   }
 
