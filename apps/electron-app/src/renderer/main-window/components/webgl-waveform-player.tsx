@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Stack, Button, ButtonToolbar } from "rsuite";
 
 import { formatTime } from "@/utils/formatters";
@@ -206,6 +206,8 @@ function draw({
 
 export function WebGLWaveformPlayer() {
   const audioElement = useRef<HTMLAudioElement>(null);
+  const audioContext = useRef<AudioContext | null>(null);
+  const track = useRef<MediaElementAudioSourceNode | null>(null);
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const gl = useRef<WebGL2RenderingContext | null>(null);
   const shaderProgram = useRef<WebGLProgram | null>(null);
@@ -214,11 +216,13 @@ export function WebGLWaveformPlayer() {
   const zoom = useRef<number>(1);
   const time = useRef<number>(0);
   const [timeDisplay, setTimeDisplay] = useState<string>(
-    formatTime(time.current)
+    formatTime(time.current / 1000)
   );
-  const [isPlaying, setIsPlaying] = useState(false);
+  const isPlayingRef = useRef(false);
+  const [isPlaying, setIsPlaying] = useState(isPlayingRef.current);
   const duration = useRef<number | undefined>();
   const animationHandle = useRef<number | undefined>();
+  const animationStartTime = useRef<DOMHighResTimeStamp | undefined>();
 
   useEffect(() => {
     if (canvasElement.current) {
@@ -276,42 +280,58 @@ export function WebGLWaveformPlayer() {
   }
 
   function jumpForward() {
-    time.current += 10; // jump forward 10 secs
-    setTimeDisplay(formatTime(time.current));
+    time.current += 10 * 1000; // jump forward 10 secs
+    setTimeDisplay(formatTime(time.current / 1000));
 
     update();
   }
 
   function jumpBack() {
-    time.current -= 10;
-    setTimeDisplay(formatTime(time.current));
+    time.current -= 10 * 1000;
+    setTimeDisplay(formatTime(time.current / 1000));
 
     update();
   }
 
   function handlePlayPauseToggle() {
-    if (!isPlaying) {
+    isPlayingRef.current = !isPlayingRef.current;
+
+    if (isPlayingRef.current) {
+      track.current?.mediaElement.play();
       play();
     } else {
+      track.current?.mediaElement.pause();
       pause();
     }
 
     setIsPlaying((playing) => !playing);
   }
 
-  function play() {
-    update();
+  const play = useCallback(() => {
+    animationHandle.current = requestAnimationFrame((t) => {
+      if (!animationStartTime.current) {
+        animationStartTime.current = t;
+      }
 
-    animationHandle.current = requestAnimationFrame((time) => {
+      const elapsed = t - animationStartTime.current;
+
+      time.current += elapsed;
+
       update();
-    });
-  }
 
-  function pause() {
+      if (isPlayingRef.current) {
+        animationStartTime.current = t;
+        play();
+      }
+    });
+  }, []);
+
+  const pause = useCallback(() => {
     if (animationHandle.current !== undefined) {
       cancelAnimationFrame(animationHandle.current);
+      animationStartTime.current = undefined;
     }
-  }
+  }, []);
 
   function update() {
     if (
@@ -329,7 +349,7 @@ export function WebGLWaveformPlayer() {
 
     const xRange = 2;
     const seconds = xRange / duration.current;
-    const translateX = time.current * seconds;
+    const translateX = (time.current / 1000) * seconds;
 
     draw({
       gl: gl.current,
@@ -341,6 +361,21 @@ export function WebGLWaveformPlayer() {
       translate: [-translateX, 0],
     });
   }
+
+  // Audio element listeners
+  useEffect(() => {
+    if (audioElement.current && !audioContext.current) {
+      audioContext.current = new AudioContext();
+      track.current = audioContext.current.createMediaElementSource(
+        audioElement.current
+      );
+      track.current.connect(audioContext.current.destination);
+      console.log(
+        audioContext.current.baseLatency,
+        audioContext.current.outputLatency
+      );
+    }
+  }, []);
 
   return (
     <Stack direction="column" alignItems="stretch" spacing={10}>
