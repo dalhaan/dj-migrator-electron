@@ -1,5 +1,7 @@
+import { Icon } from "@rsuite/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Stack, Button, ButtonToolbar } from "rsuite";
+import { FaPlay, FaPause } from "react-icons/fa";
+import { Stack, Button, ButtonToolbar, IconButton } from "rsuite";
 
 import { useLibrary, useMainStore } from "@/stores/libraryStore";
 import { formatTime } from "@/utils/formatters";
@@ -227,7 +229,7 @@ export function WebGLWaveformPlayer() {
   const waveformVertexBuffer = useRef<WebGLBuffer | null>(null);
   const waveformVertexBufferLength = useRef<number | null>(null);
   const playheadVertexBuffer = useRef<WebGLBuffer | null>(null);
-  const zoom = useRef<number>(12);
+  const zoom = useRef<number>(20);
   const time = useRef<number>(0);
   const [timeDisplay, setTimeDisplay] = useState<string>(
     formatTime(time.current / 1000)
@@ -405,14 +407,14 @@ export function WebGLWaveformPlayer() {
     <Stack direction="column" alignItems="stretch" spacing={10}>
       <canvas
         ref={canvasElement}
-        // width="400"
-        // height="400"
         style={{ width: "100%", height: 150, minHeight: 150 }}
       />
       <ButtonToolbar>
-        <Button onClick={handlePlayPauseToggle}>
-          {isPlaying ? "Pause" : "Play"}
-        </Button>
+        <IconButton
+          icon={<Icon as={isPlaying ? FaPause : FaPlay} />}
+          appearance="ghost"
+          onClick={handlePlayPauseToggle}
+        />
         <Button onClick={zoomOut}>-</Button>
         <Button onClick={zoomIn}>+</Button>
         <span>{timeDisplay}</span>
