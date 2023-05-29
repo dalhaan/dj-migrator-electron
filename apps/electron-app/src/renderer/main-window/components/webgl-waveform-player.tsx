@@ -113,26 +113,21 @@ function drawWaveform({
   shaderProgram,
   vertexBuffer,
   bufferLength,
-  aspectRatio,
   zoom,
-  translate,
+  time,
+  duration,
 }: {
   gl: WebGL2RenderingContext;
   shaderProgram: WebGLProgram;
   vertexBuffer: WebGLBuffer;
   bufferLength: number;
-  aspectRatio: number;
   zoom: number;
-  translate: [number, number];
+  time: number;
+  duration: number;
 }) {
   console.time("paintWaveform");
 
   const currentScale: [number, number] = [zoom, 1];
-
-  // gl.clearColor(0.8, 0.9, 1.0, 1.0);
-  // gl.clear(gl.COLOR_BUFFER_BIT);
-
-  // const currentScale: [number, number] = [1 / aspectRatio, 1.0];
 
   // 1. call `gl.useProgram` for the program needed to draw.
 
@@ -157,8 +152,10 @@ function drawWaveform({
     "uTransformFactor"
   );
 
+  const translateX = timeToX(time, duration);
+
   gl.uniform2fv(uScalingFactor, currentScale);
-  gl.uniform2fv(uTransformFactor, translate);
+  gl.uniform2fv(uTransformFactor, [translateX, 0]);
   gl.uniform4fv(uGlobalColor, [0.1, 0.7, 0.2, 1.0]);
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
@@ -218,6 +215,13 @@ function drawPlayhead({
   gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
 
   console.timeEnd("paintPlayhead");
+}
+
+function timeToX(time: number, duration: number) {
+  const xRange = 2;
+  const seconds = xRange / duration;
+
+  return -(time / 1000) * seconds;
 }
 
 export function WebGLWaveformPlayer() {
@@ -362,21 +366,18 @@ export function WebGLWaveformPlayer() {
     )
       return;
 
-    const aspectRatio =
-      canvasElement.current.width / canvasElement.current.height;
-
-    const xRange = 2;
-    const seconds = xRange / duration.current;
-    const translateX = (time.current / 1000) * seconds;
+    // // Set background colour
+    // gl.current.clearColor(0.8, 0.9, 1.0, 1.0);
+    // gl.current.clear(gl.current.COLOR_BUFFER_BIT);
 
     drawWaveform({
       gl: gl.current,
       shaderProgram: shaderProgram.current,
       vertexBuffer: waveformVertexBuffer.current,
       bufferLength: waveformVertexBufferLength.current,
-      aspectRatio,
       zoom: zoom.current * ZOOM_SCALE,
-      translate: [-translateX, 0],
+      time: time.current,
+      duration: duration.current,
     });
     drawPlayhead({
       gl: gl.current,
