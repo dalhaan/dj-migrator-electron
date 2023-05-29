@@ -1,4 +1,4 @@
-import { Tracks } from "@dj-migrator/common";
+import { Tracks, CuePoint } from "@dj-migrator/common";
 import { Icon } from "@rsuite/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FaPlay, FaPause } from "react-icons/fa";
@@ -290,11 +290,12 @@ export function WebGLWaveformPlayer() {
   const cuePointVertexBuffers = useRef<(WebGLBuffer | null)[]>([]);
   const zoom = useRef<number>(20);
   const time = useRef<number>(0);
+  const isPlayingRef = useRef(false);
+  const [isPlaying, setIsPlaying] = useState(isPlayingRef.current);
   const [timeDisplay, setTimeDisplay] = useState<string>(
     formatTime(time.current / 1000)
   );
-  const isPlayingRef = useRef(false);
-  const [isPlaying, setIsPlaying] = useState(isPlayingRef.current);
+  const [cuePoints, setCuePoints] = useState<CuePoint[]>([]);
   const duration = useRef<number | undefined>();
   const animationHandle = useRef<number | undefined>();
   const animationStartTime = useRef<DOMHighResTimeStamp | undefined>();
@@ -352,6 +353,8 @@ export function WebGLWaveformPlayer() {
       if (audioElement.current) {
         audioElement.current.src = "local://" + track.absolutePath;
       }
+
+      setCuePoints(cuePoints);
     },
     []
   );
@@ -468,12 +471,7 @@ export function WebGLWaveformPlayer() {
       time: time.current,
       duration: duration.current,
     });
-    drawPlayhead({
-      gl: gl.current,
-      shaderProgram: shaderProgram.current,
-      vertexBuffer: playheadVertexBuffer.current,
-      bufferLength: 4,
-    });
+
     for (const cuePointBuffer of cuePointVertexBuffers.current) {
       if (cuePointBuffer) {
         drawCuePoint({
@@ -487,6 +485,13 @@ export function WebGLWaveformPlayer() {
         });
       }
     }
+
+    drawPlayhead({
+      gl: gl.current,
+      shaderProgram: shaderProgram.current,
+      vertexBuffer: playheadVertexBuffer.current,
+      bufferLength: 4,
+    });
   }
 
   // Audio element listeners
@@ -518,6 +523,25 @@ export function WebGLWaveformPlayer() {
         />
         <Button onClick={zoomOut}>-</Button>
         <Button onClick={zoomIn}>+</Button>
+        {cuePoints.map((cuePoint, index) => {
+          console.log(cuePoint);
+          return (
+            <Button
+              key={`cuepoint:${selectedTrackId}:${index}`}
+              onClick={() => {
+                time.current = cuePoint.position;
+                update();
+              }}
+              style={
+                cuePoint.color
+                  ? { backgroundColor: `#${cuePoint.color}` }
+                  : undefined
+              }
+            >
+              Cue {index + 1}
+            </Button>
+          );
+        })}
         <span>{timeDisplay}</span>
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <audio
