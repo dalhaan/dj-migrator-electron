@@ -218,6 +218,7 @@ function drawCuePoint({
   shaderProgram,
   vertexBuffer,
   bufferLength,
+  color,
   time,
   duration,
   zoom,
@@ -226,6 +227,7 @@ function drawCuePoint({
   shaderProgram: WebGLProgram;
   vertexBuffer: WebGLBuffer;
   bufferLength: number;
+  color: [number, number, number, number] | undefined;
   time: number;
   duration: number;
   zoom: number;
@@ -264,7 +266,7 @@ function drawCuePoint({
 
   gl.uniform2fv(uScalingFactor, currentScale);
   gl.uniform2fv(uTransformFactor, [-translateX, 0]);
-  gl.uniform4fv(uGlobalColor, [0, 0, 1, 1.0]);
+  gl.uniform4fv(uGlobalColor, color || [0, 0, 1, 1.0]);
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
   gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
@@ -277,6 +279,30 @@ function timeToX(time: number, duration: number) {
   return (time / 1000) * seconds;
 }
 
+// 'ccddee' => 204, 221, 238 => 0.8, 0.86, 0.93
+function hexColorToRgb(
+  hexColour: string
+): [number, number, number, number] | undefined {
+  if (hexColour.length !== 6) return;
+
+  // 'ccddee' -> 'cc' 'dd' 'ee'
+  const rHex = hexColour.substring(0, 2);
+  const gHex = hexColour.substring(2, 4);
+  const bHex = hexColour.substring(4, 6);
+
+  // 'cc' 'dd' 'ee' => 204 221 238
+  const r = parseInt(rHex, 16);
+  const g = parseInt(gHex, 16);
+  const b = parseInt(bHex, 16);
+
+  // 204 221 238 => 0.8, 0.86, 0.93;
+  const rNormalised = (1 / 255) * r;
+  const gNormalised = (1 / 255) * g;
+  const bNormalised = (1 / 255) * b;
+
+  return [rNormalised, gNormalised, bNormalised, 1];
+}
+
 export function WebGLWaveformPlayer() {
   const audioElement = useRef<HTMLAudioElement>(null);
   const audioContext = useRef<AudioContext | null>(null);
@@ -287,7 +313,12 @@ export function WebGLWaveformPlayer() {
   const waveformVertexBuffer = useRef<WebGLBuffer | null>(null);
   const waveformVertexBufferLength = useRef<number | null>(null);
   const playheadVertexBuffer = useRef<WebGLBuffer | null>(null);
-  const cuePointVertexBuffers = useRef<(WebGLBuffer | null)[]>([]);
+  const cuePointVertexBuffers = useRef<
+    {
+      buffer: WebGLBuffer | null;
+      color: [number, number, number, number] | undefined;
+    }[]
+  >([]);
   const zoom = useRef<number>(20);
   const time = useRef<number>(0);
   const isPlayingRef = useRef(false);
@@ -343,7 +374,10 @@ export function WebGLWaveformPlayer() {
             1,
           ]);
 
-          cuePointVertexBuffers.current.push(cuePointBuffer);
+          cuePointVertexBuffers.current.push({
+            buffer: cuePointBuffer,
+            color: cuePoint.color ? hexColorToRgb(cuePoint.color) : undefined,
+          });
         }
       }
 
@@ -476,12 +510,13 @@ export function WebGLWaveformPlayer() {
     });
 
     for (const cuePointBuffer of cuePointVertexBuffers.current) {
-      if (cuePointBuffer) {
+      if (cuePointBuffer.buffer) {
         drawCuePoint({
           gl: gl.current,
           shaderProgram: shaderProgram.current,
-          vertexBuffer: cuePointBuffer,
+          vertexBuffer: cuePointBuffer.buffer,
           bufferLength: 4,
+          color: cuePointBuffer.color,
           time: time.current,
           duration: duration.current,
           zoom: zoom.current,
