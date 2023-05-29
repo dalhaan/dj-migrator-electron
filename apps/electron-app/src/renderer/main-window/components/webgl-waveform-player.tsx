@@ -1,3 +1,4 @@
+import { Tracks } from "@dj-migrator/common";
 import { Icon } from "@rsuite/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FaPlay, FaPause } from "react-icons/fa";
@@ -156,7 +157,7 @@ function drawWaveform({
   const translateX = timeToX(time, duration);
 
   gl.uniform2fv(uScalingFactor, currentScale);
-  gl.uniform2fv(uTransformFactor, [translateX, 0]);
+  gl.uniform2fv(uTransformFactor, [-translateX, 0]);
   gl.uniform4fv(uGlobalColor, [0.1, 0.7, 0.2, 1.0]);
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
@@ -212,23 +213,81 @@ function drawPlayhead({
   gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
 }
 
+function drawCuePoint({
+  gl,
+  shaderProgram,
+  vertexBuffer,
+  bufferLength,
+  time,
+  duration,
+  zoom,
+}: {
+  gl: WebGL2RenderingContext;
+  shaderProgram: WebGLProgram;
+  vertexBuffer: WebGLBuffer;
+  bufferLength: number;
+  time: number;
+  duration: number;
+  zoom: number;
+}) {
+  const currentScale: [number, number] = [zoom, 1];
+
+  // gl.clearColor(0.8, 0.9, 1.0, 1.0);
+  // gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // const currentScale: [number, number] = [1 / aspectRatio, 1.0];
+
+  // 1. call `gl.useProgram` for the program needed to draw.
+
+  gl.useProgram(shaderProgram);
+
+  // 2. setup attributes
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  const aVertexPosition = gl.getAttribLocation(
+    shaderProgram,
+    "aVertexPosition"
+  );
+  gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(aVertexPosition);
+
+  // 3. setup uniforms
+
+  const uScalingFactor = gl.getUniformLocation(shaderProgram, "uScalingFactor");
+  const uGlobalColor = gl.getUniformLocation(shaderProgram, "uGlobalColor");
+  const uTransformFactor = gl.getUniformLocation(
+    shaderProgram,
+    "uTransformFactor"
+  );
+
+  const translateX = timeToX(time, duration);
+
+  gl.uniform2fv(uScalingFactor, currentScale);
+  gl.uniform2fv(uTransformFactor, [-translateX, 0]);
+  gl.uniform4fv(uGlobalColor, [0, 0, 1, 1.0]);
+
+  // 4. call `gl.drawArrays` or `gl.drawElements`
+  gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
+}
+
 function timeToX(time: number, duration: number) {
   const xRange = 2;
   const seconds = xRange / duration;
 
-  return -(time / 1000) * seconds;
+  return (time / 1000) * seconds;
 }
 
 export function WebGLWaveformPlayer() {
   const audioElement = useRef<HTMLAudioElement>(null);
   const audioContext = useRef<AudioContext | null>(null);
-  const track = useRef<MediaElementAudioSourceNode | null>(null);
+  const audioTrack = useRef<MediaElementAudioSourceNode | null>(null);
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const gl = useRef<WebGL2RenderingContext | null>(null);
   const shaderProgram = useRef<WebGLProgram | null>(null);
   const waveformVertexBuffer = useRef<WebGLBuffer | null>(null);
   const waveformVertexBufferLength = useRef<number | null>(null);
   const playheadVertexBuffer = useRef<WebGLBuffer | null>(null);
+  const cuePointVertexBuffers = useRef<(WebGLBuffer | null)[]>([]);
   const zoom = useRef<number>(20);
   const time = useRef<number>(0);
   const [timeDisplay, setTimeDisplay] = useState<string>(
@@ -241,42 +300,71 @@ export function WebGLWaveformPlayer() {
   const animationStartTime = useRef<DOMHighResTimeStamp | undefined>();
 
   const selectedTrackId = useMainStore((state) => state.selectedTrackId);
-  const tracks = useLibrary((state) => state.tracks);
 
-  const loadTrack = useCallback(async (filePath: string) => {
-    if (!gl.current || !canvasElement.current) return;
+  const loadTrack = useCallback(
+    async (track: Tracks extends Map<string, infer Track> ? Track : never) => {
+      if (!track.absolutePath || !gl.current || !canvasElement.current) return;
 
-    const data = await window.electronAPI.getWaveformData(filePath);
+      const data = await window.electronAPI.getWaveformData(track.absolutePath);
 
-    if (!data?.waveformData) return;
+      if (!data?.waveformData) return;
 
-    if (audioElement.current) {
-      audioElement.current.src = "local://" + filePath;
-    }
+      // Get cue points
+      const cuePoints = track.track.cuePoints;
 
-    // reset time on load
-    time.current = 0;
+      // reset time on load
+      time.current = 0;
 
-    const { waveformData, duration: audioDuration } = data;
+      const { waveformData, duration: audioDuration } = data;
 
-    waveformVertexBuffer.current = createArrayBuffer(gl.current, waveformData);
-    playheadVertexBuffer.current = createArrayBuffer(gl.current, [0, -1, 0, 1]);
+      // Create buffers
 
-    waveformVertexBufferLength.current = waveformData.length;
-    duration.current = audioDuration;
+      waveformVertexBuffer.current = createArrayBuffer(
+        gl.current,
+        waveformData
+      );
+      playheadVertexBuffer.current = createArrayBuffer(
+        gl.current,
+        [0, -1, 0, 1]
+      );
 
-    update();
-  }, []);
+      // Cue point buffers
+      if (audioDuration) {
+        for (const cuePoint of cuePoints) {
+          const xPos = timeToX(cuePoint.position, audioDuration);
+
+          const cuePointBuffer = createArrayBuffer(gl.current, [
+            xPos,
+            -1,
+            xPos,
+            1,
+          ]);
+
+          cuePointVertexBuffers.current.push(cuePointBuffer);
+        }
+      }
+
+      waveformVertexBufferLength.current = waveformData.length;
+      duration.current = audioDuration;
+
+      update();
+
+      if (audioElement.current) {
+        audioElement.current.src = "local://" + track.absolutePath;
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (selectedTrackId) {
-      const filePath = tracks.get(selectedTrackId)?.absolutePath;
+      const track = useLibrary.getState().tracks.get(selectedTrackId);
 
-      if (filePath) {
-        loadTrack(filePath);
+      if (track) {
+        loadTrack(track);
       }
     }
-  }, [selectedTrackId, loadTrack, tracks]);
+  }, [selectedTrackId, loadTrack]);
 
   useEffect(() => {
     if (canvasElement.current) {
@@ -319,10 +407,10 @@ export function WebGLWaveformPlayer() {
     isPlayingRef.current = !isPlayingRef.current;
 
     if (isPlayingRef.current) {
-      track.current?.mediaElement.play();
+      audioTrack.current?.mediaElement.play();
       play();
     } else {
-      track.current?.mediaElement.pause();
+      audioTrack.current?.mediaElement.pause();
       pause();
     }
 
@@ -386,16 +474,29 @@ export function WebGLWaveformPlayer() {
       vertexBuffer: playheadVertexBuffer.current,
       bufferLength: 4,
     });
+    for (const cuePointBuffer of cuePointVertexBuffers.current) {
+      if (cuePointBuffer) {
+        drawCuePoint({
+          gl: gl.current,
+          shaderProgram: shaderProgram.current,
+          vertexBuffer: cuePointBuffer,
+          bufferLength: 4,
+          time: time.current,
+          duration: duration.current,
+          zoom: zoom.current,
+        });
+      }
+    }
   }
 
   // Audio element listeners
   useEffect(() => {
     if (audioElement.current && !audioContext.current) {
       audioContext.current = new AudioContext();
-      track.current = audioContext.current.createMediaElementSource(
+      audioTrack.current = audioContext.current.createMediaElementSource(
         audioElement.current
       );
-      track.current.connect(audioContext.current.destination);
+      audioTrack.current.connect(audioContext.current.destination);
       console.log(
         audioContext.current.baseLatency,
         audioContext.current.outputLatency
