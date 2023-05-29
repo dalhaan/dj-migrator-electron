@@ -7,6 +7,7 @@ import * as styles from "./track-display.css";
 
 import { KEY_COLOURS, KEY_TO_CAMELOT } from "@/main-window/utils/keys";
 import { useLibrary } from "@/stores/libraryStore";
+import { formatTime } from "@/utils/formatters";
 import { defaultSort, sortCamelotKeys } from "@/utils/sorting-utils";
 
 type TableData = {
@@ -179,12 +180,8 @@ export function TrackTable() {
             if (!rowData["duration"]) {
               return null;
             }
-            const minutes = Math.floor(rowData["duration"] / 60);
-            const seconds = Math.floor(rowData["duration"] - minutes * 60);
-            return `${minutes}:${seconds.toLocaleString("en-NZ", {
-              minimumIntegerDigits: 2,
-              useGrouping: false,
-            })}`;
+
+            return formatTime(rowData["duration"]);
           }}
         </Table.Cell>
       </Table.Column>

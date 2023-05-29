@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Stack, Button, ButtonToolbar } from "rsuite";
 
+import { formatTime } from "@/utils/formatters";
+
 const ZOOM_SCALE = 1;
 
 function compileShader(gl: WebGL2RenderingContext, type: number, code: string) {
@@ -168,6 +170,17 @@ function draw({
 
   gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
 
+  // Paint playhead
+  // const playheadBuffer = gl.createBuffer();
+  // gl.bufferData(
+  //   gl.ARRAY_BUFFER,
+  //   new Float32Array([0.5, 0, 0.5, 1]),
+  //   gl.STATIC_DRAW
+  // );
+
+  // gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  // gl.drawArrays(gl.LINE_STRIP, 0, 2);
+
   console.timeEnd("paint");
 
   // requestAnimationFrame((currentTime) => {
@@ -192,14 +205,20 @@ function draw({
 }
 
 export function WebGLWaveformPlayer() {
+  const audioElement = useRef<HTMLAudioElement>(null);
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const gl = useRef<WebGL2RenderingContext | null>(null);
   const shaderProgram = useRef<WebGLProgram | null>(null);
   const vertexArrayBuffer = useRef<WebGLBuffer | null>(null);
   const vertexArrayBufferLength = useRef<number | null>(null);
   const zoom = useRef<number>(1);
-  const time = useRef<number>(0.5);
-  const [timeDisplay, setTimeDisplay] = useState<number>(time.current);
+  const time = useRef<number>(0);
+  const [timeDisplay, setTimeDisplay] = useState<string>(
+    formatTime(time.current)
+  );
+  const [isPlaying, setIsPlaying] = useState(false);
+  const duration = useRef<number | undefined>();
+  const animationHandle = useRef<number | undefined>();
 
   useEffect(() => {
     if (canvasElement.current) {
@@ -221,30 +240,24 @@ export function WebGLWaveformPlayer() {
     const aspectRatio =
       canvasElement.current.width / canvasElement.current.height;
 
-    const waveformData = await window.electronAPI.getWaveformData();
+    const data = await window.electronAPI.getWaveformData();
 
-    if (!waveformData) return;
+    if (!data?.waveformData) return;
 
-    console.time("transform");
-    // Transform waveformData
-    const transformedData = [];
-    for (let i = 0; i < waveformData.length; i++) {
-      transformedData.push((i / waveformData.length) * 2 - 1);
-      transformedData.push(waveformData[i] / 32767);
-    }
-    console.timeEnd("transform");
+    const { waveformData, duration: audioDuration } = data;
 
-    const vertexBuffer = createArrayBuffer(gl.current, transformedData);
+    const vertexBuffer = createArrayBuffer(gl.current, waveformData);
 
     vertexArrayBuffer.current = vertexBuffer;
-    vertexArrayBufferLength.current = transformedData.length;
+    vertexArrayBufferLength.current = waveformData.length;
+    duration.current = audioDuration;
 
     if (shaderProgram.current && vertexBuffer) {
       draw({
         gl: gl.current,
         shaderProgram: shaderProgram.current,
         vertexBuffer,
-        bufferLength: transformedData.length,
+        bufferLength: waveformData.length,
         aspectRatio,
         zoom: zoom.current,
         translate: [time.current, 0],
@@ -313,11 +326,17 @@ export function WebGLWaveformPlayer() {
       vertexArrayBuffer.current &&
       vertexArrayBufferLength.current
     ) {
+      if (!duration.current) return;
+
       const aspectRatio =
         canvasElement.current.width / canvasElement.current.height;
 
-      time.current += 0.1;
-      setTimeDisplay(time.current);
+      time.current += 10; // jump forward 10 secs
+      setTimeDisplay(formatTime(time.current));
+
+      const xRange = 2;
+      const seconds = xRange / duration.current;
+      const translateX = time.current * seconds;
 
       draw({
         gl: gl.current,
@@ -326,7 +345,7 @@ export function WebGLWaveformPlayer() {
         bufferLength: vertexArrayBufferLength.current,
         aspectRatio,
         zoom: zoom.current * ZOOM_SCALE,
-        translate: [-time.current, 0],
+        translate: [-translateX, 0],
       });
     }
   }
@@ -339,11 +358,16 @@ export function WebGLWaveformPlayer() {
       vertexArrayBuffer.current &&
       vertexArrayBufferLength.current
     ) {
+      if (!duration.current) return;
       const aspectRatio =
         canvasElement.current.width / canvasElement.current.height;
 
-      time.current -= 0.1;
-      setTimeDisplay(time.current);
+      time.current -= 10;
+      setTimeDisplay(formatTime(time.current));
+
+      const xRange = 2;
+      const seconds = xRange / duration.current;
+      const translateX = time.current * seconds;
 
       draw({
         gl: gl.current,
@@ -352,10 +376,44 @@ export function WebGLWaveformPlayer() {
         bufferLength: vertexArrayBufferLength.current,
         aspectRatio,
         zoom: zoom.current * ZOOM_SCALE,
-        translate: [-time.current, 0],
+        translate: [-translateX, 0],
       });
     }
   }
+
+  function handlePlayPauseToggle() {
+    if (
+      !canvasElement.current ||
+      !gl.current ||
+      !shaderProgram.current ||
+      !vertexArrayBuffer.current ||
+      !vertexArrayBufferLength.current
+    )
+      return;
+
+    const aspectRatio =
+      canvasElement.current.width / canvasElement.current.height;
+
+    // play();
+
+    setIsPlaying((playing) => !playing);
+  }
+
+  // function play() {
+  //   draw({
+  //     gl: gl.current,
+  //     shaderProgram: shaderProgram.current,
+  //     vertexBuffer: vertexArrayBuffer.current,
+  //     bufferLength: vertexArrayBufferLength.current,
+  //     aspectRatio,
+  //     zoom: zoom.current * ZOOM_SCALE,
+  //     translate: [-translateX, 0],
+  //   });
+
+  //   const animationHandle = requestAnimationFrame((time) => {
+  //     play();
+  //   });
+  // }
 
   return (
     <Stack direction="column" alignItems="stretch" spacing={10}>
@@ -367,11 +425,25 @@ export function WebGLWaveformPlayer() {
       />
       <Button onClick={handleLoadWaveformData}>Get waveform data</Button>
       <ButtonToolbar>
+        <Button onClick={handlePlayPauseToggle}>
+          {isPlaying ? "Pause" : "Play"}
+        </Button>
         <Button onClick={zoomOut}>-</Button>
         <Button onClick={zoomIn}>+</Button>
         <Button onClick={jumpBack}>&lt;</Button>
         <Button onClick={jumpForward}>&gt;</Button>
         <span>{timeDisplay}</span>
+        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+        <audio
+          ref={audioElement}
+          src="local:///Users/dallanfreemantle/Desktop/DALLANS HDD BACKUP/Big Salami (Vocals).wav"
+          controls
+          onLoadedData={() => {
+            if (audioElement.current) {
+              console.log(audioElement.current.duration);
+            }
+          }}
+        />
       </ButtonToolbar>
     </Stack>
   );
