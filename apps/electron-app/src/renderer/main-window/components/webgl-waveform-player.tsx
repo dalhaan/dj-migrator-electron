@@ -533,6 +533,9 @@ export function WebGLWaveformPlayer() {
               key={`cuepoint:${selectedTrackId}:${index}`}
               onClick={() => {
                 time.current = cuePoint.position;
+                if (audioElement.current) {
+                  audioElement.current.currentTime = cuePoint.position / 1000;
+                }
                 update();
               }}
               style={
