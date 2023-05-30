@@ -5,6 +5,44 @@ type Programs = {
   FIXED_WIDTH_PROGRAM: WebGLProgram;
 };
 
+const defaultVertexShader = `
+      attribute vec2 aVertexPosition;
+
+      uniform vec2 uTranslateFactor;
+      uniform vec2 uScalingFactor;
+
+      void main() {
+        gl_Position = vec4((aVertexPosition + uTranslateFactor) * uScalingFactor, 0.0, 1.0);
+      }
+    `;
+
+const fixedWidthVertexShader = `
+      attribute vec2 aVertexPosition;
+      attribute vec2 aOriginPosition;
+
+      uniform vec2 uTranslateFactor;
+      uniform vec2 uScalingFactor;
+
+      void main() {
+        vec2 offsetPos = aVertexPosition - aOriginPosition;
+        vec2 newOriginPos = (aOriginPosition + uTranslateFactor) * uScalingFactor;
+
+        gl_Position = vec4(newOriginPos + offsetPos, 0.0, 1.0);
+      }
+    `;
+
+const defaultFragmentShader = `
+    #ifdef GL_ES
+      precision highp float;
+    #endif
+
+    uniform vec4 uGlobalColor;
+
+    void main() {
+      gl_FragColor = uGlobalColor;
+    }
+  `;
+
 export class WebGLWaveform {
   gl: WebGL2RenderingContext | null = null;
   canvasWidth: number;
@@ -26,9 +64,19 @@ export class WebGLWaveform {
   animationPrevTime: DOMHighResTimeStamp | undefined;
   isAnimationPlaying = false;
 
-  constructor(programs: Programs, canvasWidth: number) {
+  constructor(canvasWidth: number) {
     this.canvasWidth = canvasWidth;
-    this.programs = programs;
+
+    this.programs = {
+      DEFAULT_PROGRAM: this.buildShaderProgram(
+        defaultVertexShader,
+        defaultFragmentShader
+      ),
+      FIXED_WIDTH_PROGRAM: this.buildShaderProgram(
+        fixedWidthVertexShader,
+        defaultFragmentShader
+      ),
+    };
 
     // Load playhead VAO
     this.loadPlayhead();
@@ -359,6 +407,65 @@ export class WebGLWaveform {
   // -------------------------
   // Utility methods
   // -------------------------
+
+  compileShader(type: number, code: string) {
+    if (!this.gl)
+      throw new Error("Could not compile shader. No GL2 rendering context");
+
+    const shader = this.gl.createShader(type);
+
+    if (!shader)
+      throw new Error("Could not compile shader. Failed to create shader.");
+
+    this.gl.shaderSource(shader, code);
+    this.gl.compileShader(shader);
+
+    if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
+      console.error(this.gl.getShaderInfoLog(shader));
+      throw new Error(
+        `Error compiling ${
+          type === this.gl.VERTEX_SHADER ? "vertex" : "fragment"
+        } shader:`
+      );
+    }
+    return shader;
+  }
+
+  buildShaderProgram(vertexShaderCode: string, fragmentShaderCode: string) {
+    if (!this.gl)
+      throw new Error(
+        "Could not build shader program. No GL2 rendering context"
+      );
+
+    const program = this.gl.createProgram();
+
+    if (!program)
+      throw new Error(
+        "Could not build shader program. Failed to create program."
+      );
+
+    const vertexShader = this.compileShader(
+      this.gl.VERTEX_SHADER,
+      vertexShaderCode
+    );
+    this.gl.attachShader(program, vertexShader);
+    const fragmentShader = this.compileShader(
+      this.gl.FRAGMENT_SHADER,
+      fragmentShaderCode
+    );
+    this.gl.attachShader(program, fragmentShader);
+
+    this.gl.linkProgram(program);
+
+    if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
+      console.error(this.gl.getProgramInfoLog(program));
+      throw new Error(
+        "Could not build shader program. Error linking shader program."
+      );
+    }
+
+    return program;
+  }
 
   createArrayBuffer(data: number[]) {
     if (!this.gl)
