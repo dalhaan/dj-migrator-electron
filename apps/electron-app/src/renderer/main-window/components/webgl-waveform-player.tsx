@@ -26,17 +26,15 @@ const standardVertexShader = (gl: WebGL2RenderingContext) => ({
 const fixedWidthVertexShader = (gl: WebGL2RenderingContext) => ({
   type: gl.VERTEX_SHADER,
   code: `
-      attribute vec4 aVertexPositionWithOrigin;
+      attribute vec2 aVertexPosition;
+      attribute vec2 aOriginPosition;
 
       uniform vec2 uTranslateFactor;
       uniform vec2 uScalingFactor;
 
       void main() {
-        vec2 vertexPos = aVertexPositionWithOrigin.xy;
-        vec2 originPos = aVertexPositionWithOrigin.zw;
-
-        vec2 offsetPos = vertexPos - originPos;
-        vec2 newOriginPos = (originPos + uTranslateFactor) * uScalingFactor;
+        vec2 offsetPos = aVertexPosition - aOriginPosition;
+        vec2 newOriginPos = (aOriginPosition + uTranslateFactor) * uScalingFactor;
 
         gl_Position = vec4(newOriginPos + offsetPos, 0.0, 1.0);
       }
@@ -139,17 +137,7 @@ function drawWaveform({
   gl.useProgram(shaderProgram);
   gl.bindVertexArray(vao);
 
-  // 2. setup attributes
-
-  // gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  // const aVertexPosition = gl.getAttribLocation(
-  //   shaderProgram,
-  //   "aVertexPosition"
-  // );
-  // gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-  // gl.enableVertexAttribArray(aVertexPosition);
-
-  // 3. setup uniforms
+  // 2. setup uniforms
 
   const uScalingFactor = gl.getUniformLocation(shaderProgram, "uScalingFactor");
   const uGlobalColor = gl.getUniformLocation(shaderProgram, "uGlobalColor");
@@ -164,7 +152,7 @@ function drawWaveform({
   gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
   gl.uniform4fv(uGlobalColor, [0.1, 0.7, 0.2, 1.0]);
 
-  // 4. call `gl.drawArrays` or `gl.drawElements`
+  // 3. call `gl.drawArrays` or `gl.drawElements`
   gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
 
   gl.bindVertexArray(null);
@@ -193,17 +181,7 @@ function drawPlayhead({
   gl.useProgram(shaderProgram);
   gl.bindVertexArray(vao);
 
-  // 2. setup attributes
-
-  // gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  // const aVertexPosition = gl.getAttribLocation(
-  //   shaderProgram,
-  //   "aVertexPosition"
-  // );
-  // gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-  // gl.enableVertexAttribArray(aVertexPosition);
-
-  // 3. setup uniforms
+  // 2. setup uniforms
 
   const uScalingFactor = gl.getUniformLocation(shaderProgram, "uScalingFactor");
   const uGlobalColor = gl.getUniformLocation(shaderProgram, "uGlobalColor");
@@ -216,7 +194,7 @@ function drawPlayhead({
   gl.uniform2fv(uTranslateFactor, [0, 0]);
   gl.uniform4fv(uGlobalColor, [1, 0, 0, 1.0]);
 
-  // 4. call `gl.drawArrays` or `gl.drawElements`
+  // 3. call `gl.drawArrays` or `gl.drawElements`
   gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
 
   gl.bindVertexArray(null);
@@ -243,27 +221,12 @@ function drawCuePoint({
 }) {
   const currentScale: [number, number] = [zoom, 1];
 
-  // gl.clearColor(0.8, 0.9, 1.0, 1.0);
-  // gl.clear(gl.COLOR_BUFFER_BIT);
-
-  // const currentScale: [number, number] = [1 / aspectRatio, 1.0];
-
   // 1. call `gl.useProgram` for the program needed to draw.
 
   gl.useProgram(shaderProgram);
   gl.bindVertexArray(vao);
 
-  // 2. setup attributes
-
-  // gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  // const aVertexPositionWithOrigin = gl.getAttribLocation(
-  //   shaderProgram,
-  //   "aVertexPositionWithOrigin"
-  // );
-  // gl.vertexAttribPointer(aVertexPositionWithOrigin, 4, gl.FLOAT, false, 0, 0);
-  // gl.enableVertexAttribArray(aVertexPositionWithOrigin);
-
-  // 3. setup uniforms
+  // 2. setup uniforms
 
   const uScalingFactor = gl.getUniformLocation(shaderProgram, "uScalingFactor");
   const uGlobalColor = gl.getUniformLocation(shaderProgram, "uGlobalColor");
@@ -278,7 +241,7 @@ function drawCuePoint({
   gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
   gl.uniform4fv(uGlobalColor, color || [0, 0, 1, 1.0]);
 
-  // 4. call `gl.drawArrays` or `gl.drawElements`
+  // 3. call `gl.drawArrays` or `gl.drawElements`
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, bufferLength / 4);
 
   gl.bindVertexArray(null);
@@ -436,23 +399,25 @@ export function WebGLWaveformPlayer() {
           const cuePointBuffer = createArrayBuffer(gl.current, [
             xPos - strokeWidth / 2,
             -1,
-            xPos, // origin.x
-            -1, // origin.y
 
             xPos - strokeWidth / 2,
             1,
-            xPos, // origin.x
-            1, // origin.y
 
             xPos + strokeWidth / 2,
             -1,
-            xPos, // origin.x
-            -1, // origin.y
 
             xPos + strokeWidth / 2,
             1,
-            xPos, // origin.x
-            1, // origin.y
+          ]);
+          const originBuffer = createArrayBuffer(gl.current, [
+            xPos,
+            0,
+            xPos,
+            0,
+            xPos,
+            0,
+            xPos,
+            0,
           ]);
 
           const cuepointVao = gl.current.createVertexArray();
@@ -461,14 +426,30 @@ export function WebGLWaveformPlayer() {
 
           // Link `aVertexPosition` -> cuePointBuffer
           gl.current.bindBuffer(gl.current.ARRAY_BUFFER, cuePointBuffer);
-          const aVertexPositionWithOrigin = gl.current.getAttribLocation(
+          aVertexPosition = gl.current.getAttribLocation(
             fixedWidthShaderProgram.current,
-            "aVertexPositionWithOrigin"
+            "aVertexPosition"
           );
-          gl.current.enableVertexAttribArray(aVertexPositionWithOrigin);
+          gl.current.enableVertexAttribArray(aVertexPosition);
           gl.current.vertexAttribPointer(
-            aVertexPositionWithOrigin,
-            4,
+            aVertexPosition,
+            2,
+            gl.current.FLOAT,
+            false,
+            0,
+            0
+          );
+
+          // Link `aOriginPosition` -> originBuffer
+          gl.current.bindBuffer(gl.current.ARRAY_BUFFER, originBuffer);
+          const aOriginPosition = gl.current.getAttribLocation(
+            fixedWidthShaderProgram.current,
+            "aOriginPosition"
+          );
+          gl.current.enableVertexAttribArray(aOriginPosition);
+          gl.current.vertexAttribPointer(
+            aOriginPosition,
+            2,
             gl.current.FLOAT,
             false,
             0,
