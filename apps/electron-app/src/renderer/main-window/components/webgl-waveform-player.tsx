@@ -9,6 +9,35 @@ import { formatTime } from "@/utils/formatters";
 
 const ZOOM_SCALE = 1;
 
+const standardVertexShader = (gl: WebGL2RenderingContext) => ({
+  type: gl.VERTEX_SHADER,
+  code: `
+      attribute vec2 aVertexPosition;
+
+      uniform vec2 uTransformFactor;
+      uniform vec2 uScalingFactor;
+
+      void main() {
+        gl_Position = vec4((aVertexPosition + uTransformFactor) * uScalingFactor, 0.0, 1.0);
+      }
+    `,
+});
+
+const standardMaterialFragmentShader = (gl: WebGL2RenderingContext) => ({
+  type: gl.FRAGMENT_SHADER,
+  code: `
+    #ifdef GL_ES
+      precision highp float;
+    #endif
+
+    uniform vec4 uGlobalColor;
+
+    void main() {
+      gl_FragColor = uGlobalColor;
+    }
+  `,
+});
+
 function compileShader(gl: WebGL2RenderingContext, type: number, code: string) {
   const shader = gl.createShader(type);
 
@@ -28,15 +57,12 @@ function compileShader(gl: WebGL2RenderingContext, type: number, code: string) {
   return shader;
 }
 
-type ShaderInfo = {
+type Shader = {
   type: number;
   code: string;
-}[];
+};
 
-function buildShaderProgram(
-  gl: WebGL2RenderingContext,
-  shaderInfo: ShaderInfo
-) {
+function buildShaderProgram(gl: WebGL2RenderingContext, shaderInfo: Shader[]) {
   const program = gl.createProgram();
 
   if (!program) return null;
@@ -59,51 +85,8 @@ function buildShaderProgram(
   return program;
 }
 
-function createShaderProgram(gl: WebGL2RenderingContext) {
-  const shaderSet: ShaderInfo = [
-    {
-      type: gl.VERTEX_SHADER,
-      code: `
-          attribute vec2 aVertexPosition;
-
-          uniform vec2 uTransformFactor;
-          uniform vec2 uScalingFactor;
-
-          void main() {
-            vec2 translatedPosition = vec2(
-              aVertexPosition.x + uTransformFactor.x,
-              aVertexPosition.y + uTransformFactor.y
-            );
-
-            gl_Position = vec4(translatedPosition * uScalingFactor, 0.0, 1.0);
-          }
-        `,
-    },
-    {
-      type: gl.FRAGMENT_SHADER,
-      code: `
-        #ifdef GL_ES
-          precision highp float;
-        #endif
-
-        uniform vec4 uGlobalColor;
-
-        void main() {
-          gl_FragColor = uGlobalColor;
-        }
-      `,
-    },
-  ];
-
-  const shaderProgram = buildShaderProgram(gl, shaderSet);
-
-  return shaderProgram;
-}
-
 function createArrayBuffer(gl: WebGL2RenderingContext, data: number[]) {
   const vertexArray = new Float32Array(data);
-
-  console.log(vertexArray.length);
 
   const vertexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
@@ -269,7 +252,7 @@ function drawCuePoint({
   gl.uniform4fv(uGlobalColor, color || [0, 0, 1, 1.0]);
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
-  gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, bufferLength / 2);
 }
 
 function timeToX(time: number, duration: number) {
@@ -367,10 +350,17 @@ export function WebGLWaveformPlayer() {
         for (const cuePoint of cuePoints) {
           const xPos = timeToX(cuePoint.position, audioDuration);
 
+          const strokeWidth = 4 / canvasElement.current.width;
+
           const cuePointBuffer = createArrayBuffer(gl.current, [
-            xPos,
+            xPos - strokeWidth / 2,
             -1,
-            xPos,
+            xPos - strokeWidth / 2,
+            1,
+
+            xPos + strokeWidth / 2,
+            -1,
+            xPos + strokeWidth / 2,
             1,
           ]);
 
@@ -407,14 +397,19 @@ export function WebGLWaveformPlayer() {
 
   useEffect(() => {
     if (canvasElement.current) {
+      // Set up canvas
       const dpr = window.devicePixelRatio || 1;
       canvasElement.current.width = canvasElement.current.offsetWidth * dpr;
       canvasElement.current.height = canvasElement.current.offsetHeight * dpr;
 
       gl.current = canvasElement.current.getContext("webgl2");
 
+      // Create shaders
       if (gl.current) {
-        shaderProgram.current = createShaderProgram(gl.current);
+        shaderProgram.current = buildShaderProgram(gl.current, [
+          standardVertexShader(gl.current),
+          standardMaterialFragmentShader(gl.current),
+        ]);
       }
     }
   }, []);
@@ -515,7 +510,7 @@ export function WebGLWaveformPlayer() {
           gl: gl.current,
           shaderProgram: shaderProgram.current,
           vertexBuffer: cuePointBuffer.buffer,
-          bufferLength: 4,
+          bufferLength: 8,
           color: cuePointBuffer.color,
           time: time.current,
           duration: duration.current,
@@ -562,7 +557,6 @@ export function WebGLWaveformPlayer() {
         <Button onClick={zoomOut}>-</Button>
         <Button onClick={zoomIn}>+</Button>
         {cuePoints.map((cuePoint, index) => {
-          console.log(cuePoint);
           return (
             <Button
               key={`cuepoint:${selectedTrackId}:${index}`}
