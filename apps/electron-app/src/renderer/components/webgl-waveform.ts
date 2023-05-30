@@ -44,7 +44,7 @@ const defaultFragmentShader = `
   `;
 
 export class WebGLWaveform {
-  gl: WebGL2RenderingContext | null = null;
+  gl: WebGL2RenderingContext;
   canvasWidth: number;
   programs: Programs;
   audioDuration: number | null = null;
@@ -64,7 +64,8 @@ export class WebGLWaveform {
   animationPrevTime: DOMHighResTimeStamp | undefined;
   isAnimationPlaying = false;
 
-  constructor(canvasWidth: number) {
+  constructor(gl: WebGL2RenderingContext, canvasWidth: number) {
+    this.gl = gl;
     this.canvasWidth = canvasWidth;
 
     this.programs = {
@@ -88,13 +89,15 @@ export class WebGLWaveform {
 
   setZoom(zoom: number) {
     this.zoom = zoom;
+
+    this.draw();
   }
 
   setTime(time: number) {
     this.time = time;
   }
 
-  loadPlayhead() {
+  private loadPlayhead() {
     if (!this.gl)
       throw new Error("Could not load playhead. No GL2 rendering context");
 
