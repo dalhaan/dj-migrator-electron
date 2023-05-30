@@ -14,11 +14,11 @@ const standardVertexShader = (gl: WebGL2RenderingContext) => ({
   code: `
       attribute vec2 aVertexPosition;
 
-      uniform vec2 uTransformFactor;
+      uniform vec2 uTranslateFactor;
       uniform vec2 uScalingFactor;
 
       void main() {
-        gl_Position = vec4((aVertexPosition + uTransformFactor) * uScalingFactor, 0.0, 1.0);
+        gl_Position = vec4((aVertexPosition + uTranslateFactor) * uScalingFactor, 0.0, 1.0);
       }
     `,
 });
@@ -28,11 +28,11 @@ const fixedWidthVertexShader = (gl: WebGL2RenderingContext) => ({
   code: `
       attribute vec2 aVertexPosition;
 
-      uniform vec2 uTransformFactor;
+      uniform vec2 uTranslateFactor;
       uniform vec2 uScalingFactor;
 
       void main() {
-        gl_Position = vec4((aVertexPosition + uTransformFactor) * uScalingFactor, 0.0, 1.0);
+        gl_Position = vec4((aVertexPosition + uTranslateFactor) * uScalingFactor, 0.0, 1.0);
       }
     `,
 });
@@ -146,15 +146,15 @@ function drawWaveform({
 
   const uScalingFactor = gl.getUniformLocation(shaderProgram, "uScalingFactor");
   const uGlobalColor = gl.getUniformLocation(shaderProgram, "uGlobalColor");
-  const uTransformFactor = gl.getUniformLocation(
+  const uTranslateFactor = gl.getUniformLocation(
     shaderProgram,
-    "uTransformFactor"
+    "uTranslateFactor"
   );
 
   const translateX = timeToX(time, duration);
 
   gl.uniform2fv(uScalingFactor, currentScale);
-  gl.uniform2fv(uTransformFactor, [-translateX, 0]);
+  gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
   gl.uniform4fv(uGlobalColor, [0.1, 0.7, 0.2, 1.0]);
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
@@ -197,13 +197,13 @@ function drawPlayhead({
 
   const uScalingFactor = gl.getUniformLocation(shaderProgram, "uScalingFactor");
   const uGlobalColor = gl.getUniformLocation(shaderProgram, "uGlobalColor");
-  const uTransformFactor = gl.getUniformLocation(
+  const uTranslateFactor = gl.getUniformLocation(
     shaderProgram,
-    "uTransformFactor"
+    "uTranslateFactor"
   );
 
   gl.uniform2fv(uScalingFactor, currentScale);
-  gl.uniform2fv(uTransformFactor, [0, 0]);
+  gl.uniform2fv(uTranslateFactor, [0, 0]);
   gl.uniform4fv(uGlobalColor, [1, 0, 0, 1.0]);
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
@@ -254,15 +254,15 @@ function drawCuePoint({
 
   const uScalingFactor = gl.getUniformLocation(shaderProgram, "uScalingFactor");
   const uGlobalColor = gl.getUniformLocation(shaderProgram, "uGlobalColor");
-  const uTransformFactor = gl.getUniformLocation(
+  const uTranslateFactor = gl.getUniformLocation(
     shaderProgram,
-    "uTransformFactor"
+    "uTranslateFactor"
   );
 
   const translateX = timeToX(time, duration);
 
   gl.uniform2fv(uScalingFactor, currentScale);
-  gl.uniform2fv(uTransformFactor, [-translateX, 0]);
+  gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
   gl.uniform4fv(uGlobalColor, color || [0, 0, 1, 1.0]);
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
