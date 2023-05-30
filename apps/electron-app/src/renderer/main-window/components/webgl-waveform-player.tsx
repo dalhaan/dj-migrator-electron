@@ -372,7 +372,7 @@ export function WebGLWaveformPlayer() {
           const xPos = timeToX(cuePoint.position, audioDuration);
 
           const dpr = window.devicePixelRatio || 1;
-          const strokeWidth = (6 * dpr) / canvasElement.current.width;
+          const strokeWidth = (4 * dpr) / canvasElement.current.width;
 
           const cuePointBuffer = createArrayBuffer(gl.current, [
             xPos - strokeWidth / 2,
