@@ -26,13 +26,19 @@ const standardVertexShader = (gl: WebGL2RenderingContext) => ({
 const fixedWidthVertexShader = (gl: WebGL2RenderingContext) => ({
   type: gl.VERTEX_SHADER,
   code: `
-      attribute vec2 aVertexPosition;
+      attribute vec4 aVertexPositionWithOrigin;
 
       uniform vec2 uTranslateFactor;
       uniform vec2 uScalingFactor;
 
       void main() {
-        gl_Position = vec4((aVertexPosition + uTranslateFactor) * uScalingFactor, 0.0, 1.0);
+        vec2 vertexPos = aVertexPositionWithOrigin.xy;
+        vec2 originPos = aVertexPositionWithOrigin.zw;
+
+        vec2 offsetPos = vertexPos - originPos;
+        vec2 newOriginPos = (originPos + uTranslateFactor) * uScalingFactor;
+
+        gl_Position = vec4(newOriginPos + offsetPos, 0.0, 1.0);
       }
     `,
 });
@@ -243,12 +249,12 @@ function drawCuePoint({
   // 2. setup attributes
 
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  const aVertexPosition = gl.getAttribLocation(
+  const aVertexPositionWithOrigin = gl.getAttribLocation(
     shaderProgram,
-    "aVertexPosition"
+    "aVertexPositionWithOrigin"
   );
-  gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(aVertexPosition);
+  gl.vertexAttribPointer(aVertexPositionWithOrigin, 4, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(aVertexPositionWithOrigin);
 
   // 3. setup uniforms
 
@@ -266,7 +272,7 @@ function drawCuePoint({
   gl.uniform4fv(uGlobalColor, color || [0, 0, 1, 1.0]);
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, bufferLength / 2);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, bufferLength / 4);
 }
 
 function timeToX(time: number, duration: number) {
@@ -365,18 +371,29 @@ export function WebGLWaveformPlayer() {
         for (const cuePoint of cuePoints) {
           const xPos = timeToX(cuePoint.position, audioDuration);
 
-          const strokeWidth = 4 / canvasElement.current.width;
+          const dpr = window.devicePixelRatio || 1;
+          const strokeWidth = (6 * dpr) / canvasElement.current.width;
 
           const cuePointBuffer = createArrayBuffer(gl.current, [
             xPos - strokeWidth / 2,
             -1,
+            xPos, // origin.x
+            -1, // origin.y
+
             xPos - strokeWidth / 2,
             1,
+            xPos, // origin.x
+            1, // origin.y
 
             xPos + strokeWidth / 2,
             -1,
+            xPos, // origin.x
+            -1, // origin.y
+
             xPos + strokeWidth / 2,
             1,
+            xPos, // origin.x
+            1, // origin.y
           ]);
 
           cuePointVertexBuffers.current.push({
@@ -522,7 +539,7 @@ export function WebGLWaveformPlayer() {
           gl: gl.current,
           shaderProgram: fixedWidthShaderProgram.current,
           vertexBuffer: cuePointBuffer.buffer,
-          bufferLength: 8,
+          bufferLength: 16,
           color: cuePointBuffer.color,
           time: time.current,
           duration: duration.current,
