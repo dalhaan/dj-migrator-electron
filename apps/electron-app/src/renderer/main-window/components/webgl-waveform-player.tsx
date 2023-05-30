@@ -134,7 +134,7 @@ export function WebGLWaveformPlayer() {
           return (
             <Button
               key={`cuepoint:${selectedTrackId}:${index}`}
-              onClick={() => {
+              onPointerDown={() => {
                 if (audioElement.current) {
                   audioElement.current.currentTime = cuePoint.position / 1000;
                 }
