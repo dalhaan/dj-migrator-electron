@@ -382,6 +382,7 @@ export class WebGLWaveform {
   }
 
   play() {
+    this.isAnimationPlaying = true;
     this.animationHandle = requestAnimationFrame((t) => {
       if (!this.animationPrevTime) {
         this.animationPrevTime = t;
@@ -401,6 +402,7 @@ export class WebGLWaveform {
   }
 
   pause() {
+    this.isAnimationPlaying = false;
     if (this.animationHandle !== null) {
       cancelAnimationFrame(this.animationHandle);
       this.animationPrevTime = undefined;
