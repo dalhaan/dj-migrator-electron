@@ -359,7 +359,7 @@ export function WebGLWaveformPlayer() {
 
       const data = await window.electronAPI.getWaveformData(track.absolutePath);
 
-      if (!data?.waveformData) return;
+      if (!data?.waveformData) throw new Error("Failed to get waveform data");
 
       // Get cue points
       const cuePoints = track.track.cuePoints;
