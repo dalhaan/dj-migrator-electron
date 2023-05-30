@@ -118,7 +118,7 @@ function createArrayBuffer(gl: WebGL2RenderingContext, data: number[]) {
 function drawWaveform({
   gl,
   shaderProgram,
-  vertexBuffer,
+  vao,
   bufferLength,
   zoom,
   time,
@@ -126,7 +126,7 @@ function drawWaveform({
 }: {
   gl: WebGL2RenderingContext;
   shaderProgram: WebGLProgram;
-  vertexBuffer: WebGLBuffer;
+  vao: WebGLVertexArrayObject;
   bufferLength: number;
   zoom: number;
   time: number;
@@ -137,16 +137,17 @@ function drawWaveform({
   // 1. call `gl.useProgram` for the program needed to draw.
 
   gl.useProgram(shaderProgram);
+  gl.bindVertexArray(vao);
 
   // 2. setup attributes
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  const aVertexPosition = gl.getAttribLocation(
-    shaderProgram,
-    "aVertexPosition"
-  );
-  gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(aVertexPosition);
+  // gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  // const aVertexPosition = gl.getAttribLocation(
+  //   shaderProgram,
+  //   "aVertexPosition"
+  // );
+  // gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+  // gl.enableVertexAttribArray(aVertexPosition);
 
   // 3. setup uniforms
 
@@ -165,17 +166,19 @@ function drawWaveform({
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
   gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
+
+  gl.bindVertexArray(null);
 }
 
 function drawPlayhead({
   gl,
   shaderProgram,
-  vertexBuffer,
+  vao,
   bufferLength,
 }: {
   gl: WebGL2RenderingContext;
   shaderProgram: WebGLProgram;
-  vertexBuffer: WebGLBuffer;
+  vao: WebGLVertexArrayObject;
   bufferLength: number;
 }) {
   const currentScale: [number, number] = [1, 1];
@@ -188,16 +191,17 @@ function drawPlayhead({
   // 1. call `gl.useProgram` for the program needed to draw.
 
   gl.useProgram(shaderProgram);
+  gl.bindVertexArray(vao);
 
   // 2. setup attributes
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  const aVertexPosition = gl.getAttribLocation(
-    shaderProgram,
-    "aVertexPosition"
-  );
-  gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(aVertexPosition);
+  // gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  // const aVertexPosition = gl.getAttribLocation(
+  //   shaderProgram,
+  //   "aVertexPosition"
+  // );
+  // gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+  // gl.enableVertexAttribArray(aVertexPosition);
 
   // 3. setup uniforms
 
@@ -214,12 +218,14 @@ function drawPlayhead({
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
   gl.drawArrays(gl.LINE_STRIP, 0, bufferLength / 2);
+
+  gl.bindVertexArray(null);
 }
 
 function drawCuePoint({
   gl,
   shaderProgram,
-  vertexBuffer,
+  vao,
   bufferLength,
   color,
   time,
@@ -228,7 +234,7 @@ function drawCuePoint({
 }: {
   gl: WebGL2RenderingContext;
   shaderProgram: WebGLProgram;
-  vertexBuffer: WebGLBuffer;
+  vao: WebGLVertexArrayObject;
   bufferLength: number;
   color: [number, number, number, number] | undefined;
   time: number;
@@ -245,16 +251,17 @@ function drawCuePoint({
   // 1. call `gl.useProgram` for the program needed to draw.
 
   gl.useProgram(shaderProgram);
+  gl.bindVertexArray(vao);
 
   // 2. setup attributes
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  const aVertexPositionWithOrigin = gl.getAttribLocation(
-    shaderProgram,
-    "aVertexPositionWithOrigin"
-  );
-  gl.vertexAttribPointer(aVertexPositionWithOrigin, 4, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(aVertexPositionWithOrigin);
+  // gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  // const aVertexPositionWithOrigin = gl.getAttribLocation(
+  //   shaderProgram,
+  //   "aVertexPositionWithOrigin"
+  // );
+  // gl.vertexAttribPointer(aVertexPositionWithOrigin, 4, gl.FLOAT, false, 0, 0);
+  // gl.enableVertexAttribArray(aVertexPositionWithOrigin);
 
   // 3. setup uniforms
 
@@ -273,6 +280,8 @@ function drawCuePoint({
 
   // 4. call `gl.drawArrays` or `gl.drawElements`
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, bufferLength / 4);
+
+  gl.bindVertexArray(null);
 }
 
 function timeToX(time: number, duration: number) {
@@ -314,14 +323,14 @@ export function WebGLWaveformPlayer() {
   const gl = useRef<WebGL2RenderingContext | null>(null);
   const standardShaderProgram = useRef<WebGLProgram | null>(null);
   const fixedWidthShaderProgram = useRef<WebGLProgram | null>(null);
-  const waveformVertexBuffer = useRef<WebGLBuffer | null>(null);
   const waveformVertexBufferLength = useRef<number | null>(null);
-  const playheadVertexBuffer = useRef<WebGLBuffer | null>(null);
-  const cuePointVertexBuffers = useRef<
-    {
-      buffer: WebGLBuffer | null;
+  const waveformVao = useRef<WebGLVertexArrayObject | null>(null);
+  const playheadVao = useRef<WebGLVertexArrayObject | null>(null);
+  const cuePointVaos = useRef<
+    ({
+      vao: WebGLVertexArrayObject | null;
       color: [number, number, number, number] | undefined;
-    }[]
+    } | null)[]
   >([]);
   const zoom = useRef<number>(20);
   const time = useRef<number>(0);
@@ -339,7 +348,14 @@ export function WebGLWaveformPlayer() {
 
   const loadTrack = useCallback(
     async (track: Tracks extends Map<string, infer Track> ? Track : never) => {
-      if (!track.absolutePath || !gl.current || !canvasElement.current) return;
+      if (
+        !track.absolutePath ||
+        !gl.current ||
+        !canvasElement.current ||
+        !standardShaderProgram.current ||
+        !fixedWidthShaderProgram.current
+      )
+        return;
 
       const data = await window.electronAPI.getWaveformData(track.absolutePath);
 
@@ -355,19 +371,62 @@ export function WebGLWaveformPlayer() {
 
       // Create buffers
 
-      waveformVertexBuffer.current = createArrayBuffer(
-        gl.current,
-        waveformData
+      // Init waveform buffer, vao & attributes
+      const waveformVertexBuffer = createArrayBuffer(gl.current, waveformData);
+      waveformVertexBufferLength.current = waveformData.length;
+
+      waveformVao.current = gl.current.createVertexArray();
+      if (!waveformVao.current)
+        throw new Error("Waveform VAO failed to create");
+      gl.current.bindVertexArray(waveformVao.current);
+
+      // Link `aVertexPosition` -> waveformVertexBuffer
+      gl.current.bindBuffer(gl.current.ARRAY_BUFFER, waveformVertexBuffer);
+      let aVertexPosition = gl.current.getAttribLocation(
+        standardShaderProgram.current,
+        "aVertexPosition"
       );
-      playheadVertexBuffer.current = createArrayBuffer(
-        gl.current,
-        [0, -1, 0, 1]
+      gl.current.enableVertexAttribArray(aVertexPosition);
+      gl.current.vertexAttribPointer(
+        aVertexPosition,
+        2,
+        gl.current.FLOAT,
+        false,
+        0,
+        0
       );
 
+      gl.current.bindVertexArray(null);
+
+      // Init playhead buffer, vao & attributes
+      const playheadVertexBuffer = createArrayBuffer(gl.current, [0, -1, 0, 1]);
+
+      playheadVao.current = gl.current.createVertexArray();
+      if (!playheadVao.current)
+        throw new Error("Playhead VAO failed to create");
+      gl.current.bindVertexArray(playheadVao.current);
+
+      // Link `aVertexPosition` -> playheadVertexBuffer
+      gl.current.bindBuffer(gl.current.ARRAY_BUFFER, playheadVertexBuffer);
+      aVertexPosition = gl.current.getAttribLocation(
+        standardShaderProgram.current,
+        "aVertexPosition"
+      );
+      gl.current.enableVertexAttribArray(aVertexPosition);
+      gl.current.vertexAttribPointer(
+        aVertexPosition,
+        2,
+        gl.current.FLOAT,
+        false,
+        0,
+        0
+      );
+
+      gl.current.bindVertexArray(null);
+
+      // Init cuepoint buffers, vaos & attributes
       // Cue point buffers
       if (audioDuration) {
-        cuePointVertexBuffers.current = [];
-
         for (const cuePoint of cuePoints) {
           const xPos = timeToX(cuePoint.position, audioDuration);
 
@@ -396,15 +455,39 @@ export function WebGLWaveformPlayer() {
             1, // origin.y
           ]);
 
-          cuePointVertexBuffers.current.push({
-            buffer: cuePointBuffer,
+          const cuepointVao = gl.current.createVertexArray();
+          if (!cuepointVao) throw new Error("Cuepoint VAO failed to create");
+          gl.current.bindVertexArray(cuepointVao);
+
+          // Link `aVertexPosition` -> cuePointBuffer
+          gl.current.bindBuffer(gl.current.ARRAY_BUFFER, cuePointBuffer);
+          const aVertexPositionWithOrigin = gl.current.getAttribLocation(
+            fixedWidthShaderProgram.current,
+            "aVertexPositionWithOrigin"
+          );
+          gl.current.enableVertexAttribArray(aVertexPositionWithOrigin);
+          gl.current.vertexAttribPointer(
+            aVertexPositionWithOrigin,
+            4,
+            gl.current.FLOAT,
+            false,
+            0,
+            0
+          );
+
+          gl.current.bindVertexArray(null);
+
+          cuePointVaos.current.push({
+            vao: cuepointVao,
             color: cuePoint.color ? hexColorToRgb(cuePoint.color) : undefined,
           });
         }
       }
 
-      waveformVertexBufferLength.current = waveformData.length;
       duration.current = audioDuration;
+
+      // Unlink vertex array object
+      gl.current.bindVertexArray(null);
 
       update();
 
@@ -511,10 +594,10 @@ export function WebGLWaveformPlayer() {
       !gl.current ||
       !standardShaderProgram.current ||
       !fixedWidthShaderProgram.current ||
-      !waveformVertexBuffer.current ||
+      !waveformVao.current ||
       !waveformVertexBufferLength.current ||
       !duration.current ||
-      !playheadVertexBuffer.current
+      !playheadVao.current
     )
       return;
 
@@ -526,21 +609,21 @@ export function WebGLWaveformPlayer() {
     drawWaveform({
       gl: gl.current,
       shaderProgram: standardShaderProgram.current,
-      vertexBuffer: waveformVertexBuffer.current,
+      vao: waveformVao.current,
       bufferLength: waveformVertexBufferLength.current,
       zoom: zoom.current * ZOOM_SCALE,
       time: time.current,
       duration: duration.current,
     });
 
-    for (const cuePointBuffer of cuePointVertexBuffers.current) {
-      if (cuePointBuffer.buffer) {
+    for (const cuePointVao of cuePointVaos.current) {
+      if (cuePointVao?.vao) {
         drawCuePoint({
           gl: gl.current,
           shaderProgram: fixedWidthShaderProgram.current,
-          vertexBuffer: cuePointBuffer.buffer,
+          vao: cuePointVao.vao,
           bufferLength: 16,
-          color: cuePointBuffer.color,
+          color: cuePointVao.color,
           time: time.current,
           duration: duration.current,
           zoom: zoom.current,
@@ -551,7 +634,7 @@ export function WebGLWaveformPlayer() {
     drawPlayhead({
       gl: gl.current,
       shaderProgram: standardShaderProgram.current,
-      vertexBuffer: playheadVertexBuffer.current,
+      vao: playheadVao.current,
       bufferLength: 4,
     });
   }
