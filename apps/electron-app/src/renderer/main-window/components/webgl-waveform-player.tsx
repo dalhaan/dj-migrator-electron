@@ -23,6 +23,20 @@ const standardVertexShader = (gl: WebGL2RenderingContext) => ({
     `,
 });
 
+const fixedWidthVertexShader = (gl: WebGL2RenderingContext) => ({
+  type: gl.VERTEX_SHADER,
+  code: `
+      attribute vec2 aVertexPosition;
+
+      uniform vec2 uTransformFactor;
+      uniform vec2 uScalingFactor;
+
+      void main() {
+        gl_Position = vec4((aVertexPosition + uTransformFactor) * uScalingFactor, 0.0, 1.0);
+      }
+    `,
+});
+
 const standardMaterialFragmentShader = (gl: WebGL2RenderingContext) => ({
   type: gl.FRAGMENT_SHADER,
   code: `
@@ -292,7 +306,8 @@ export function WebGLWaveformPlayer() {
   const audioTrack = useRef<MediaElementAudioSourceNode | null>(null);
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const gl = useRef<WebGL2RenderingContext | null>(null);
-  const shaderProgram = useRef<WebGLProgram | null>(null);
+  const standardShaderProgram = useRef<WebGLProgram | null>(null);
+  const fixedWidthShaderProgram = useRef<WebGLProgram | null>(null);
   const waveformVertexBuffer = useRef<WebGLBuffer | null>(null);
   const waveformVertexBufferLength = useRef<number | null>(null);
   const playheadVertexBuffer = useRef<WebGLBuffer | null>(null);
@@ -406,8 +421,12 @@ export function WebGLWaveformPlayer() {
 
       // Create shaders
       if (gl.current) {
-        shaderProgram.current = buildShaderProgram(gl.current, [
+        standardShaderProgram.current = buildShaderProgram(gl.current, [
           standardVertexShader(gl.current),
+          standardMaterialFragmentShader(gl.current),
+        ]);
+        fixedWidthShaderProgram.current = buildShaderProgram(gl.current, [
+          fixedWidthVertexShader(gl.current),
           standardMaterialFragmentShader(gl.current),
         ]);
       }
@@ -421,20 +440,12 @@ export function WebGLWaveformPlayer() {
   }
 
   function zoomOut() {
-    if (
-      canvasElement.current &&
-      gl.current &&
-      shaderProgram.current &&
-      waveformVertexBuffer.current &&
-      waveformVertexBufferLength.current
-    ) {
-      zoom.current--;
-      if (zoom.current < 1) {
-        zoom.current = 1;
-      }
-
-      update();
+    zoom.current--;
+    if (zoom.current < 1) {
+      zoom.current = 1;
     }
+
+    update();
   }
 
   function handlePlayPauseToggle() {
@@ -481,7 +492,8 @@ export function WebGLWaveformPlayer() {
     if (
       !canvasElement.current ||
       !gl.current ||
-      !shaderProgram.current ||
+      !standardShaderProgram.current ||
+      !fixedWidthShaderProgram.current ||
       !waveformVertexBuffer.current ||
       !waveformVertexBufferLength.current ||
       !duration.current ||
@@ -496,7 +508,7 @@ export function WebGLWaveformPlayer() {
 
     drawWaveform({
       gl: gl.current,
-      shaderProgram: shaderProgram.current,
+      shaderProgram: standardShaderProgram.current,
       vertexBuffer: waveformVertexBuffer.current,
       bufferLength: waveformVertexBufferLength.current,
       zoom: zoom.current * ZOOM_SCALE,
@@ -508,7 +520,7 @@ export function WebGLWaveformPlayer() {
       if (cuePointBuffer.buffer) {
         drawCuePoint({
           gl: gl.current,
-          shaderProgram: shaderProgram.current,
+          shaderProgram: fixedWidthShaderProgram.current,
           vertexBuffer: cuePointBuffer.buffer,
           bufferLength: 8,
           color: cuePointBuffer.color,
@@ -521,7 +533,7 @@ export function WebGLWaveformPlayer() {
 
     drawPlayhead({
       gl: gl.current,
-      shaderProgram: shaderProgram.current,
+      shaderProgram: standardShaderProgram.current,
       vertexBuffer: playheadVertexBuffer.current,
       bufferLength: 4,
     });
