@@ -15,6 +15,7 @@ export class WebGLWaveform {
   programs: Programs;
   audioDuration: number | null = null;
   time = 0;
+  latency = 0;
   zoom = 20;
   // Waveform
   waveformVertexBufferLength: number | null = null;
@@ -53,6 +54,12 @@ export class WebGLWaveform {
     this.audioDuration = duration;
   }
 
+  setLatency(latency: number) {
+    this.latency = latency;
+
+    console.log("Audio output latency: " + latency);
+  }
+
   setZoom(zoom: number) {
     this.zoom = zoom;
 
@@ -61,6 +68,10 @@ export class WebGLWaveform {
 
   setTime(time: number) {
     this.time = time;
+  }
+
+  getTime() {
+    return this.time + this.latency;
   }
 
   private loadPlayhead() {
@@ -239,7 +250,10 @@ export class WebGLWaveform {
       "uTranslateFactor"
     );
 
-    const translateX = WebGLWaveform.timeToX(this.time, this.audioDuration);
+    const translateX = WebGLWaveform.timeToX(
+      this.getTime(),
+      this.audioDuration
+    );
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
     this.gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
@@ -330,7 +344,10 @@ export class WebGLWaveform {
       "uTranslateFactor"
     );
 
-    const translateX = WebGLWaveform.timeToX(this.time, this.audioDuration);
+    const translateX = WebGLWaveform.timeToX(
+      this.getTime(),
+      this.audioDuration
+    );
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
     this.gl.uniform2fv(uTranslateFactor, [-translateX, 0]);

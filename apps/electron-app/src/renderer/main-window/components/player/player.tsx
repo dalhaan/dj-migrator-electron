@@ -94,6 +94,14 @@ export function Player() {
 
     if (!isPlaying) {
       audioTrack.current?.mediaElement.play();
+
+      if (audioContext.current) {
+        const latency =
+          audioContext.current.baseLatency + audioContext.current.outputLatency;
+
+        waveform.current.setLatency(latency * 1000);
+      }
+
       waveform.current.play();
     } else {
       audioTrack.current?.mediaElement.pause();
@@ -141,6 +149,14 @@ export function Player() {
                   audioElement.current.currentTime = cuePoint.position / 1000;
                 }
                 if (waveform.current) {
+                  if (audioContext.current) {
+                    const latency =
+                      audioContext.current.baseLatency +
+                      audioContext.current.outputLatency;
+
+                    waveform.current.setLatency(latency * 1000);
+                  }
+
                   waveform.current.setTime(cuePoint.position);
                   waveform.current.draw();
                 }
