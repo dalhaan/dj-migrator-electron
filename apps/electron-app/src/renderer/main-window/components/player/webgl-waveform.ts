@@ -90,6 +90,9 @@ export class WebGLWaveform {
     if (!this.gl)
       throw new Error("Could not load waveform. No GL2 rendering context");
 
+    // Clean up old waveform VAO
+    this.gl.deleteVertexArray(this.waveformVao);
+
     const vertexBuffer = this.createArrayBuffer(data);
     this.waveformVertexBufferLength = data.length;
 
