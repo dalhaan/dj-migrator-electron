@@ -188,7 +188,8 @@ export function Player() {
                   }
 
                   waveform.current.setTime(cuePoint.position);
-                  waveform.current.draw(waveform.current.isAnimationPlaying);
+                  // waveform.current.draw(waveform.current.isAnimationPlaying);
+                  waveform.current.draw(false);
                 }
               }}
               style={
