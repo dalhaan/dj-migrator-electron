@@ -1,6 +1,6 @@
 # DJ Migrator
 
-Roadmap:
+**Roadmap:**
 
 - [x] import Serato crates
 - [x] decode Serato cue points
@@ -19,6 +19,8 @@ Roadmap:
 - [ ] latency compensation
 - [ ] frequency colour-coded waveform
 - [ ] playlist organisation
+
+## Motivation
 
 I made a simple Serato to RekordBox playlist & cue point converter a few years ago before starting this project but quickly abandoned it once I converted all of my tracks and playlists over as I didn't need it anymore. I thought about adding more functionality other than just a simple converter but decided not to as RekordBox removed the ability to import and export collection XML files when they released RekordBox 6. I found out that they added the feature back in a later minor release so I'm making a start on the project again after three years. The goal is to make a fully fledge playlist and track manager where you can create playlists, add cues, edit metadata and export it to any DJ software.
 
