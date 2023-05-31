@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FaPlay, FaPause } from "react-icons/fa";
 import { Stack, Button, ButtonToolbar, IconButton } from "rsuite";
 
-import { WebGLWaveform } from "@/components/webgl-waveform";
+import { WebGLWaveform } from "@/main-window/components/player/webgl-waveform";
 import { useLibrary, useMainStore } from "@/stores/libraryStore";
 
-export function WebGLWaveformPlayer() {
+export function Player() {
   const audioElement = useRef<HTMLAudioElement>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const audioTrack = useRef<MediaElementAudioSourceNode | null>(null);

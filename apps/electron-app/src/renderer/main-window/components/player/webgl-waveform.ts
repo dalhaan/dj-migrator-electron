@@ -1,47 +1,13 @@
 import { CuePoint } from "@dj-migrator/common";
 
+import defaultFragmentShader from "./default-fragment-shader.glsl";
+import defaultVertexShader from "./default-vertex-shader.glsl";
+import fixedWidthVertexShader from "./fixed-width-vertex-shader.glsl";
+
 type Programs = {
   DEFAULT_PROGRAM: WebGLProgram;
   FIXED_WIDTH_PROGRAM: WebGLProgram;
 };
-
-const defaultVertexShader = `
-      attribute vec2 aVertexPosition;
-
-      uniform vec2 uTranslateFactor;
-      uniform vec2 uScalingFactor;
-
-      void main() {
-        gl_Position = vec4((aVertexPosition + uTranslateFactor) * uScalingFactor, 0.0, 1.0);
-      }
-    `;
-
-const fixedWidthVertexShader = `
-      attribute vec2 aVertexPosition;
-      attribute vec2 aOriginPosition;
-
-      uniform vec2 uTranslateFactor;
-      uniform vec2 uScalingFactor;
-
-      void main() {
-        vec2 offsetPos = aVertexPosition - aOriginPosition;
-        vec2 newOriginPos = (aOriginPosition + uTranslateFactor) * uScalingFactor;
-
-        gl_Position = vec4(newOriginPos + offsetPos, 0.0, 1.0);
-      }
-    `;
-
-const defaultFragmentShader = `
-    #ifdef GL_ES
-      precision highp float;
-    #endif
-
-    uniform vec4 uGlobalColor;
-
-    void main() {
-      gl_FragColor = uGlobalColor;
-    }
-  `;
 
 export class WebGLWaveform {
   gl: WebGL2RenderingContext;
