@@ -1,5 +1,23 @@
 # DJ Migrator
 
+Roadmap:
+
+- [x] import Serato crates
+- [x] decode Serato cue points
+- [x] export to RekordBox collection XML
+- [x] track table column sorting
+- [x] display camelot key colours
+- [x] decode audio file PCM values for waveform with FFmpeg
+- [x] ~~create 2D canvas waveform display~~ (too slow)
+- [x] create WebGL waveform display
+- [x] show playhead
+- [x] show cue points
+- [ ] show beat grid
+- [ ] beat jump
+- [ ] edit/create cue points
+- [ ] latency compensation
+- [ ] frequency colour-coded waveform
+
 I made a simple Serato to RekordBox playlist & cue point converter a few years ago before starting this project but quickly abandoned it once I converted all of my tracks and playlists over as I didn't need it anymore. I thought about adding more functionality other than just a simple converter but decided not to as RekordBox removed the ability to import and export collection XML files when they released RekordBox 6. I found out that they added the feature back in a later minor release so I'm making a start on the project again after three years. The goal is to make a fully fledge playlist and track manager where you can create playlists, add cues, edit metadata and export it to any DJ software.
 
 This app is built on the Electron platform, uses the FFMpeg WASM binary to extract the PCM values from an audio file, and WebGL to create the waveform from those values.
