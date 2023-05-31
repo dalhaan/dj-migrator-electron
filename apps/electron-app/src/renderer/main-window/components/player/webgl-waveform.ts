@@ -117,6 +117,14 @@ export class WebGLWaveform {
     if (!this.audioDuration)
       throw new Error("Could not load cue points. No audio duration.");
 
+    // Clean up old cue point vaos
+    for (const cuePoint of this.cuePointVaos) {
+      if (cuePoint?.vao) {
+        this.gl.deleteVertexArray(cuePoint.vao);
+      }
+    }
+    this.cuePointVaos = [];
+
     for (const cuePoint of cuePoints) {
       const xPos = WebGLWaveform.timeToX(cuePoint.position, this.audioDuration);
 
