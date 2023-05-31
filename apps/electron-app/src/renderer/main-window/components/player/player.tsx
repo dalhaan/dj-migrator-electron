@@ -142,8 +142,9 @@ export function Player() {
         <Button onClick={zoomIn}>+</Button>
         {cuePoints.map((cuePoint, index) => {
           return (
-            <Button
+            <IconButton
               key={`cuepoint:${selectedTrackId}:${index}`}
+              icon={<Icon as={FaPlay} />}
               onPointerDown={() => {
                 if (audioElement.current) {
                   audioElement.current.currentTime = cuePoint.position / 1000;
@@ -166,9 +167,7 @@ export function Player() {
                   ? { backgroundColor: `#${cuePoint.color}` }
                   : undefined
               }
-            >
-              Cue {index + 1}
-            </Button>
+            />
           );
         })}
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
