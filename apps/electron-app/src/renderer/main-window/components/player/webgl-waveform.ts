@@ -63,7 +63,7 @@ export class WebGLWaveform {
   setZoom(zoom: number) {
     this.zoom = zoom;
 
-    this.draw(true);
+    this.draw(false);
   }
 
   setTime(time: number) {
@@ -365,16 +365,14 @@ export class WebGLWaveform {
 
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-    // this.drawWaveform(accountForLatency);
-    this.drawWaveform(false);
+    this.drawWaveform(accountForLatency);
 
     for (const cuePointVao of this.cuePointVaos) {
       if (cuePointVao?.vao) {
         this.drawCuePoint(
           cuePointVao.vao,
           cuePointVao.color,
-          false
-          // accountForLatency
+          accountForLatency
         );
       }
     }
@@ -393,7 +391,7 @@ export class WebGLWaveform {
 
       this.time += elapsed;
 
-      this.draw(true);
+      this.draw(false);
 
       if (this.isAnimationPlaying) {
         this.animationPrevTime = t;
