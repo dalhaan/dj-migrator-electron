@@ -16,4 +16,5 @@ export const colors = {
   black: "#000000",
   almostBlack: "#1a1d24",
   almostWhite: "#EEEEEE",
+  selected: "#444444",
 };

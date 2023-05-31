@@ -4,6 +4,11 @@ import { defineConfig } from "vite";
 
 // https://vitejs.dev/config
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      external: ["@ffmpeg/ffmpeg"],
+    },
+  },
   resolve: {
     alias: {
       "@": resolve(__dirname, "src/main"),

@@ -41,10 +41,13 @@
     "react-router-dom": "^6.11.0",
     "react-use": "^17.4.0",
     "rsuite": "^5.33.0",
+    "vite-plugin-glsl": "^1.1.2",
     "zod": "^3.21.4",
     "zustand": "^4.3.7"
   },
   "dependencies": {
+    "@ffmpeg/core": "^0.11.0",
+    "@ffmpeg/ffmpeg": "^0.11.6",
     "electron-squirrel-startup": "^1.0.0"
   }
 }

@@ -5,15 +5,15 @@ import { Nav, Panel, Sidenav } from "rsuite";
 
 import * as styles from "./playlist-panel.css";
 
-import { useLibrary } from "@/stores/libraryStore";
+import { useLibrary, useMainStore } from "@/stores/libraryStore";
 
 export function PlaylistPanel() {
-  const selectedPlaylist = useLibrary((state) => state.selectedPlaylist);
+  const selectedPlaylist = useMainStore((state) => state.selectedPlaylist);
 
   const playlists = useLibrary((state) => state.playlists);
 
   function handleCrateClick(playlist: Playlist) {
-    useLibrary.getState().setSelectedPlaylist(playlist);
+    useMainStore.getState().setSelectedPlaylist(playlist);
   }
 
   return (
