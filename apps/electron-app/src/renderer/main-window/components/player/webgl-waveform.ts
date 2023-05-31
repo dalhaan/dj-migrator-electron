@@ -63,7 +63,7 @@ export class WebGLWaveform {
   setZoom(zoom: number) {
     this.zoom = zoom;
 
-    this.draw(this.isAnimationPlaying);
+    this.draw(true);
   }
 
   setTime(time: number) {
@@ -71,7 +71,7 @@ export class WebGLWaveform {
   }
 
   getTime(accountForLatency: boolean) {
-    return accountForLatency ? this.time + this.latency : this.time;
+    return accountForLatency ? this.time - this.latency : this.time;
   }
 
   private loadPlayhead() {
@@ -365,14 +365,16 @@ export class WebGLWaveform {
 
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-    this.drawWaveform(accountForLatency);
+    // this.drawWaveform(accountForLatency);
+    this.drawWaveform(false);
 
     for (const cuePointVao of this.cuePointVaos) {
       if (cuePointVao?.vao) {
         this.drawCuePoint(
           cuePointVao.vao,
           cuePointVao.color,
-          accountForLatency
+          false
+          // accountForLatency
         );
       }
     }
@@ -380,7 +382,7 @@ export class WebGLWaveform {
     this.drawPlayhead();
   }
 
-  play() {
+  playLoop() {
     this.isAnimationPlaying = true;
     this.animationHandle = requestAnimationFrame((t) => {
       if (!this.animationPrevTime) {
@@ -396,9 +398,13 @@ export class WebGLWaveform {
 
       if (this.isAnimationPlaying) {
         this.animationPrevTime = t;
-        this.play();
+        this.playLoop();
       }
     });
+  }
+
+  play() {
+    this.playLoop();
   }
 
   pause() {
@@ -406,6 +412,11 @@ export class WebGLWaveform {
     if (this.animationHandle !== null) {
       cancelAnimationFrame(this.animationHandle);
       this.animationPrevTime = undefined;
+
+      // Reset latency so the playhead is on the current spot
+      // requestAnimationFrame(() => {
+      //   this.draw(false);
+      // });
     }
   }
 

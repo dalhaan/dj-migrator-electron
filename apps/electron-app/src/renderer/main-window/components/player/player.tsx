@@ -93,8 +93,6 @@ export function Player() {
     if (!waveform.current) return;
 
     if (!isPlaying) {
-      audioTrack.current?.mediaElement.play();
-
       if (audioContext.current) {
         const latency =
           audioContext.current.baseLatency + audioContext.current.outputLatency;
@@ -102,10 +100,9 @@ export function Player() {
         waveform.current.setLatency(latency * 1000);
       }
 
-      waveform.current.play();
+      audioTrack.current?.mediaElement.play();
     } else {
       audioTrack.current?.mediaElement.pause();
-      waveform.current.pause();
     }
 
     setIsPlaying((isPlaying) => !isPlaying);
@@ -113,17 +110,49 @@ export function Player() {
 
   // Audio element listeners
   useEffect(() => {
-    if (audioElement.current && !audioContext.current) {
-      audioContext.current = new AudioContext();
-      audioTrack.current = audioContext.current.createMediaElementSource(
-        audioElement.current
-      );
-      audioTrack.current.connect(audioContext.current.destination);
-      console.log(
-        audioContext.current.baseLatency,
-        audioContext.current.outputLatency
-      );
+    const audioElementRef = audioElement.current;
+
+    function onTimeUpdate() {
+      console.log("========= onTimeudpate =========");
+      if (audioElementRef && waveform.current) {
+        console.log("audio time: ", audioElementRef.currentTime);
+        console.log("waveform time: ", waveform.current.getTime(false) / 1000);
+        console.log(
+          "difference: ",
+          audioElementRef.currentTime - waveform.current.getTime(false) / 1000
+        );
+        // waveform.current.setTime(audioElementRef.currentTime * 1000);
+      }
     }
+
+    function onPlay() {
+      if (audioElementRef && waveform.current) {
+        waveform.current.play();
+        waveform.current.setTime(audioElementRef.currentTime * 1000);
+      }
+    }
+    function onPause() {
+      if (audioElementRef && waveform.current) {
+        waveform.current.pause();
+        waveform.current.setTime(audioElementRef.currentTime * 1000);
+      }
+    }
+
+    if (audioElementRef && !audioContext.current) {
+      audioContext.current = new AudioContext();
+      audioTrack.current =
+        audioContext.current.createMediaElementSource(audioElementRef);
+      audioTrack.current.connect(audioContext.current.destination);
+    }
+    audioElementRef?.addEventListener("timeupdate", onTimeUpdate);
+    audioElementRef?.addEventListener("play", onPlay);
+    audioElementRef?.addEventListener("pause", onPause);
+
+    return () => {
+      audioElementRef?.removeEventListener("timeupdate", onTimeUpdate);
+      audioElementRef?.removeEventListener("play", onPlay);
+      audioElementRef?.removeEventListener("pause", onPause);
+    };
   }, []);
 
   return (
@@ -136,7 +165,7 @@ export function Player() {
         <IconButton
           icon={<Icon as={isPlaying ? FaPause : FaPlay} />}
           appearance="ghost"
-          onClick={handlePlayPauseToggle}
+          onPointerDown={handlePlayPauseToggle}
         />
         <Button onClick={zoomOut}>-</Button>
         <Button onClick={zoomIn}>+</Button>
