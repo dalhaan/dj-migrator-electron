@@ -6,12 +6,6 @@ import { LIBRARY_STORE_NAME } from "~/common/store-names";
 export const useLibrary = create<{
   tracks: Tracks;
   playlists: Playlist[];
-  selectedTrack: Track | null;
-  selectedPlaylist: Playlist | null;
-  setTracks: (tracks: Tracks) => void;
-  setPlaylists: (playlists: Playlist[]) => void;
-  setSelectedTrack: (track: Track | null) => void;
-  setSelectedPlaylist: (playlist: Playlist | null) => void;
 }>((set) => {
   window.electronAPI.onStoreChange(LIBRARY_STORE_NAME, set);
   window.electronAPI.getStore(LIBRARY_STORE_NAME);
@@ -27,8 +21,20 @@ export const useLibrary = create<{
     setPlaylists: (playlists: Playlist[]) => {
       window.electronAPI.updateStore(LIBRARY_STORE_NAME, { playlists });
     },
-    setSelectedTrack: (track: Track | null) => {
-      set({ selectedTrack: track });
+  };
+});
+
+export const useMainStore = create<{
+  selectedTrackId: string | null;
+  selectedPlaylist: Playlist | null;
+  setSelectedTrackId: (trackId: string | null) => void;
+  setSelectedPlaylist: (playlist: Playlist | null) => void;
+}>((set) => {
+  return {
+    selectedTrackId: null,
+    selectedPlaylist: null,
+    setSelectedTrackId: (trackId: string | null) => {
+      set({ selectedTrackId: trackId });
     },
     setSelectedPlaylist: (playlist: Playlist | null) =>
       set({ selectedPlaylist: playlist }),

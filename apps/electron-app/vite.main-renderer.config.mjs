@@ -3,10 +3,11 @@ import path, { resolve } from "path";
 import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import glsl from "vite-plugin-glsl";
 
 // https://vitejs.dev/config
 export default defineConfig({
-  plugins: [react(), vanillaExtractPlugin()],
+  plugins: [react(), vanillaExtractPlugin(), glsl()],
   build: {
     rollupOptions: {
       input: path.join(__dirname, "./main-window.html"),

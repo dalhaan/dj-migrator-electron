@@ -10,10 +10,13 @@ const camelotKeyMatcher = /^(\d{1,2})([AB])$/;
  * @param keyB - Camelot key
  */
 export function sortCamelotKeys(
-  keyA: string,
-  keyB: string,
+  keyA: string | undefined,
+  keyB: string | undefined,
   sortType: SortType
 ): number {
+  if (!keyA) return 1;
+  if (!keyB) return -1;
+
   const matchesA = keyA.match(camelotKeyMatcher);
   const matchesB = keyB.match(camelotKeyMatcher);
 
@@ -22,7 +25,8 @@ export function sortCamelotKeys(
   const camelotNumberB = matchesB?.[1];
   const camelotLetterB = matchesB?.[2];
 
-  if (!camelotNumberA || !camelotNumberB) return 0;
+  if (!camelotNumberA) return -1;
+  if (!camelotNumberB) return 1;
 
   if (sortType === "asc") {
     const numberCompareValue = Number(camelotNumberA) - Number(camelotNumberB);
@@ -47,14 +51,18 @@ export function sortCamelotKeys(
  * Sorts string or number array.
  */
 export function defaultSort(
-  a: string | number,
-  b: string | number,
+  a: string | number | undefined,
+  b: string | number | undefined,
   sortType: SortType
 ): number {
   if (typeof a === "number" && typeof b === "number") {
     return sortType === "asc" ? a - b : b - a;
   } else if (typeof a === "string" && typeof b === "string") {
     return sortType === "asc" ? a.localeCompare(b) : b.localeCompare(a);
+  } else if (a === undefined) {
+    return 1;
+  } else if (b === undefined) {
+    return -1;
   }
 
   return 0;

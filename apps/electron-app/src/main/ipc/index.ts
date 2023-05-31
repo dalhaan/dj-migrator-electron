@@ -3,10 +3,12 @@ import { ipcMain } from "electron";
 import { exportPlaylistsToRekordBoxXml } from "./dj-migrator/rekordbox";
 import { findCrates, parseCrates } from "./dj-migrator/serato";
 import {
+  openFileDialog,
   openDirectoryDialog,
   openSaveFileDialog,
   showMessageBox,
 } from "./file-system";
+import { getWaveformData } from "./waveform";
 
 export const IPC = {
   // Serato
@@ -16,8 +18,12 @@ export const IPC = {
   // RekordBox,
   exportPlaylistsToRekordBoxXml,
 
+  // Waveform
+  getWaveformData,
+
   // File system
   showMessageBox,
+  openFileDialog,
   openDirectoryDialog,
   openSaveFileDialog,
 };

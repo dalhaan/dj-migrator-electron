@@ -1,4 +1,6 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import url from "url";
+
+import { app, BrowserWindow, ipcMain, protocol } from "electron";
 
 import { createExportWindow } from "./createExportWindow";
 import { createImportWindow } from "./createImportWindow";
@@ -14,6 +16,14 @@ if (require("electron-squirrel-startup")) {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on("ready", async () => {
+  // Enables the "local://" file protocol to allow access to the local file system
+  protocol.registerFileProtocol("local", (request, callback) => {
+    const filePath = url.fileURLToPath(
+      "file://" + request.url.slice("local://".length)
+    );
+    callback(filePath);
+  });
+
   initIpcHandlers();
 
   const mainWindow = await createMainWindow();

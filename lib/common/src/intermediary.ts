@@ -14,7 +14,7 @@ export interface IMetadata {
   fileExtension: string;
 }
 
-export default class CuePoint {
+export class CuePoint {
   index: number;
   position: number;
   color: string | undefined;
