@@ -388,7 +388,6 @@ export class WebGLWaveform {
       if (!this.animationPrevTime) {
         this.animationPrevTime = t;
       }
-      // TODO: don't account for latency on pause
 
       const elapsed = t - this.animationPrevTime;
 
