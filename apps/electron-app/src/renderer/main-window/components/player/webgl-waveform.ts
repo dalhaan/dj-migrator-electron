@@ -63,15 +63,15 @@ export class WebGLWaveform {
   setZoom(zoom: number) {
     this.zoom = zoom;
 
-    this.draw();
+    this.draw(this.isAnimationPlaying);
   }
 
   setTime(time: number) {
     this.time = time;
   }
 
-  getTime() {
-    return this.time + this.latency;
+  getTime(accountForLatency: boolean) {
+    return accountForLatency ? this.time + this.latency : this.time;
   }
 
   private loadPlayhead() {
@@ -216,7 +216,7 @@ export class WebGLWaveform {
     }
   }
 
-  drawWaveform() {
+  drawWaveform(accountForLatency: boolean) {
     if (!this.gl)
       throw new Error("Could not draw waveform. No GL2 rendering context");
     if (!this.waveformVao)
@@ -251,7 +251,7 @@ export class WebGLWaveform {
     );
 
     const translateX = WebGLWaveform.timeToX(
-      this.getTime(),
+      this.getTime(accountForLatency),
       this.audioDuration
     );
 
@@ -314,7 +314,8 @@ export class WebGLWaveform {
 
   drawCuePoint(
     vao: WebGLVertexArrayObject,
-    color: [number, number, number, number] | undefined
+    color: [number, number, number, number] | undefined,
+    accountForLatency: boolean
   ) {
     if (!this.gl)
       throw new Error("Could not draw cue point. No GL2 rendering context");
@@ -345,7 +346,7 @@ export class WebGLWaveform {
     );
 
     const translateX = WebGLWaveform.timeToX(
-      this.getTime(),
+      this.getTime(accountForLatency),
       this.audioDuration
     );
 
@@ -359,16 +360,20 @@ export class WebGLWaveform {
     this.gl.bindVertexArray(null);
   }
 
-  draw() {
+  draw(accountForLatency: boolean) {
     if (!this.gl) throw new Error("Could not draw. No GL2 rendering context");
 
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-    this.drawWaveform();
+    this.drawWaveform(accountForLatency);
 
     for (const cuePointVao of this.cuePointVaos) {
       if (cuePointVao?.vao) {
-        this.drawCuePoint(cuePointVao.vao, cuePointVao.color);
+        this.drawCuePoint(
+          cuePointVao.vao,
+          cuePointVao.color,
+          accountForLatency
+        );
       }
     }
 
@@ -381,12 +386,13 @@ export class WebGLWaveform {
       if (!this.animationPrevTime) {
         this.animationPrevTime = t;
       }
+      // TODO: don't account for latency on pause
 
       const elapsed = t - this.animationPrevTime;
 
       this.time += elapsed;
 
-      this.draw();
+      this.draw(true);
 
       if (this.isAnimationPlaying) {
         this.animationPrevTime = t;

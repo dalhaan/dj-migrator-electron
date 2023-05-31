@@ -37,7 +37,7 @@ export function Player() {
       waveform.current.setAudioDuration(audioDuration);
       waveform.current.loadWaveform(waveformData);
       waveform.current.loadCuePoints(cuePoints);
-      waveform.current.draw();
+      waveform.current.draw(false);
 
       if (audioElement.current) {
         audioElement.current.src = "local://" + track.absolutePath;
@@ -159,7 +159,7 @@ export function Player() {
                   }
 
                   waveform.current.setTime(cuePoint.position);
-                  waveform.current.draw();
+                  waveform.current.draw(waveform.current.isAnimationPlaying);
                 }
               }}
               style={
