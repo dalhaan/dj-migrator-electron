@@ -32,6 +32,7 @@ export function Player() {
       if (!waveformData) throw new Error("Failed to get waveform data");
       if (!audioDuration) throw new Error("Failed to get audio duration");
 
+      waveform.current.pause();
       waveform.current.setTime(0);
       waveform.current.setAudioDuration(audioDuration);
       waveform.current.loadWaveform(waveformData);
@@ -42,6 +43,7 @@ export function Player() {
         audioElement.current.src = "local://" + track.absolutePath;
       }
 
+      setIsPlaying(false);
       setCuePoints(cuePoints);
     },
     []
