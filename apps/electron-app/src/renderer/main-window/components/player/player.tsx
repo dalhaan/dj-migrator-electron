@@ -11,6 +11,7 @@ export function Player() {
   const audioElement = useRef<HTMLAudioElement>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const audioTrack = useRef<MediaElementAudioSourceNode | null>(null);
+  const bpm = useRef<number | null>(null);
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const waveform = useRef<WebGLWaveform | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -35,6 +36,7 @@ export function Player() {
       waveform.current.pause();
       waveform.current.setTime(0);
       waveform.current.setBpm(track.track.metadata.bpm ?? null);
+      bpm.current = track.track.metadata.bpm ?? null;
       waveform.current.setAudioDuration(audioDuration);
       waveform.current.loadWaveform(waveformData);
       waveform.current.loadBeatgrid();
@@ -128,6 +130,21 @@ export function Player() {
     }
   }
 
+  function beatJump(direction: "FORWARDS" | "BACKWARDS") {
+    if (!bpm.current || !audioElement.current) return;
+
+    console.log("beatJump", audioElement.current.currentTime);
+
+    const noBeats = 1;
+    const timePerBeatMs = (60 * 1000) / bpm.current;
+    const newTime =
+      direction === "FORWARDS"
+        ? audioElement.current.currentTime * 1000 + timePerBeatMs
+        : audioElement.current.currentTime * 1000 - timePerBeatMs;
+
+    jumpToTime(newTime);
+  }
+
   // Audio element listeners
   useEffect(() => {
     const audioElementRef = audioElement.current;
@@ -189,6 +206,8 @@ export function Player() {
         />
         <Button onClick={zoomOut}>-</Button>
         <Button onClick={zoomIn}>+</Button>
+        <Button onClick={() => beatJump("BACKWARDS")}>&lt;</Button>
+        <Button onClick={() => beatJump("FORWARDS")}>&gt;</Button>
         {cuePoints.map((cuePoint, index) => {
           return (
             <IconButton
