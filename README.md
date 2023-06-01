@@ -12,6 +12,8 @@
 - [x] create WebGL waveform display
 - [x] show playhead
 - [x] show cue points
+- [ ] handle MP3 VBR encodings (this could be solved be loading the entire track to a buffer. Need to investigate)
+- [ ] Render WebGL waveform in a Worker using an OffscreenCanvas
 - [ ] decode Serato beat grid
 - [ ] show beat grid
 - [ ] beat jump

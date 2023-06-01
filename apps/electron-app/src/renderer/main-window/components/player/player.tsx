@@ -2,7 +2,7 @@ import { Tracks, CuePoint } from "@dj-migrator/common";
 import { Icon } from "@rsuite/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FaPlay, FaPause } from "react-icons/fa";
-import { Stack, Button, ButtonToolbar, IconButton } from "rsuite";
+import { Stack, Button, ButtonToolbar, IconButton, SelectPicker } from "rsuite";
 
 import { WebGLWaveform } from "@/main-window/components/player/webgl-waveform";
 import { useLibrary, useMainStore } from "@/stores/libraryStore";
@@ -11,6 +11,9 @@ export function Player() {
   const audioElement = useRef<HTMLAudioElement>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const audioTrack = useRef<MediaElementAudioSourceNode | null>(null);
+  const audioDurationRef = useRef(0);
+  const bpm = useRef<number | null>(null);
+  const beatsToJump = useRef(1);
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const waveform = useRef<WebGLWaveform | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -34,8 +37,12 @@ export function Player() {
 
       waveform.current.pause();
       waveform.current.setTime(0);
+      waveform.current.setBpm(track.track.metadata.bpm ?? null);
+      bpm.current = track.track.metadata.bpm ?? null;
       waveform.current.setAudioDuration(audioDuration);
+      audioDurationRef.current = audioDuration;
       waveform.current.loadWaveform(waveformData);
+      waveform.current.loadBeatgrid();
       waveform.current.loadCuePoints(cuePoints);
       waveform.current.draw(false);
 
@@ -108,6 +115,45 @@ export function Player() {
     setIsPlaying((isPlaying) => !isPlaying);
   }
 
+  function jumpToTime(time: number) {
+    const clampedTime = Math.min(
+      Math.max(time, 0),
+      audioDurationRef.current * 1000
+    );
+
+    if (audioElement.current) {
+      audioElement.current.currentTime = clampedTime / 1000;
+    }
+    if (waveform.current) {
+      if (audioContext.current) {
+        const latency =
+          audioContext.current.baseLatency + audioContext.current.outputLatency;
+
+        waveform.current.setLatency(latency * 1000);
+      }
+
+      waveform.current.setTime(clampedTime);
+      // waveform.current.draw(waveform.current.isAnimationPlaying);
+      waveform.current.draw(false);
+    }
+  }
+
+  function beatJump(direction: "FORWARDS" | "BACKWARDS") {
+    if (!bpm.current || !audioElement.current) return;
+
+    console.log("beatJump", audioElement.current.currentTime);
+
+    const timePerBeatMs = (60 * 1000) / bpm.current;
+    const newTime =
+      direction === "FORWARDS"
+        ? audioElement.current.currentTime * 1000 +
+          timePerBeatMs * beatsToJump.current
+        : audioElement.current.currentTime * 1000 -
+          timePerBeatMs * beatsToJump.current;
+
+    jumpToTime(newTime);
+  }
+
   // Audio element listeners
   useEffect(() => {
     const audioElementRef = audioElement.current;
@@ -169,29 +215,23 @@ export function Player() {
         />
         <Button onClick={zoomOut}>-</Button>
         <Button onClick={zoomIn}>+</Button>
+        <Button onPointerDown={() => beatJump("BACKWARDS")}>&lt;</Button>
+        <SelectPicker
+          data={[1, 2, 4, 8, 16, 32].map((e) => ({ value: e, label: e }))}
+          defaultValue={1}
+          onChange={(beats) => {
+            beatsToJump.current = beats ?? 1;
+          }}
+          searchable={false}
+          cleanable={false}
+        ></SelectPicker>
+        <Button onPointerDown={() => beatJump("FORWARDS")}>&gt;</Button>
         {cuePoints.map((cuePoint, index) => {
           return (
             <IconButton
               key={`cuepoint:${selectedTrackId}:${index}`}
               icon={<Icon as={FaPlay} />}
-              onPointerDown={() => {
-                if (audioElement.current) {
-                  audioElement.current.currentTime = cuePoint.position / 1000;
-                }
-                if (waveform.current) {
-                  if (audioContext.current) {
-                    const latency =
-                      audioContext.current.baseLatency +
-                      audioContext.current.outputLatency;
-
-                    waveform.current.setLatency(latency * 1000);
-                  }
-
-                  waveform.current.setTime(cuePoint.position);
-                  // waveform.current.draw(waveform.current.isAnimationPlaying);
-                  waveform.current.draw(false);
-                }
-              }}
+              onPointerDown={() => jumpToTime(cuePoint.position)}
               style={
                 cuePoint.color
                   ? { backgroundColor: `#${cuePoint.color}` }
