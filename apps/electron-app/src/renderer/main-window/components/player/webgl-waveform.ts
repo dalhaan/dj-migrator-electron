@@ -24,6 +24,8 @@ export class WebGLWaveform {
   // Playhead
   playheadVertexBufferLength: number | null = null;
   playheadVao: WebGLVertexArrayObject | null = null;
+  beatgridVertexBufferLength: number | null = null;
+  beatgridVao: WebGLVertexArrayObject | null = null;
   cuePointVaos: ({
     vao: WebGLVertexArrayObject | null;
     color: [number, number, number, number] | undefined;
@@ -116,6 +118,62 @@ export class WebGLWaveform {
     if (!this.waveformVao) throw new Error("Waveform VAO failed to create");
 
     this.gl.bindVertexArray(this.waveformVao);
+
+    // Link `aVertexPosition` -> waveformVertexBuffer
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
+    const aVertexPosition = this.gl.getAttribLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "aVertexPosition"
+    );
+    this.gl.enableVertexAttribArray(aVertexPosition);
+    this.gl.vertexAttribPointer(aVertexPosition, 2, this.gl.FLOAT, false, 0, 0);
+
+    this.gl.bindVertexArray(null);
+  }
+
+  loadBeatgrid() {
+    if (!this.gl)
+      throw new Error("Could not load waveform. No GL2 rendering context");
+
+    // Clean up old waveform VAO
+    this.gl.deleteVertexArray(this.beatgridVao);
+
+    // If there's no bpm, we cannot know the beatgrid, therefore we cannot load the beatgrid
+    if (!this.bpm || !this.audioDuration) {
+      return;
+    }
+
+    // Generate beatgrid line vertices
+
+    // Calculate number of beats in the track
+    const durationMins = this.audioDuration / 60;
+    const noBeats = this.bpm * durationMins;
+    const timePerBeatMs = (60 * 1000) / this.bpm;
+
+    console.log({
+      durationMins,
+      noBeats,
+      timePerBeatMs,
+    });
+    // TODO: draw beatgrid as bars instead of beats
+
+    const data = [];
+    for (let i = 0; i < noBeats; i++) {
+      const xPos = WebGLWaveform.timeToX(i * timePerBeatMs, this.audioDuration);
+
+      data.push(xPos); // x
+      data.push(-1); // y
+      data.push(xPos); // x
+      data.push(1); // y
+    }
+
+    const vertexBuffer = this.createArrayBuffer(data);
+    this.beatgridVertexBufferLength = data.length;
+
+    this.beatgridVao = this.gl.createVertexArray();
+    if (!this.beatgridVao) throw new Error("Beatgrid VAO failed to create");
+
+    this.gl.bindVertexArray(this.beatgridVao);
 
     // Link `aVertexPosition` -> waveformVertexBuffer
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
@@ -274,6 +332,56 @@ export class WebGLWaveform {
     this.gl.bindVertexArray(null);
   }
 
+  drawBeatgrid(accountForLatency: boolean) {
+    if (!this.gl)
+      throw new Error("Could not draw waveform. No GL2 rendering context");
+    if (!this.bpm) return;
+    if (!this.beatgridVao)
+      throw new Error("Could not draw beatgrid. No beatgrid VAO");
+    if (!this.audioDuration)
+      throw new Error("Could not draw waveform. No audio duration");
+    if (!this.beatgridVertexBufferLength)
+      throw new Error(
+        "Could not draw beatgrid. No beatgrid vertex buffer length"
+      );
+
+    const currentScale: [number, number] = [this.zoom, 1];
+
+    // 1. call `gl.useProgram` for the program needed to draw.
+
+    this.gl.useProgram(this.programs.DEFAULT_PROGRAM);
+    this.gl.bindVertexArray(this.beatgridVao);
+
+    // 2. setup uniforms
+
+    const uScalingFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uScalingFactor"
+    );
+    const uGlobalColor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uGlobalColor"
+    );
+    const uTranslateFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uTranslateFactor"
+    );
+
+    const translateX = WebGLWaveform.timeToX(
+      this.getTime(accountForLatency),
+      this.audioDuration
+    );
+
+    this.gl.uniform2fv(uScalingFactor, currentScale);
+    this.gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
+    this.gl.uniform4fv(uGlobalColor, [1, 1, 1, 1.0]);
+
+    // 3. call `gl.drawArrays` or `gl.drawElements`
+    this.gl.drawArrays(this.gl.LINES, 0, this.beatgridVertexBufferLength / 2);
+
+    this.gl.bindVertexArray(null);
+  }
+
   drawPlayhead() {
     if (!this.gl)
       throw new Error("Could not draw waveform. No GL2 rendering context");
@@ -371,6 +479,7 @@ export class WebGLWaveform {
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
     this.drawWaveform(accountForLatency);
+    this.drawBeatgrid(accountForLatency);
 
     for (const cuePointVao of this.cuePointVaos) {
       if (cuePointVao?.vao) {

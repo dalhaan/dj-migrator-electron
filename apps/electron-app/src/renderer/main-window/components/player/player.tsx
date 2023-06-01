@@ -34,8 +34,10 @@ export function Player() {
 
       waveform.current.pause();
       waveform.current.setTime(0);
+      waveform.current.setBpm(track.track.metadata.bpm ?? null);
       waveform.current.setAudioDuration(audioDuration);
       waveform.current.loadWaveform(waveformData);
+      waveform.current.loadBeatgrid();
       waveform.current.loadCuePoints(cuePoints);
       waveform.current.draw(false);
 
