@@ -46,9 +46,6 @@ function buildCollectionTag(
     const fileExtension = track.track.metadata.fileExtension.replace(".", "");
     const fileKind = `${fileExtension.toUpperCase()} File`;
 
-    const bpm =
-      track.track.metadata.bpm &&
-      `${parseFloat(track.track.metadata.bpm).toFixed(2)}`;
     const encodedLocation = track.track.metadata.location
       .split(path.sep) // TODO: not sure this is necessary as Serato may always use forward slashes even on Windows
       .map((component) => encodeURIComponent(component))
@@ -73,7 +70,7 @@ function buildCollectionTag(
       DiscNumber: "0",
       TrackNumber: "0",
       Year: "0",
-      AverageBpm: bpm || "",
+      AverageBpm: track.track.metadata.bpm || "",
       DateAdded: getTodaysDate(),
       BitRate: track.track.metadata.bitrate
         ? `${track.track.metadata.bitrate / 1000}`

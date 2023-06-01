@@ -15,6 +15,7 @@ export class WebGLWaveform {
   programs: Programs;
   audioDuration: number | null = null;
   time = 0;
+  bpm: number | null = null;
   latency = 0;
   zoom = 20;
   // Waveform
@@ -23,6 +24,10 @@ export class WebGLWaveform {
   // Playhead
   playheadVertexBufferLength: number | null = null;
   playheadVao: WebGLVertexArrayObject | null = null;
+  beatgridVertexBufferLength: number | null = null;
+  beatgridVao: WebGLVertexArrayObject | null = null;
+  bargridVertexBufferLength: number | null = null;
+  bargridVao: WebGLVertexArrayObject | null = null;
   cuePointVaos: ({
     vao: WebGLVertexArrayObject | null;
     color: [number, number, number, number] | undefined;
@@ -52,6 +57,10 @@ export class WebGLWaveform {
 
   setAudioDuration(duration: number) {
     this.audioDuration = duration;
+  }
+
+  setBpm(bpm: number | null) {
+    this.bpm = bpm;
   }
 
   setLatency(latency: number) {
@@ -115,6 +124,88 @@ export class WebGLWaveform {
     // Link `aVertexPosition` -> waveformVertexBuffer
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
     const aVertexPosition = this.gl.getAttribLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "aVertexPosition"
+    );
+    this.gl.enableVertexAttribArray(aVertexPosition);
+    this.gl.vertexAttribPointer(aVertexPosition, 2, this.gl.FLOAT, false, 0, 0);
+
+    this.gl.bindVertexArray(null);
+  }
+
+  loadBeatgrid() {
+    if (!this.gl)
+      throw new Error("Could not load waveform. No GL2 rendering context");
+
+    // Clean up old beatgrid VAO
+    this.gl.deleteVertexArray(this.beatgridVao);
+    this.gl.deleteVertexArray(this.bargridVao);
+
+    // If there's no bpm, we cannot know the beatgrid, therefore we cannot load the beatgrid
+    if (!this.bpm || !this.audioDuration) {
+      return;
+    }
+
+    // Generate beatgrid line vertices
+
+    // Calculate number of beats in the track
+    const durationMins = this.audioDuration / 60;
+    const noBeats = this.bpm * durationMins;
+    const timePerBeatMs = (60 * 1000) / this.bpm;
+
+    console.log({
+      bpm: this.bpm,
+      durationMins,
+      noBeats,
+      timePerBeatMs,
+    });
+
+    const beatgridVertexData = [];
+    const bargridVertexData = [];
+    for (let i = 0; i < noBeats; i++) {
+      const xPos = WebGLWaveform.timeToX(i * timePerBeatMs, this.audioDuration);
+
+      // beats
+      beatgridVertexData.push(xPos); // x
+      beatgridVertexData.push(-1); // y
+      beatgridVertexData.push(xPos); // x
+      beatgridVertexData.push(1); // y
+
+      // bars
+      if (i % 4 === 0) {
+        bargridVertexData.push(xPos); // x
+        bargridVertexData.push(-1); // y
+        bargridVertexData.push(xPos); // x
+        bargridVertexData.push(1); // y
+      }
+    }
+
+    const beatgridVertexBuffer = this.createArrayBuffer(beatgridVertexData);
+    this.beatgridVertexBufferLength = beatgridVertexData.length;
+    const bargridVertexBuffer = this.createArrayBuffer(bargridVertexData);
+    this.bargridVertexBufferLength = bargridVertexData.length;
+
+    this.beatgridVao = this.gl.createVertexArray();
+    this.bargridVao = this.gl.createVertexArray();
+    if (!this.beatgridVao || !this.bargridVao)
+      throw new Error("Beatgrid VAO failed to create");
+
+    this.gl.bindVertexArray(this.beatgridVao);
+
+    // Link `aVertexPosition` -> beatgridVertexBuffer
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, beatgridVertexBuffer);
+    let aVertexPosition = this.gl.getAttribLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "aVertexPosition"
+    );
+    this.gl.enableVertexAttribArray(aVertexPosition);
+    this.gl.vertexAttribPointer(aVertexPosition, 2, this.gl.FLOAT, false, 0, 0);
+
+    this.gl.bindVertexArray(this.bargridVao);
+
+    // Link `aVertexPosition` -> bargridVertexBuffer
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, bargridVertexBuffer);
+    aVertexPosition = this.gl.getAttribLocation(
       this.programs.DEFAULT_PROGRAM,
       "aVertexPosition"
     );
@@ -269,6 +360,89 @@ export class WebGLWaveform {
     this.gl.bindVertexArray(null);
   }
 
+  drawBeatgrid(accountForLatency: boolean) {
+    if (!this.gl)
+      throw new Error("Could not draw waveform. No GL2 rendering context");
+    if (!this.bpm) return;
+    if (!this.beatgridVao)
+      throw new Error("Could not draw beatgrid. No beatgrid VAO");
+    if (!this.bargridVao)
+      throw new Error("Could not draw beatgrid. No bargrid VAO");
+    if (!this.audioDuration)
+      throw new Error("Could not draw waveform. No audio duration");
+    if (!this.beatgridVertexBufferLength)
+      throw new Error(
+        "Could not draw beatgrid. No beatgrid vertex buffer length"
+      );
+    if (!this.bargridVertexBufferLength)
+      throw new Error(
+        "Could not draw beatgrid. No beatgrid vertex buffer length"
+      );
+
+    const currentScale: [number, number] = [this.zoom, 1];
+
+    // 1. call `gl.useProgram` for the program needed to draw.
+
+    this.gl.useProgram(this.programs.DEFAULT_PROGRAM);
+
+    // Draw beatgrid
+    this.gl.bindVertexArray(this.beatgridVao);
+
+    // 2. setup uniforms
+
+    let uScalingFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uScalingFactor"
+    );
+    let uGlobalColor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uGlobalColor"
+    );
+    let uTranslateFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uTranslateFactor"
+    );
+
+    const translateX = WebGLWaveform.timeToX(
+      this.getTime(accountForLatency),
+      this.audioDuration
+    );
+
+    this.gl.uniform2fv(uScalingFactor, currentScale);
+    this.gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
+    this.gl.uniform4fv(uGlobalColor, [0.5, 0.5, 0.5, 1.0]);
+
+    // 3. call `gl.drawArrays` or `gl.drawElements`
+    this.gl.drawArrays(this.gl.LINES, 0, this.beatgridVertexBufferLength / 2);
+
+    // Draw bargrid
+    this.gl.bindVertexArray(this.bargridVao);
+
+    // 2. setup uniforms
+
+    uScalingFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uScalingFactor"
+    );
+    uGlobalColor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uGlobalColor"
+    );
+    uTranslateFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uTranslateFactor"
+    );
+
+    this.gl.uniform2fv(uScalingFactor, currentScale);
+    this.gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
+    this.gl.uniform4fv(uGlobalColor, [1, 1, 1, 1.0]);
+
+    // 3. call `gl.drawArrays` or `gl.drawElements`
+    this.gl.drawArrays(this.gl.LINES, 0, this.bargridVertexBufferLength / 2);
+
+    this.gl.bindVertexArray(null);
+  }
+
   drawPlayhead() {
     if (!this.gl)
       throw new Error("Could not draw waveform. No GL2 rendering context");
@@ -366,6 +540,7 @@ export class WebGLWaveform {
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
     this.drawWaveform(accountForLatency);
+    this.drawBeatgrid(accountForLatency);
 
     for (const cuePointVao of this.cuePointVaos) {
       if (cuePointVao?.vao) {

@@ -3,7 +3,7 @@ export interface IMetadata {
   artist?: string;
   album?: string;
   genre?: string[];
-  bpm?: string;
+  bpm?: number;
   key?: string;
   location: string;
   sampleRate?: number;
