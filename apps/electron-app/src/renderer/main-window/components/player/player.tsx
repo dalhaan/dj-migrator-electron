@@ -110,6 +110,24 @@ export function Player() {
     setIsPlaying((isPlaying) => !isPlaying);
   }
 
+  function jumpToTime(time: number) {
+    if (audioElement.current) {
+      audioElement.current.currentTime = time / 1000;
+    }
+    if (waveform.current) {
+      if (audioContext.current) {
+        const latency =
+          audioContext.current.baseLatency + audioContext.current.outputLatency;
+
+        waveform.current.setLatency(latency * 1000);
+      }
+
+      waveform.current.setTime(time);
+      // waveform.current.draw(waveform.current.isAnimationPlaying);
+      waveform.current.draw(false);
+    }
+  }
+
   // Audio element listeners
   useEffect(() => {
     const audioElementRef = audioElement.current;
@@ -176,24 +194,7 @@ export function Player() {
             <IconButton
               key={`cuepoint:${selectedTrackId}:${index}`}
               icon={<Icon as={FaPlay} />}
-              onPointerDown={() => {
-                if (audioElement.current) {
-                  audioElement.current.currentTime = cuePoint.position / 1000;
-                }
-                if (waveform.current) {
-                  if (audioContext.current) {
-                    const latency =
-                      audioContext.current.baseLatency +
-                      audioContext.current.outputLatency;
-
-                    waveform.current.setLatency(latency * 1000);
-                  }
-
-                  waveform.current.setTime(cuePoint.position);
-                  // waveform.current.draw(waveform.current.isAnimationPlaying);
-                  waveform.current.draw(false);
-                }
-              }}
+              onPointerDown={() => jumpToTime(cuePoint.position)}
               style={
                 cuePoint.color
                   ? { backgroundColor: `#${cuePoint.color}` }
