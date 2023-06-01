@@ -374,7 +374,7 @@ export class WebGLWaveform {
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
     this.gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
-    this.gl.uniform4fv(uGlobalColor, [1, 1, 1, 1.0]);
+    this.gl.uniform4fv(uGlobalColor, [0.7, 0.7, 0.7, 1.0]);
 
     // 3. call `gl.drawArrays` or `gl.drawElements`
     this.gl.drawArrays(this.gl.LINES, 0, this.beatgridVertexBufferLength / 2);
