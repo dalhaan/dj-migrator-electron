@@ -11,6 +11,7 @@ export function Player() {
   const audioElement = useRef<HTMLAudioElement>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const audioTrack = useRef<MediaElementAudioSourceNode | null>(null);
+  const audioDurationRef = useRef(0);
   const bpm = useRef<number | null>(null);
   const beatsToJump = useRef(1);
   const canvasElement = useRef<HTMLCanvasElement>(null);
@@ -39,6 +40,7 @@ export function Player() {
       waveform.current.setBpm(track.track.metadata.bpm ?? null);
       bpm.current = track.track.metadata.bpm ?? null;
       waveform.current.setAudioDuration(audioDuration);
+      audioDurationRef.current = audioDuration;
       waveform.current.loadWaveform(waveformData);
       waveform.current.loadBeatgrid();
       waveform.current.loadCuePoints(cuePoints);
@@ -114,8 +116,13 @@ export function Player() {
   }
 
   function jumpToTime(time: number) {
+    const clampedTime = Math.min(
+      Math.max(time, 0),
+      audioDurationRef.current * 1000
+    );
+
     if (audioElement.current) {
-      audioElement.current.currentTime = time / 1000;
+      audioElement.current.currentTime = clampedTime / 1000;
     }
     if (waveform.current) {
       if (audioContext.current) {
@@ -125,7 +132,7 @@ export function Player() {
         waveform.current.setLatency(latency * 1000);
       }
 
-      waveform.current.setTime(time);
+      waveform.current.setTime(clampedTime);
       // waveform.current.draw(waveform.current.isAnimationPlaying);
       waveform.current.draw(false);
     }
