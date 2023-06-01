@@ -2,7 +2,7 @@ import { Tracks, CuePoint } from "@dj-migrator/common";
 import { Icon } from "@rsuite/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FaPlay, FaPause } from "react-icons/fa";
-import { Stack, Button, ButtonToolbar, IconButton } from "rsuite";
+import { Stack, Button, ButtonToolbar, IconButton, SelectPicker } from "rsuite";
 
 import { WebGLWaveform } from "@/main-window/components/player/webgl-waveform";
 import { useLibrary, useMainStore } from "@/stores/libraryStore";
@@ -12,6 +12,7 @@ export function Player() {
   const audioContext = useRef<AudioContext | null>(null);
   const audioTrack = useRef<MediaElementAudioSourceNode | null>(null);
   const bpm = useRef<number | null>(null);
+  const beatsToJump = useRef(1);
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const waveform = useRef<WebGLWaveform | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -135,12 +136,13 @@ export function Player() {
 
     console.log("beatJump", audioElement.current.currentTime);
 
-    const noBeats = 1;
     const timePerBeatMs = (60 * 1000) / bpm.current;
     const newTime =
       direction === "FORWARDS"
-        ? audioElement.current.currentTime * 1000 + timePerBeatMs
-        : audioElement.current.currentTime * 1000 - timePerBeatMs;
+        ? audioElement.current.currentTime * 1000 +
+          timePerBeatMs * beatsToJump.current
+        : audioElement.current.currentTime * 1000 -
+          timePerBeatMs * beatsToJump.current;
 
     jumpToTime(newTime);
   }
@@ -206,8 +208,17 @@ export function Player() {
         />
         <Button onClick={zoomOut}>-</Button>
         <Button onClick={zoomIn}>+</Button>
-        <Button onClick={() => beatJump("BACKWARDS")}>&lt;</Button>
-        <Button onClick={() => beatJump("FORWARDS")}>&gt;</Button>
+        <Button onPointerDown={() => beatJump("BACKWARDS")}>&lt;</Button>
+        <SelectPicker
+          data={[1, 2, 4, 8, 16, 32].map((e) => ({ value: e, label: e }))}
+          defaultValue={1}
+          onChange={(beats) => {
+            beatsToJump.current = beats ?? 1;
+          }}
+          searchable={false}
+          cleanable={false}
+        ></SelectPicker>
+        <Button onPointerDown={() => beatJump("FORWARDS")}>&gt;</Button>
         {cuePoints.map((cuePoint, index) => {
           return (
             <IconButton
