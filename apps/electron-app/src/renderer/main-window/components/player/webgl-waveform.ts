@@ -15,6 +15,7 @@ export class WebGLWaveform {
   programs: Programs;
   audioDuration: number | null = null;
   time = 0;
+  bpm: number | null = null;
   latency = 0;
   zoom = 20;
   // Waveform
@@ -52,6 +53,10 @@ export class WebGLWaveform {
 
   setAudioDuration(duration: number) {
     this.audioDuration = duration;
+  }
+
+  setBpm(bpm: number | null) {
+    this.bpm = bpm;
   }
 
   setLatency(latency: number) {

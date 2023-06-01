@@ -45,7 +45,7 @@ async function getMetadata(filePath: string) {
         artist: tags.common?.artist,
         album: tags.common?.album,
         genre: tags.common?.genre,
-        bpm: tags.common?.bpm as string | undefined,
+        bpm: tags.common?.bpm,
         key:
           fileExtension === ".flac"
             ? tags.native.vorbis?.find((tag) => tag.id === "INITIALKEY")?.value
