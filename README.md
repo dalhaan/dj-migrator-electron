@@ -12,6 +12,7 @@
 - [x] create WebGL waveform display
 - [x] show playhead
 - [x] show cue points
+- [ ] Render WebGL waveform in a Worker using an OffscreenCanvas
 - [ ] decode Serato beat grid
 - [ ] show beat grid
 - [ ] beat jump
