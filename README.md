@@ -1,5 +1,10 @@
 # DJ Migrator
 
+<div align="center">
+  <img src="docs/current-state.png" alt="Screenshot of the current state of DJ Migrator">
+  <em>The current WIP state of DJ Migrator</em>
+</div>
+
 **Roadmap:**
 
 - [x] import Serato crates
