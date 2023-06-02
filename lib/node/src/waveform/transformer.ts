@@ -1,8 +1,7 @@
-const AMPLITUDE_OFFSET = 10000; // Waveform vertical padding
 // Amplitude values are signed 16bit int (LE)
 // whose min-max range is -32768 -> 32767
-const MAX_AMPLITUDE_VALUE = 32767 + AMPLITUDE_OFFSET;
-const MIN_AMPLITUDE_VALUE = -32768 - AMPLITUDE_OFFSET;
+const MAX_AMPLITUDE_VALUE = 32767;
+const MIN_AMPLITUDE_VALUE = -32768;
 
 export function transformWaveformDataForWebGL(waveformData: number[]) {
   console.time("transformWaveformDataForWebGL");
