@@ -45,7 +45,6 @@ export function Player() {
       waveform.current.loadBeatgrid();
       waveform.current.loadCuePoints(cuePoints);
       waveform.current.draw(false);
-      waveform.current.drawMinimap(false);
 
       if (audioElement.current) {
         audioElement.current.src = "local://" + track.absolutePath;

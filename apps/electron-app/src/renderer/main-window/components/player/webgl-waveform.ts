@@ -366,7 +366,7 @@ export class WebGLWaveform {
     this.gl.bindVertexArray(null);
   }
 
-  drawMinimap(accountForLatency: boolean) {
+  drawMinimap() {
     if (!this.gl)
       throw new Error("Could not draw waveform. No GL2 rendering context");
     if (!this.waveformVao)
@@ -645,6 +645,49 @@ export class WebGLWaveform {
     this.gl.bindVertexArray(null);
   }
 
+  drawMinimapCuePoint(
+    vao: WebGLVertexArrayObject,
+    color: [number, number, number, number] | undefined
+  ) {
+    if (!this.gl)
+      throw new Error("Could not draw cue point. No GL2 rendering context");
+    if (!vao) throw new Error("Could not draw cue point. No cue point VAO");
+    if (!this.audioDuration)
+      throw new Error("Could not draw cue point. No audio duration");
+
+    const currentScale: [number, number] = [1, 0.3];
+    const translateFactor: [number, number] = [-1, -2.5];
+
+    // 1. call `gl.useProgram` for the program needed to draw.
+
+    this.gl.useProgram(this.programs.FIXED_WIDTH_PROGRAM);
+    this.gl.bindVertexArray(vao);
+
+    // 2. setup uniforms
+
+    const uScalingFactor = this.gl.getUniformLocation(
+      this.programs.FIXED_WIDTH_PROGRAM,
+      "uScalingFactor"
+    );
+    const uGlobalColor = this.gl.getUniformLocation(
+      this.programs.FIXED_WIDTH_PROGRAM,
+      "uGlobalColor"
+    );
+    const uTranslateFactor = this.gl.getUniformLocation(
+      this.programs.FIXED_WIDTH_PROGRAM,
+      "uTranslateFactor"
+    );
+
+    this.gl.uniform2fv(uScalingFactor, currentScale);
+    this.gl.uniform2fv(uTranslateFactor, translateFactor);
+    this.gl.uniform4fv(uGlobalColor, color || [0, 0, 1, 1.0]);
+
+    // 3. call `this.gl.drawArrays` or `this.gl.drawElements`
+    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+
+    this.gl.bindVertexArray(null);
+  }
+
   draw(accountForLatency: boolean) {
     if (!this.gl) throw new Error("Could not draw. No GL2 rendering context");
 
@@ -653,6 +696,8 @@ export class WebGLWaveform {
     this.drawWaveform(accountForLatency);
     this.drawBeatgrid(accountForLatency);
 
+    this.drawMinimap();
+
     for (const cuePointVao of this.cuePointVaos) {
       if (cuePointVao?.vao) {
         this.drawCuePoint(
@@ -660,13 +705,12 @@ export class WebGLWaveform {
           cuePointVao.color,
           accountForLatency
         );
+        this.drawMinimapCuePoint(cuePointVao.vao, cuePointVao.color);
       }
     }
 
-    this.drawPlayhead();
-
-    this.drawMinimap(accountForLatency);
     this.drawMinimapPlayhead(accountForLatency);
+    this.drawPlayhead();
   }
 
   playLoop() {
