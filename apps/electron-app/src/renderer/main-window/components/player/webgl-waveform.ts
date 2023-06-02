@@ -412,6 +412,59 @@ export class WebGLWaveform {
     this.gl.bindVertexArray(null);
   }
 
+  drawMinimapPlayhead(accountForLatency: boolean) {
+    if (!this.gl)
+      throw new Error(
+        "Could not draw minimap playhead. No GL2 rendering context"
+      );
+    if (!this.playheadVao)
+      throw new Error("Could not draw minimap playhead. No playhead VAO");
+    if (!this.audioDuration)
+      throw new Error("Could not draw minimap playhead. No audio duration");
+
+    const currentScale: [number, number] = [1, 0.3];
+    const color: [number, number, number, number] = [1, 0, 0, 1.0];
+    const translateX = WebGLWaveform.timeToX(
+      this.getTime(accountForLatency),
+      this.audioDuration
+    );
+    const translateFactor: [number, number] = [translateX - 1, -2.5];
+
+    // gl.clearColor(0.8, 0.9, 1.0, 1.0);
+    // gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // const currentScale: [number, number] = [1 / aspectRatio, 1.0];
+
+    // 1. call `gl.useProgram` for the program needed to draw.
+
+    this.gl.useProgram(this.programs.DEFAULT_PROGRAM);
+    this.gl.bindVertexArray(this.playheadVao);
+
+    // 2. setup uniforms
+
+    const uScalingFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uScalingFactor"
+    );
+    const uGlobalColor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uGlobalColor"
+    );
+    const uTranslateFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uTranslateFactor"
+    );
+
+    this.gl.uniform2fv(uScalingFactor, currentScale);
+    this.gl.uniform2fv(uTranslateFactor, translateFactor);
+    this.gl.uniform4fv(uGlobalColor, color);
+
+    // 3. call `this.gl.drawArrays` or `this.gl.drawElements`
+    this.gl.drawArrays(this.gl.LINE_STRIP, 0, 2);
+
+    this.gl.bindVertexArray(null);
+  }
+
   drawBeatgrid(accountForLatency: boolean) {
     if (!this.gl)
       throw new Error("Could not draw waveform. No GL2 rendering context");
@@ -598,7 +651,6 @@ export class WebGLWaveform {
     // this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
     this.drawWaveform(accountForLatency);
-    this.drawMinimap(accountForLatency);
     this.drawBeatgrid(accountForLatency);
 
     for (const cuePointVao of this.cuePointVaos) {
@@ -612,6 +664,9 @@ export class WebGLWaveform {
     }
 
     this.drawPlayhead();
+
+    this.drawMinimap(accountForLatency);
+    this.drawMinimapPlayhead(accountForLatency);
   }
 
   playLoop() {
