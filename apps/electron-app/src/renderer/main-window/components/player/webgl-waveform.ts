@@ -319,7 +319,10 @@ export class WebGLWaveform {
         "Could not draw waveform. No waveform vertex buffer length"
       );
 
-    const currentScale: [number, number] = [this.zoom, 1];
+    const currentScale: [number, number] = [
+      WebGLWaveform.zoomToScale(this.zoom),
+      1,
+    ];
 
     // 1. call `gl.useProgram` for the program needed to draw.
 
@@ -379,7 +382,10 @@ export class WebGLWaveform {
         "Could not draw beatgrid. No beatgrid vertex buffer length"
       );
 
-    const currentScale: [number, number] = [this.zoom, 1];
+    const currentScale: [number, number] = [
+      WebGLWaveform.zoomToScale(this.zoom),
+      1,
+    ];
 
     // 1. call `gl.useProgram` for the program needed to draw.
 
@@ -497,7 +503,10 @@ export class WebGLWaveform {
     if (!this.audioDuration)
       throw new Error("Could not draw cue point. No audio duration");
 
-    const currentScale: [number, number] = [this.zoom, 1];
+    const currentScale: [number, number] = [
+      WebGLWaveform.zoomToScale(this.zoom),
+      1,
+    ];
 
     // 1. call `gl.useProgram` for the program needed to draw.
 
@@ -698,5 +707,13 @@ export class WebGLWaveform {
     const bNormalised = (1 / 255) * b;
 
     return [rNormalised, gNormalised, bNormalised, 1];
+  }
+
+  static zoomToScale(zoom: number) {
+    console.log({
+      zoom,
+      scale: 1.5 ** zoom,
+    });
+    return 1.5 ** zoom;
   }
 }
