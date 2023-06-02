@@ -367,16 +367,24 @@ export class WebGLWaveform {
   }
 
   drawWaveform(accountForLatency: boolean) {
-    if (!this.gl)
-      throw new Error("Could not draw waveform. No GL2 rendering context");
-    if (!this.waveformVao)
-      throw new Error("Could not draw waveform. No waveform VAO");
-    if (!this.audioDuration)
-      throw new Error("Could not draw waveform. No audio duration");
-    if (!this.waveformVertexBufferLength)
-      throw new Error(
+    if (!this.gl) {
+      console.error("Could not draw waveform. No GL2 rendering context");
+      return;
+    }
+    if (!this.waveformVao) {
+      console.error("Could not draw waveform. No waveform VAO");
+      return;
+    }
+    if (!this.audioDuration) {
+      console.error("Could not draw waveform. No audio duration");
+      return;
+    }
+    if (!this.waveformVertexBufferLength) {
+      console.error(
         "Could not draw waveform. No waveform vertex buffer length"
       );
+      return;
+    }
 
     const currentScale: [number, number] = [
       WebGLWaveform.zoomToScale(this.zoom),
@@ -431,14 +439,16 @@ export class WebGLWaveform {
   }
 
   drawMinimap() {
-    if (!this.gl)
-      throw new Error("Could not draw waveform. No GL2 rendering context");
+    if (!this.gl) {
+      console.error("Could not draw waveform. No GL2 rendering context");
+      return;
+    }
     if (!this.waveformVao)
-      throw new Error("Could not draw waveform. No waveform VAO");
+      return console.error("Could not draw waveform. No waveform VAO");
     if (!this.audioDuration)
-      throw new Error("Could not draw waveform. No audio duration");
+      return console.error("Could not draw waveform. No audio duration");
     if (!this.waveformVertexBufferLength)
-      throw new Error(
+      return console.error(
         "Could not draw waveform. No waveform vertex buffer length"
       );
 
@@ -488,13 +498,15 @@ export class WebGLWaveform {
 
   drawMinimapPlayhead(accountForLatency: boolean) {
     if (!this.gl)
-      throw new Error(
+      return console.error(
         "Could not draw minimap playhead. No GL2 rendering context"
       );
     if (!this.minimapPlayheadVao)
-      throw new Error("Could not draw minimap playhead. No playhead VAO");
+      return console.error("Could not draw minimap playhead. No playhead VAO");
     if (!this.audioDuration)
-      throw new Error("Could not draw minimap playhead. No audio duration");
+      return console.error(
+        "Could not draw minimap playhead. No audio duration"
+      );
 
     const currentScale: [number, number] = [1, MINIMAP_HEIGHT / 2];
 
@@ -549,20 +561,20 @@ export class WebGLWaveform {
 
   drawBeatgrid(accountForLatency: boolean) {
     if (!this.gl)
-      throw new Error("Could not draw waveform. No GL2 rendering context");
+      return console.error("Could not draw waveform. No GL2 rendering context");
     if (!this.bpm) return;
     if (!this.beatgridVao)
-      throw new Error("Could not draw beatgrid. No beatgrid VAO");
+      return console.error("Could not draw beatgrid. No beatgrid VAO");
     if (!this.bargridVao)
-      throw new Error("Could not draw beatgrid. No bargrid VAO");
+      return console.error("Could not draw beatgrid. No bargrid VAO");
     if (!this.audioDuration)
-      throw new Error("Could not draw waveform. No audio duration");
+      return console.error("Could not draw waveform. No audio duration");
     if (!this.beatgridVertexBufferLength)
-      throw new Error(
+      return console.error(
         "Could not draw beatgrid. No beatgrid vertex buffer length"
       );
     if (!this.bargridVertexBufferLength)
-      throw new Error(
+      return console.error(
         "Could not draw beatgrid. No beatgrid vertex buffer length"
       );
 
@@ -647,9 +659,9 @@ export class WebGLWaveform {
 
   drawPlayhead() {
     if (!this.gl)
-      throw new Error("Could not draw waveform. No GL2 rendering context");
+      return console.error("Could not draw waveform. No GL2 rendering context");
     if (!this.playheadVao)
-      throw new Error("Could not draw waveform. No playhead VAO");
+      return console.error("Could not draw waveform. No playhead VAO");
 
     const currentScale: [number, number] = [1, WAVEFORM_HEIGHT / 2];
     const translateFactor: [number, number] = [0, 0];
@@ -701,10 +713,13 @@ export class WebGLWaveform {
     accountForLatency: boolean
   ) {
     if (!this.gl)
-      throw new Error("Could not draw cue point. No GL2 rendering context");
-    if (!vao) throw new Error("Could not draw cue point. No cue point VAO");
+      return console.error(
+        "Could not draw cue point. No GL2 rendering context"
+      );
+    if (!vao)
+      return console.error("Could not draw cue point. No cue point VAO");
     if (!this.audioDuration)
-      throw new Error("Could not draw cue point. No audio duration");
+      return console.error("Could not draw cue point. No audio duration");
 
     const currentScale: [number, number] = [
       WebGLWaveform.zoomToScale(this.zoom),
@@ -758,10 +773,13 @@ export class WebGLWaveform {
     color: [number, number, number, number] | undefined
   ) {
     if (!this.gl)
-      throw new Error("Could not draw cue point. No GL2 rendering context");
-    if (!vao) throw new Error("Could not draw cue point. No cue point VAO");
+      return console.error(
+        "Could not draw cue point. No GL2 rendering context"
+      );
+    if (!vao)
+      return console.error("Could not draw cue point. No cue point VAO");
     if (!this.audioDuration)
-      throw new Error("Could not draw cue point. No audio duration");
+      return console.error("Could not draw cue point. No audio duration");
 
     const currentScale: [number, number] = [1, MINIMAP_HEIGHT / 2];
     const translateFactor: [number, number] = [-1, 0];
@@ -815,7 +833,10 @@ export class WebGLWaveform {
   }
 
   draw(accountForLatency: boolean) {
-    if (!this.gl) throw new Error("Could not draw. No GL2 rendering context");
+    if (!this.gl) {
+      console.error("Could not draw. No GL2 rendering context");
+      return;
+    }
 
     this.resizeCanvasToDisplaySize();
     // this.gl.clear(this.gl.COLOR_BUFFER_BIT);

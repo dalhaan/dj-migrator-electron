@@ -202,6 +202,28 @@ export function Player() {
     };
   }, []);
 
+  // Canvas resize listener
+  useEffect(() => {
+    const canvasElementRef = canvasElement.current;
+    const waveformRef = waveform.current;
+
+    const canvasResizeObserver = new ResizeObserver(() => {
+      if (waveformRef) {
+        waveformRef.draw(false);
+      }
+    });
+
+    if (canvasElementRef) {
+      canvasResizeObserver.observe(canvasElementRef);
+    }
+
+    return () => {
+      if (canvasElementRef) {
+        canvasResizeObserver.unobserve(canvasElementRef);
+      }
+    };
+  }, []);
+
   return (
     <Stack direction="column" alignItems="stretch" spacing={10}>
       <canvas
