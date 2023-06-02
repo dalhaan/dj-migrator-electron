@@ -9,6 +9,8 @@ type Programs = {
   FIXED_WIDTH_PROGRAM: WebGLProgram;
 };
 
+const WAVEFORM_OFFSET = 0.4;
+
 export class WebGLWaveform {
   gl: WebGL2RenderingContext;
   canvasWidth: number;
@@ -251,13 +253,13 @@ export class WebGLWaveform {
       ]);
       const originBuffer = this.createArrayBuffer([
         xPos,
-        0,
+        -1,
         xPos,
-        0,
+        1,
         xPos,
-        0,
+        -1,
         xPos,
-        0,
+        1,
       ]);
 
       const cuepointVao = this.gl.createVertexArray();
@@ -321,7 +323,7 @@ export class WebGLWaveform {
 
     const currentScale: [number, number] = [
       WebGLWaveform.zoomToScale(this.zoom),
-      1,
+      1 - WAVEFORM_OFFSET / 2,
     ];
 
     // 1. call `gl.useProgram` for the program needed to draw.
@@ -349,11 +351,58 @@ export class WebGLWaveform {
       this.audioDuration
     );
 
+    // Draw main waveform
     this.gl.uniform2fv(uScalingFactor, currentScale);
-    this.gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
+    this.gl.uniform2fv(uTranslateFactor, [-translateX, WAVEFORM_OFFSET]);
     this.gl.uniform4fv(uGlobalColor, [0.1, 0.7, 0.2, 1.0]);
 
     // 3. call `gl.drawArrays` or `gl.drawElements`
+    this.gl.drawArrays(
+      this.gl.LINE_STRIP,
+      0,
+      this.waveformVertexBufferLength / 2
+    );
+
+    this.gl.bindVertexArray(null);
+  }
+
+  drawMinimap(accountForLatency: boolean) {
+    if (!this.gl)
+      throw new Error("Could not draw waveform. No GL2 rendering context");
+    if (!this.waveformVao)
+      throw new Error("Could not draw waveform. No waveform VAO");
+    if (!this.audioDuration)
+      throw new Error("Could not draw waveform. No audio duration");
+    if (!this.waveformVertexBufferLength)
+      throw new Error(
+        "Could not draw waveform. No waveform vertex buffer length"
+      );
+
+    // 1. call `gl.useProgram` for the program needed to draw.
+
+    this.gl.useProgram(this.programs.DEFAULT_PROGRAM);
+    this.gl.bindVertexArray(this.waveformVao);
+
+    // 2. setup uniforms
+
+    const uScalingFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uScalingFactor"
+    );
+    const uGlobalColor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uGlobalColor"
+    );
+    const uTranslateFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uTranslateFactor"
+    );
+
+    // Draw minimap
+    this.gl.uniform2fv(uScalingFactor, [1, 0.3]);
+    this.gl.uniform2fv(uTranslateFactor, [-1, -2.5]);
+    this.gl.uniform4fv(uGlobalColor, [0.1, 0.7, 0.2, 1.0]);
+
     this.gl.drawArrays(
       this.gl.LINE_STRIP,
       0,
@@ -384,7 +433,7 @@ export class WebGLWaveform {
 
     const currentScale: [number, number] = [
       WebGLWaveform.zoomToScale(this.zoom),
-      1,
+      1 - WAVEFORM_OFFSET / 2,
     ];
 
     // 1. call `gl.useProgram` for the program needed to draw.
@@ -415,7 +464,7 @@ export class WebGLWaveform {
     );
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
-    this.gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
+    this.gl.uniform2fv(uTranslateFactor, [-translateX, WAVEFORM_OFFSET]);
     this.gl.uniform4fv(uGlobalColor, [0.5, 0.5, 0.5, 1.0]);
 
     // 3. call `gl.drawArrays` or `gl.drawElements`
@@ -440,7 +489,7 @@ export class WebGLWaveform {
     );
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
-    this.gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
+    this.gl.uniform2fv(uTranslateFactor, [-translateX, WAVEFORM_OFFSET]);
     this.gl.uniform4fv(uGlobalColor, [1, 1, 1, 1.0]);
 
     // 3. call `gl.drawArrays` or `gl.drawElements`
@@ -455,7 +504,7 @@ export class WebGLWaveform {
     if (!this.playheadVao)
       throw new Error("Could not draw waveform. No playhead VAO");
 
-    const currentScale: [number, number] = [1, 1];
+    const currentScale: [number, number] = [1, 1 - WAVEFORM_OFFSET / 2];
 
     // gl.clearColor(0.8, 0.9, 1.0, 1.0);
     // gl.clear(gl.COLOR_BUFFER_BIT);
@@ -483,7 +532,7 @@ export class WebGLWaveform {
     );
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
-    this.gl.uniform2fv(uTranslateFactor, [0, 0]);
+    this.gl.uniform2fv(uTranslateFactor, [0, WAVEFORM_OFFSET]);
     this.gl.uniform4fv(uGlobalColor, [1, 0, 0, 1.0]);
 
     // 3. call `this.gl.drawArrays` or `this.gl.drawElements`
@@ -505,7 +554,7 @@ export class WebGLWaveform {
 
     const currentScale: [number, number] = [
       WebGLWaveform.zoomToScale(this.zoom),
-      1,
+      1 - WAVEFORM_OFFSET / 2,
     ];
 
     // 1. call `gl.useProgram` for the program needed to draw.
@@ -534,7 +583,7 @@ export class WebGLWaveform {
     );
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
-    this.gl.uniform2fv(uTranslateFactor, [-translateX, 0]);
+    this.gl.uniform2fv(uTranslateFactor, [-translateX, WAVEFORM_OFFSET]);
     this.gl.uniform4fv(uGlobalColor, color || [0, 0, 1, 1.0]);
 
     // 3. call `this.gl.drawArrays` or `this.gl.drawElements`
@@ -546,9 +595,10 @@ export class WebGLWaveform {
   draw(accountForLatency: boolean) {
     if (!this.gl) throw new Error("Could not draw. No GL2 rendering context");
 
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    // this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
     this.drawWaveform(accountForLatency);
+    this.drawMinimap(accountForLatency);
     this.drawBeatgrid(accountForLatency);
 
     for (const cuePointVao of this.cuePointVaos) {
@@ -710,10 +760,6 @@ export class WebGLWaveform {
   }
 
   static zoomToScale(zoom: number) {
-    console.log({
-      zoom,
-      scale: 1.5 ** zoom,
-    });
     return 1.5 ** zoom;
   }
 }

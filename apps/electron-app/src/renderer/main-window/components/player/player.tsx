@@ -45,6 +45,7 @@ export function Player() {
       waveform.current.loadBeatgrid();
       waveform.current.loadCuePoints(cuePoints);
       waveform.current.draw(false);
+      waveform.current.drawMinimap(false);
 
       if (audioElement.current) {
         audioElement.current.src = "local://" + track.absolutePath;
@@ -205,7 +206,7 @@ export function Player() {
     <Stack direction="column" alignItems="stretch" spacing={10}>
       <canvas
         ref={canvasElement}
-        style={{ width: "100%", height: 150, minHeight: 150 }}
+        style={{ width: "100%", height: 210, minHeight: 210 }}
       />
       <ButtonToolbar>
         <IconButton
