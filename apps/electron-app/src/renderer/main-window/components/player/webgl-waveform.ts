@@ -802,9 +802,22 @@ export class WebGLWaveform {
     this.gl.bindVertexArray(null);
   }
 
+  resizeCanvasToDisplaySize() {
+    if ("clientWidth" in this.gl.canvas) {
+      const width = this.gl.canvas.clientWidth * 2;
+      const height = this.gl.canvas.clientHeight * 2;
+      if (this.gl.canvas.width !== width || this.gl.canvas.height !== height) {
+        this.gl.canvas.width = width;
+        this.gl.canvas.height = height;
+        this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+      }
+    }
+  }
+
   draw(accountForLatency: boolean) {
     if (!this.gl) throw new Error("Could not draw. No GL2 rendering context");
 
+    this.resizeCanvasToDisplaySize();
     // this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
     this.drawWaveform(accountForLatency);
