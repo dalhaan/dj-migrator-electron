@@ -19,6 +19,7 @@
 - [x] show cue points
 - [x] show beat grid
 - [x] beat jump
+- [x] add track minimap
 - [ ] edit/create cue points
 - [ ] playlist organisation
 - [ ] decode Serato beat grid
