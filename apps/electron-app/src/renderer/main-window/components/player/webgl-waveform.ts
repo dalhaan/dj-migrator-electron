@@ -8,8 +8,10 @@ type Programs = {
   DEFAULT_PROGRAM: WebGLProgram;
   FIXED_WIDTH_PROGRAM: WebGLProgram;
 };
+const WAVEFORM_HEIGHT = 1.5;
+const WAVEFORM_PADDING = 0.3;
 
-const WAVEFORM_OFFSET = 0.4;
+const MINIMAP_HEIGHT = 0.5;
 
 export class WebGLWaveform {
   gl: WebGL2RenderingContext;
@@ -323,8 +325,15 @@ export class WebGLWaveform {
 
     const currentScale: [number, number] = [
       WebGLWaveform.zoomToScale(this.zoom),
-      1 - WAVEFORM_OFFSET / 2,
+      (WAVEFORM_HEIGHT - WAVEFORM_PADDING) / 2,
     ];
+
+    const translateX = WebGLWaveform.timeToX(
+      this.getTime(accountForLatency),
+      this.audioDuration
+    );
+    const translateFactor: [number, number] = [-translateX, 0];
+    const offsetFactor: [number, number] = [0, -MINIMAP_HEIGHT / 2];
 
     // 1. call `gl.useProgram` for the program needed to draw.
 
@@ -345,15 +354,15 @@ export class WebGLWaveform {
       this.programs.DEFAULT_PROGRAM,
       "uTranslateFactor"
     );
-
-    const translateX = WebGLWaveform.timeToX(
-      this.getTime(accountForLatency),
-      this.audioDuration
+    const uOffsetFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uOffsetFactor"
     );
 
     // Draw main waveform
     this.gl.uniform2fv(uScalingFactor, currentScale);
-    this.gl.uniform2fv(uTranslateFactor, [-translateX, WAVEFORM_OFFSET]);
+    this.gl.uniform2fv(uTranslateFactor, translateFactor);
+    this.gl.uniform2fv(uOffsetFactor, offsetFactor);
     this.gl.uniform4fv(uGlobalColor, [0.1, 0.7, 0.2, 1.0]);
 
     // 3. call `gl.drawArrays` or `gl.drawElements`
@@ -378,6 +387,11 @@ export class WebGLWaveform {
         "Could not draw waveform. No waveform vertex buffer length"
       );
 
+    const currentScale: [number, number] = [1, MINIMAP_HEIGHT / 2];
+    const translateFactor: [number, number] = [-1, 0];
+    const offsetFactor: [number, number] = [0, 1 - MINIMAP_HEIGHT / 2];
+    const color: [number, number, number, number] = [0.1, 0.7, 0.2, 1.0];
+
     // 1. call `gl.useProgram` for the program needed to draw.
 
     this.gl.useProgram(this.programs.DEFAULT_PROGRAM);
@@ -397,11 +411,16 @@ export class WebGLWaveform {
       this.programs.DEFAULT_PROGRAM,
       "uTranslateFactor"
     );
+    const uOffsetFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uOffsetFactor"
+    );
 
     // Draw minimap
-    this.gl.uniform2fv(uScalingFactor, [1, 0.3]);
-    this.gl.uniform2fv(uTranslateFactor, [-1, -2.5]);
-    this.gl.uniform4fv(uGlobalColor, [0.1, 0.7, 0.2, 1.0]);
+    this.gl.uniform2fv(uScalingFactor, currentScale);
+    this.gl.uniform2fv(uTranslateFactor, translateFactor);
+    this.gl.uniform2fv(uOffsetFactor, offsetFactor);
+    this.gl.uniform4fv(uGlobalColor, color);
 
     this.gl.drawArrays(
       this.gl.LINE_STRIP,
@@ -422,13 +441,16 @@ export class WebGLWaveform {
     if (!this.audioDuration)
       throw new Error("Could not draw minimap playhead. No audio duration");
 
-    const currentScale: [number, number] = [1, 0.3];
-    const color: [number, number, number, number] = [1, 0, 0, 1.0];
+    const currentScale: [number, number] = [1, MINIMAP_HEIGHT / 2];
+
     const translateX = WebGLWaveform.timeToX(
       this.getTime(accountForLatency),
       this.audioDuration
     );
-    const translateFactor: [number, number] = [translateX - 1, -2.5];
+    const translateFactor: [number, number] = [translateX - 1, 0];
+    const offsetFactor: [number, number] = [0, 1 - MINIMAP_HEIGHT / 2];
+
+    const color: [number, number, number, number] = [1, 0, 0, 1.0];
 
     // gl.clearColor(0.8, 0.9, 1.0, 1.0);
     // gl.clear(gl.COLOR_BUFFER_BIT);
@@ -454,9 +476,14 @@ export class WebGLWaveform {
       this.programs.DEFAULT_PROGRAM,
       "uTranslateFactor"
     );
+    const uOffsetFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uOffsetFactor"
+    );
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
     this.gl.uniform2fv(uTranslateFactor, translateFactor);
+    this.gl.uniform2fv(uOffsetFactor, offsetFactor);
     this.gl.uniform4fv(uGlobalColor, color);
 
     // 3. call `this.gl.drawArrays` or `this.gl.drawElements`
@@ -486,8 +513,15 @@ export class WebGLWaveform {
 
     const currentScale: [number, number] = [
       WebGLWaveform.zoomToScale(this.zoom),
-      1 - WAVEFORM_OFFSET / 2,
+      WAVEFORM_HEIGHT / 2,
     ];
+
+    const translateX = WebGLWaveform.timeToX(
+      this.getTime(accountForLatency),
+      this.audioDuration
+    );
+    const translateFactor: [number, number] = [-translateX, 0];
+    const offsetFactor: [number, number] = [0, -MINIMAP_HEIGHT / 2];
 
     // 1. call `gl.useProgram` for the program needed to draw.
 
@@ -510,14 +544,14 @@ export class WebGLWaveform {
       this.programs.DEFAULT_PROGRAM,
       "uTranslateFactor"
     );
-
-    const translateX = WebGLWaveform.timeToX(
-      this.getTime(accountForLatency),
-      this.audioDuration
+    let uOffsetFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uOffsetFactor"
     );
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
-    this.gl.uniform2fv(uTranslateFactor, [-translateX, WAVEFORM_OFFSET]);
+    this.gl.uniform2fv(uTranslateFactor, translateFactor);
+    this.gl.uniform2fv(uOffsetFactor, offsetFactor);
     this.gl.uniform4fv(uGlobalColor, [0.5, 0.5, 0.5, 1.0]);
 
     // 3. call `gl.drawArrays` or `gl.drawElements`
@@ -540,9 +574,14 @@ export class WebGLWaveform {
       this.programs.DEFAULT_PROGRAM,
       "uTranslateFactor"
     );
+    uOffsetFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uOffsetFactor"
+    );
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
-    this.gl.uniform2fv(uTranslateFactor, [-translateX, WAVEFORM_OFFSET]);
+    this.gl.uniform2fv(uTranslateFactor, translateFactor);
+    this.gl.uniform2fv(uOffsetFactor, offsetFactor);
     this.gl.uniform4fv(uGlobalColor, [1, 1, 1, 1.0]);
 
     // 3. call `gl.drawArrays` or `gl.drawElements`
@@ -557,7 +596,9 @@ export class WebGLWaveform {
     if (!this.playheadVao)
       throw new Error("Could not draw waveform. No playhead VAO");
 
-    const currentScale: [number, number] = [1, 1 - WAVEFORM_OFFSET / 2];
+    const currentScale: [number, number] = [1, WAVEFORM_HEIGHT / 2];
+    const translateFactor: [number, number] = [0, 0];
+    const offsetFactor: [number, number] = [0, -MINIMAP_HEIGHT / 2];
 
     // gl.clearColor(0.8, 0.9, 1.0, 1.0);
     // gl.clear(gl.COLOR_BUFFER_BIT);
@@ -583,9 +624,14 @@ export class WebGLWaveform {
       this.programs.DEFAULT_PROGRAM,
       "uTranslateFactor"
     );
+    const uOffsetFactor = this.gl.getUniformLocation(
+      this.programs.DEFAULT_PROGRAM,
+      "uOffsetFactor"
+    );
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
-    this.gl.uniform2fv(uTranslateFactor, [0, WAVEFORM_OFFSET]);
+    this.gl.uniform2fv(uTranslateFactor, translateFactor);
+    this.gl.uniform2fv(uOffsetFactor, offsetFactor);
     this.gl.uniform4fv(uGlobalColor, [1, 0, 0, 1.0]);
 
     // 3. call `this.gl.drawArrays` or `this.gl.drawElements`
@@ -607,8 +653,15 @@ export class WebGLWaveform {
 
     const currentScale: [number, number] = [
       WebGLWaveform.zoomToScale(this.zoom),
-      1 - WAVEFORM_OFFSET / 2,
+      WAVEFORM_HEIGHT / 2,
     ];
+
+    const translateX = WebGLWaveform.timeToX(
+      this.getTime(accountForLatency),
+      this.audioDuration
+    );
+    const translateFactor: [number, number] = [-translateX, 0];
+    const offsetFactor: [number, number] = [0, -MINIMAP_HEIGHT / 2];
 
     // 1. call `gl.useProgram` for the program needed to draw.
 
@@ -629,14 +682,14 @@ export class WebGLWaveform {
       this.programs.FIXED_WIDTH_PROGRAM,
       "uTranslateFactor"
     );
-
-    const translateX = WebGLWaveform.timeToX(
-      this.getTime(accountForLatency),
-      this.audioDuration
+    const uOffsetFactor = this.gl.getUniformLocation(
+      this.programs.FIXED_WIDTH_PROGRAM,
+      "uOffsetFactor"
     );
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
-    this.gl.uniform2fv(uTranslateFactor, [-translateX, WAVEFORM_OFFSET]);
+    this.gl.uniform2fv(uTranslateFactor, translateFactor);
+    this.gl.uniform2fv(uOffsetFactor, offsetFactor);
     this.gl.uniform4fv(uGlobalColor, color || [0, 0, 1, 1.0]);
 
     // 3. call `this.gl.drawArrays` or `this.gl.drawElements`
@@ -655,8 +708,9 @@ export class WebGLWaveform {
     if (!this.audioDuration)
       throw new Error("Could not draw cue point. No audio duration");
 
-    const currentScale: [number, number] = [1, 0.3];
-    const translateFactor: [number, number] = [-1, -2.5];
+    const currentScale: [number, number] = [1, MINIMAP_HEIGHT / 2];
+    const translateFactor: [number, number] = [-1, 0];
+    const offsetFactor: [number, number] = [0, 1 - MINIMAP_HEIGHT / 2];
 
     // 1. call `gl.useProgram` for the program needed to draw.
 
@@ -677,9 +731,14 @@ export class WebGLWaveform {
       this.programs.FIXED_WIDTH_PROGRAM,
       "uTranslateFactor"
     );
+    const uOffsetFactor = this.gl.getUniformLocation(
+      this.programs.FIXED_WIDTH_PROGRAM,
+      "uOffsetFactor"
+    );
 
     this.gl.uniform2fv(uScalingFactor, currentScale);
     this.gl.uniform2fv(uTranslateFactor, translateFactor);
+    this.gl.uniform2fv(uOffsetFactor, offsetFactor);
     this.gl.uniform4fv(uGlobalColor, color || [0, 0, 1, 1.0]);
 
     // 3. call `this.gl.drawArrays` or `this.gl.drawElements`
