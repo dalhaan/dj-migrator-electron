@@ -17,7 +17,7 @@ export class WebGLWaveform {
   time = 0;
   bpm: number | null = null;
   latency = 0;
-  zoom = 20;
+  zoom = 8;
   // Waveform
   waveformVertexBufferLength: number | null = null;
   waveformVao: WebGLVertexArrayObject | null = null;
