@@ -15,7 +15,6 @@ const MINIMAP_HEIGHT = 0.5;
 
 export class WebGLWaveform {
   gl: WebGL2RenderingContext;
-  canvasWidth: number;
   programs: Programs;
   audioDuration: number | null = null;
   time = 0;
@@ -41,9 +40,8 @@ export class WebGLWaveform {
   animationPrevTime: DOMHighResTimeStamp | undefined;
   isAnimationPlaying = false;
 
-  constructor(gl: WebGL2RenderingContext, canvasWidth: number) {
+  constructor(gl: WebGL2RenderingContext) {
     this.gl = gl;
-    this.canvasWidth = canvasWidth;
 
     this.programs = {
       DEFAULT_PROGRAM: this.buildShaderProgram(
@@ -239,7 +237,7 @@ export class WebGLWaveform {
       const xPos = WebGLWaveform.timeToX(cuePoint.position, this.audioDuration);
 
       const dpr = window.devicePixelRatio || 1;
-      const strokeWidth = (4 * dpr) / this.canvasWidth;
+      const strokeWidth = (4 * dpr) / this.gl.canvas.width;
 
       const vertexBuffer = this.createArrayBuffer([
         xPos - strokeWidth / 2,
@@ -325,7 +323,7 @@ export class WebGLWaveform {
     this.gl.deleteVertexArray(this.minimapPlayheadVao);
 
     const dpr = window.devicePixelRatio || 1;
-    const strokeWidth = (4 * dpr) / this.canvasWidth;
+    const strokeWidth = (4 * dpr) / this.gl.canvas.width;
 
     const vertexBuffer = this.createArrayBuffer([
       -strokeWidth / 2,

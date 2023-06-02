@@ -76,7 +76,7 @@ export function Player() {
 
       const gl = canvasElement.current.getContext("webgl2");
       if (gl) {
-        waveform.current = new WebGLWaveform(gl, canvasElement.current.width);
+        waveform.current = new WebGLWaveform(gl);
       }
     }
   }, []);
