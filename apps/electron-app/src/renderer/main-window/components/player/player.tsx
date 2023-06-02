@@ -44,6 +44,7 @@ export function Player() {
       waveform.current.loadWaveform(waveformData);
       waveform.current.loadBeatgrid();
       waveform.current.loadCuePoints(cuePoints);
+      waveform.current.loadMinimapPlayhead();
       waveform.current.draw(false);
 
       if (audioElement.current) {

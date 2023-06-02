@@ -28,6 +28,7 @@ export class WebGLWaveform {
   // Playhead
   playheadVertexBufferLength: number | null = null;
   playheadVao: WebGLVertexArrayObject | null = null;
+  minimapPlayheadVao: WebGLVertexArrayObject | null = null;
   beatgridVertexBufferLength: number | null = null;
   beatgridVao: WebGLVertexArrayObject | null = null;
   bargridVertexBufferLength: number | null = null;
@@ -311,6 +312,62 @@ export class WebGLWaveform {
     }
   }
 
+  loadMinimapPlayhead() {
+    if (!this.gl)
+      throw new Error(
+        "Could not load minimap playhead. No GL2 rendering context"
+      );
+
+    if (!this.audioDuration)
+      throw new Error("Could not load minimap playhead. No audio duration.");
+
+    // Clean up old minimap playhead vao
+    this.gl.deleteVertexArray(this.minimapPlayheadVao);
+
+    const dpr = window.devicePixelRatio || 1;
+    const strokeWidth = (4 * dpr) / this.canvasWidth;
+
+    const vertexBuffer = this.createArrayBuffer([
+      -strokeWidth / 2,
+      -1,
+
+      -strokeWidth / 2,
+      1,
+
+      strokeWidth / 2,
+      -1,
+
+      strokeWidth / 2,
+      1,
+    ]);
+    const originBuffer = this.createArrayBuffer([0, -1, 0, 1, 0, -1, 0, 1]);
+
+    this.minimapPlayheadVao = this.gl.createVertexArray();
+    if (!this.minimapPlayheadVao)
+      throw new Error("Minimap playhead VAO failed to create");
+    this.gl.bindVertexArray(this.minimapPlayheadVao);
+
+    // Link `aVertexPosition` -> cuePointBuffer
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
+    const aVertexPosition = this.gl.getAttribLocation(
+      this.programs.FIXED_WIDTH_PROGRAM,
+      "aVertexPosition"
+    );
+    this.gl.enableVertexAttribArray(aVertexPosition);
+    this.gl.vertexAttribPointer(aVertexPosition, 2, this.gl.FLOAT, false, 0, 0);
+
+    // Link `aOriginPosition` -> originBuffer
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, originBuffer);
+    const aOriginPosition = this.gl.getAttribLocation(
+      this.programs.FIXED_WIDTH_PROGRAM,
+      "aOriginPosition"
+    );
+    this.gl.enableVertexAttribArray(aOriginPosition);
+    this.gl.vertexAttribPointer(aOriginPosition, 2, this.gl.FLOAT, false, 0, 0);
+
+    this.gl.bindVertexArray(null);
+  }
+
   drawWaveform(accountForLatency: boolean) {
     if (!this.gl)
       throw new Error("Could not draw waveform. No GL2 rendering context");
@@ -436,7 +493,7 @@ export class WebGLWaveform {
       throw new Error(
         "Could not draw minimap playhead. No GL2 rendering context"
       );
-    if (!this.playheadVao)
+    if (!this.minimapPlayheadVao)
       throw new Error("Could not draw minimap playhead. No playhead VAO");
     if (!this.audioDuration)
       throw new Error("Could not draw minimap playhead. No audio duration");
@@ -459,25 +516,25 @@ export class WebGLWaveform {
 
     // 1. call `gl.useProgram` for the program needed to draw.
 
-    this.gl.useProgram(this.programs.DEFAULT_PROGRAM);
-    this.gl.bindVertexArray(this.playheadVao);
+    this.gl.useProgram(this.programs.FIXED_WIDTH_PROGRAM);
+    this.gl.bindVertexArray(this.minimapPlayheadVao);
 
     // 2. setup uniforms
 
     const uScalingFactor = this.gl.getUniformLocation(
-      this.programs.DEFAULT_PROGRAM,
+      this.programs.FIXED_WIDTH_PROGRAM,
       "uScalingFactor"
     );
     const uGlobalColor = this.gl.getUniformLocation(
-      this.programs.DEFAULT_PROGRAM,
+      this.programs.FIXED_WIDTH_PROGRAM,
       "uGlobalColor"
     );
     const uTranslateFactor = this.gl.getUniformLocation(
-      this.programs.DEFAULT_PROGRAM,
+      this.programs.FIXED_WIDTH_PROGRAM,
       "uTranslateFactor"
     );
     const uOffsetFactor = this.gl.getUniformLocation(
-      this.programs.DEFAULT_PROGRAM,
+      this.programs.FIXED_WIDTH_PROGRAM,
       "uOffsetFactor"
     );
 
@@ -487,7 +544,7 @@ export class WebGLWaveform {
     this.gl.uniform4fv(uGlobalColor, color);
 
     // 3. call `this.gl.drawArrays` or `this.gl.drawElements`
-    this.gl.drawArrays(this.gl.LINE_STRIP, 0, 2);
+    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
 
     this.gl.bindVertexArray(null);
   }
