@@ -44,6 +44,7 @@ export function Player() {
       waveform.current.loadWaveform(waveformData);
       waveform.current.loadBeatgrid();
       waveform.current.loadCuePoints(cuePoints);
+      waveform.current.loadMinimapPlayhead();
       waveform.current.draw(false);
 
       if (audioElement.current) {
@@ -75,7 +76,7 @@ export function Player() {
 
       const gl = canvasElement.current.getContext("webgl2");
       if (gl) {
-        waveform.current = new WebGLWaveform(gl, canvasElement.current.width);
+        waveform.current = new WebGLWaveform(gl);
       }
     }
   }, []);
@@ -201,11 +202,33 @@ export function Player() {
     };
   }, []);
 
+  // Canvas resize listener
+  useEffect(() => {
+    const canvasElementRef = canvasElement.current;
+    const waveformRef = waveform.current;
+
+    const canvasResizeObserver = new ResizeObserver(() => {
+      if (waveformRef) {
+        waveformRef.draw(false);
+      }
+    });
+
+    if (canvasElementRef) {
+      canvasResizeObserver.observe(canvasElementRef);
+    }
+
+    return () => {
+      if (canvasElementRef) {
+        canvasResizeObserver.unobserve(canvasElementRef);
+      }
+    };
+  }, []);
+
   return (
     <Stack direction="column" alignItems="stretch" spacing={10}>
       <canvas
         ref={canvasElement}
-        style={{ width: "100%", height: 150, minHeight: 150 }}
+        style={{ width: "100%", height: 210, minHeight: 210 }}
       />
       <ButtonToolbar>
         <IconButton
