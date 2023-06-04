@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FaPlay, FaPause } from "react-icons/fa";
 import { Stack, Button, ButtonToolbar, IconButton, SelectPicker } from "rsuite";
 
+import { AudioPlayer } from "@/audio/audio-player";
 import { WebGLWaveform } from "@/main-window/components/player/webgl-waveform";
 import { useLibrary, useMainStore } from "@/stores/libraryStore";
 import { getAudioPcmValues, getAudioFileDuration } from "@/workers/ffmpeg";
@@ -11,9 +12,7 @@ import { transformPcmToVertex } from "@/workers/pcm-data-to-vertex";
 import { readFile } from "@/workers/readFile";
 
 export function Player() {
-  const audioContext = useRef<AudioContext | null>(null);
-  const audioSource = useRef<AudioBufferSourceNode | null>(null);
-  const audioBuffer = useRef<AudioBuffer | null>(null);
+  const audioPlayer = useRef(new AudioPlayer());
   const audioDurationRef = useRef(0);
   const bpm = useRef<number | null>(null);
   const beatsToJump = useRef(1);
@@ -31,13 +30,11 @@ export function Player() {
       // Load data from worker
       // File (fs) -> PCM values (ffmpeg) -> waveform vertex data
       const data = await readFile(track.absolutePath);
-      const file = new File([data.slice()], "song");
-
-      const audioDuration = await getAudioFileDuration(data);
       const pcmValues = await getAudioPcmValues(data);
       const waveformVertexData = transformPcmToVertex(
         Array.from(pcmValues) // Read Int16Array as number[]
       );
+      const audioDuration = await getAudioFileDuration(data);
 
       if (!pcmValues || !audioDuration)
         throw new Error("Failed to get waveform data");
@@ -47,6 +44,9 @@ export function Player() {
       if (!pcmValues) throw new Error("Failed to get waveform data");
       if (audioDuration === undefined)
         throw new Error("Failed to get audio duration");
+
+      const file = new File([data.slice()], "song");
+      audioPlayer.current.loadAudioData(await file.arrayBuffer());
 
       waveform.current.pause();
       waveform.current.setTime(0);
@@ -59,26 +59,6 @@ export function Player() {
       waveform.current.loadCuePoints(cuePoints);
       waveform.current.loadMinimapPlayhead();
       waveform.current.draw(false);
-
-      if (audioContext.current) {
-        console.time("decodeAudioData");
-        audioContext.current.decodeAudioData(
-          await file.arrayBuffer(),
-          (buffer) => {
-            console.timeEnd("decodeAudioData");
-
-            audioBuffer.current = buffer;
-
-            if (audioContext.current) {
-              audioSource.current = audioContext.current.createBufferSource();
-              audioSource.current.buffer = audioBuffer.current;
-              audioSource.current.connect(audioContext.current.destination);
-              audioSource.current.start(0);
-              audioContext.current.suspend();
-            }
-          }
-        );
-      }
 
       setIsPlaying(false);
       setCuePoints(cuePoints);
@@ -127,34 +107,31 @@ export function Player() {
   }
 
   async function play() {
-    if (waveform.current && audioContext.current && audioBuffer.current) {
-      await audioContext.current.resume();
+    if (waveform.current) {
+      await audioPlayer.current.play();
       waveform.current.play();
     }
   }
   async function pause() {
-    if (waveform.current && audioContext.current && audioSource.current) {
-      console.log({ currentTime: audioContext.current.currentTime });
-      await audioContext.current.suspend();
+    if (waveform.current) {
+      await audioPlayer.current.pause();
       waveform.current.pause();
     }
   }
 
-  function handlePlayPauseToggle() {
-    console.log(audioContext.current?.state);
+  async function handlePlayPauseToggle() {
     if (!waveform.current) return;
 
     if (!isPlaying) {
-      if (audioContext.current) {
-        const latency =
-          audioContext.current.baseLatency + audioContext.current.outputLatency;
+      const latency =
+        audioPlayer.current.context.baseLatency +
+        audioPlayer.current.context.outputLatency;
 
-        waveform.current.setLatency(latency * 1000);
-      }
+      waveform.current.setLatency(latency * 1000);
 
-      play();
+      await play();
     } else {
-      pause();
+      await pause();
     }
 
     setIsPlaying((isPlaying) => !isPlaying);
@@ -166,16 +143,12 @@ export function Player() {
       audioDurationRef.current * 1000
     );
 
-    // if (audioElement.current) {
-    //   audioElement.current.currentTime = clampedTime / 1000;
-    // }
     if (waveform.current) {
-      if (audioContext.current) {
-        const latency =
-          audioContext.current.baseLatency + audioContext.current.outputLatency;
+      const latency =
+        audioPlayer.current.context.baseLatency +
+        audioPlayer.current.context.outputLatency;
 
-        waveform.current.setLatency(latency * 1000);
-      }
+      waveform.current.setLatency(latency * 1000);
 
       waveform.current.setTime(clampedTime);
       // waveform.current.draw(waveform.current.isAnimationPlaying);
@@ -195,13 +168,6 @@ export function Player() {
     //       timePerBeatMs * beatsToJump.current;
     // jumpToTime(newTime);
   }
-
-  // Audio element listeners
-  useEffect(() => {
-    if (!audioContext.current) {
-      audioContext.current = new AudioContext();
-    }
-  }, []);
 
   // Canvas resize listener
   useEffect(() => {
