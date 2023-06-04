@@ -29,6 +29,7 @@ export function Player() {
       if (!waveform.current) return;
 
       // Load data from worker
+      // File (fs) -> PCM values (ffmpeg) -> waveform vertex data
       const file = await readFile(track.absolutePath);
       const audioDuration = await getAudioFileDuration(file);
       const pcmValues = await getAudioPcmValues(file);
