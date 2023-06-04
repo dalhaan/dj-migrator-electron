@@ -11,9 +11,9 @@ import { transformPcmToVertex } from "@/workers/pcm-data-to-vertex";
 import { readFile } from "@/workers/readFile";
 
 export function Player() {
-  const audioElement = useRef<HTMLAudioElement>(null);
   const audioContext = useRef<AudioContext | null>(null);
-  const audioTrack = useRef<MediaElementAudioSourceNode | null>(null);
+  const audioSource = useRef<AudioBufferSourceNode | null>(null);
+  const audioBuffer = useRef<AudioBuffer | null>(null);
   const audioDurationRef = useRef(0);
   const bpm = useRef<number | null>(null);
   const beatsToJump = useRef(1);
@@ -30,9 +30,11 @@ export function Player() {
 
       // Load data from worker
       // File (fs) -> PCM values (ffmpeg) -> waveform vertex data
-      const file = await readFile(track.absolutePath);
-      const audioDuration = await getAudioFileDuration(file);
-      const pcmValues = await getAudioPcmValues(file);
+      const data = await readFile(track.absolutePath);
+      const file = new File([data.slice()], "song");
+
+      const audioDuration = await getAudioFileDuration(data);
+      const pcmValues = await getAudioPcmValues(data);
       const waveformVertexData = transformPcmToVertex(
         Array.from(pcmValues) // Read Int16Array as number[]
       );
@@ -58,8 +60,24 @@ export function Player() {
       waveform.current.loadMinimapPlayhead();
       waveform.current.draw(false);
 
-      if (audioElement.current) {
-        audioElement.current.src = "local://" + track.absolutePath;
+      if (audioContext.current) {
+        console.time("decodeAudioData");
+        audioContext.current.decodeAudioData(
+          await file.arrayBuffer(),
+          (buffer) => {
+            console.timeEnd("decodeAudioData");
+
+            audioBuffer.current = buffer;
+
+            if (audioContext.current) {
+              audioSource.current = audioContext.current.createBufferSource();
+              audioSource.current.buffer = audioBuffer.current;
+              audioSource.current.connect(audioContext.current.destination);
+              audioSource.current.start(0);
+              audioContext.current.suspend();
+            }
+          }
+        );
       }
 
       setIsPlaying(false);
@@ -108,7 +126,22 @@ export function Player() {
     }
   }
 
+  async function play() {
+    if (waveform.current && audioContext.current && audioBuffer.current) {
+      await audioContext.current.resume();
+      waveform.current.play();
+    }
+  }
+  async function pause() {
+    if (waveform.current && audioContext.current && audioSource.current) {
+      console.log({ currentTime: audioContext.current.currentTime });
+      await audioContext.current.suspend();
+      waveform.current.pause();
+    }
+  }
+
   function handlePlayPauseToggle() {
+    console.log(audioContext.current?.state);
     if (!waveform.current) return;
 
     if (!isPlaying) {
@@ -119,9 +152,9 @@ export function Player() {
         waveform.current.setLatency(latency * 1000);
       }
 
-      audioTrack.current?.mediaElement.play();
+      play();
     } else {
-      audioTrack.current?.mediaElement.pause();
+      pause();
     }
 
     setIsPlaying((isPlaying) => !isPlaying);
@@ -133,9 +166,9 @@ export function Player() {
       audioDurationRef.current * 1000
     );
 
-    if (audioElement.current) {
-      audioElement.current.currentTime = clampedTime / 1000;
-    }
+    // if (audioElement.current) {
+    //   audioElement.current.currentTime = clampedTime / 1000;
+    // }
     if (waveform.current) {
       if (audioContext.current) {
         const latency =
@@ -151,66 +184,23 @@ export function Player() {
   }
 
   function beatJump(direction: "FORWARDS" | "BACKWARDS") {
-    if (!bpm.current || !audioElement.current) return;
-
-    console.log("beatJump", audioElement.current.currentTime);
-
-    const timePerBeatMs = (60 * 1000) / bpm.current;
-    const newTime =
-      direction === "FORWARDS"
-        ? audioElement.current.currentTime * 1000 +
-          timePerBeatMs * beatsToJump.current
-        : audioElement.current.currentTime * 1000 -
-          timePerBeatMs * beatsToJump.current;
-
-    jumpToTime(newTime);
+    // if (!bpm.current || !audioElement.current) return;
+    // console.log("beatJump", audioElement.current.currentTime);
+    // const timePerBeatMs = (60 * 1000) / bpm.current;
+    // const newTime =
+    //   direction === "FORWARDS"
+    //     ? audioElement.current.currentTime * 1000 +
+    //       timePerBeatMs * beatsToJump.current
+    //     : audioElement.current.currentTime * 1000 -
+    //       timePerBeatMs * beatsToJump.current;
+    // jumpToTime(newTime);
   }
 
   // Audio element listeners
   useEffect(() => {
-    const audioElementRef = audioElement.current;
-
-    function onTimeUpdate() {
-      console.log("========= onTimeudpate =========");
-      if (audioElementRef && waveform.current) {
-        console.log("audio time: ", audioElementRef.currentTime);
-        console.log("waveform time: ", waveform.current.getTime(false) / 1000);
-        console.log(
-          "difference: ",
-          audioElementRef.currentTime - waveform.current.getTime(false) / 1000
-        );
-        // waveform.current.setTime(audioElementRef.currentTime * 1000);
-      }
-    }
-
-    function onPlay() {
-      if (audioElementRef && waveform.current) {
-        waveform.current.play();
-        waveform.current.setTime(audioElementRef.currentTime * 1000);
-      }
-    }
-    function onPause() {
-      if (audioElementRef && waveform.current) {
-        waveform.current.pause();
-        waveform.current.setTime(audioElementRef.currentTime * 1000);
-      }
-    }
-
-    if (audioElementRef && !audioContext.current) {
+    if (!audioContext.current) {
       audioContext.current = new AudioContext();
-      audioTrack.current =
-        audioContext.current.createMediaElementSource(audioElementRef);
-      audioTrack.current.connect(audioContext.current.destination);
     }
-    audioElementRef?.addEventListener("timeupdate", onTimeUpdate);
-    audioElementRef?.addEventListener("play", onPlay);
-    audioElementRef?.addEventListener("pause", onPause);
-
-    return () => {
-      audioElementRef?.removeEventListener("timeupdate", onTimeUpdate);
-      audioElementRef?.removeEventListener("play", onPlay);
-      audioElementRef?.removeEventListener("pause", onPause);
-    };
   }, []);
 
   // Canvas resize listener
@@ -275,7 +265,7 @@ export function Player() {
           );
         })}
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-        <audio
+        {/* <audio
           ref={audioElement}
           // src="local:///Users/dallanfreemantle/Desktop/DALLANS HDD BACKUP/Big Salami (Vocals).wav"
           controls
@@ -285,7 +275,7 @@ export function Player() {
             }
           }}
           style={{ display: "none" }}
-        />
+        /> */}
       </ButtonToolbar>
     </Stack>
   );
