@@ -3,7 +3,7 @@
 const MAX_AMPLITUDE_VALUE = 32767;
 const MIN_AMPLITUDE_VALUE = -32768;
 
-export function transformWaveformDataForWebGL(waveformData: number[]) {
+export function transformPcmToVertex(waveformData: number[]) {
   console.time("transformWaveformDataForWebGL");
 
   const transformedData = [];

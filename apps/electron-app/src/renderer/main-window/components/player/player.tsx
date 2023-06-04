@@ -7,7 +7,7 @@ import { Stack, Button, ButtonToolbar, IconButton, SelectPicker } from "rsuite";
 import { WebGLWaveform } from "@/main-window/components/player/webgl-waveform";
 import { useLibrary, useMainStore } from "@/stores/libraryStore";
 import { getAudioPcmValues, getAudioFileDuration } from "@/workers/ffmpeg";
-import { transformWaveformDataForWebGL } from "@/workers/pcm-data-to-vertex";
+import { transformPcmToVertex } from "@/workers/pcm-data-to-vertex";
 import { readFile } from "@/workers/readFile";
 
 export function Player() {
@@ -33,7 +33,7 @@ export function Player() {
       const file = await readFile(track.absolutePath);
       const audioDuration = await getAudioFileDuration(file);
       const pcmValues = await getAudioPcmValues(file);
-      const waveformVertexData = transformWaveformDataForWebGL(
+      const waveformVertexData = transformPcmToVertex(
         Array.from(pcmValues) // Read Int16Array as number[]
       );
 
