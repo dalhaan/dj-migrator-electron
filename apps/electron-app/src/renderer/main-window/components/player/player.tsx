@@ -6,6 +6,9 @@ import { Stack, Button, ButtonToolbar, IconButton, SelectPicker } from "rsuite";
 
 import { WebGLWaveform } from "@/main-window/components/player/webgl-waveform";
 import { useLibrary, useMainStore } from "@/stores/libraryStore";
+import { generateWaveform, getAudioFileDuration } from "@/workers/ffmpeg";
+import { transformWaveformDataForWebGL } from "@/workers/pcm-data-to-vertex";
+import { readFile } from "@/workers/readFile";
 
 export function Player() {
   const audioElement = useRef<HTMLAudioElement>(null);
@@ -25,15 +28,24 @@ export function Player() {
     async (track: Tracks extends Map<string, infer Track> ? Track : never) => {
       if (!waveform.current) return;
 
-      const data = await window.electronAPI.getWaveformData(track.absolutePath);
+      // Load data from worker
+      const file = await readFile(track.absolutePath);
+      const audioDuration = await getAudioFileDuration(file);
+      const waveformData = await generateWaveform(file);
+      const waveformVertexData = transformWaveformDataForWebGL(
+        Array.from(waveformData)
+      );
 
-      if (!data) throw new Error("Failed to get waveform data");
+      console.log({ audioDuration, waveformData });
 
-      const { waveformData, duration: audioDuration } = data;
+      if (!waveformData || !audioDuration)
+        throw new Error("Failed to get waveform data");
+
       const cuePoints = track.track.cuePoints;
 
       if (!waveformData) throw new Error("Failed to get waveform data");
-      if (!audioDuration) throw new Error("Failed to get audio duration");
+      if (audioDuration === undefined)
+        throw new Error("Failed to get audio duration");
 
       waveform.current.pause();
       waveform.current.setTime(0);
@@ -41,7 +53,7 @@ export function Player() {
       bpm.current = track.track.metadata.bpm ?? null;
       waveform.current.setAudioDuration(audioDuration);
       audioDurationRef.current = audioDuration;
-      waveform.current.loadWaveform(waveformData);
+      waveform.current.loadWaveform(waveformVertexData);
       waveform.current.loadBeatgrid();
       waveform.current.loadCuePoints(cuePoints);
       waveform.current.loadMinimapPlayhead();
