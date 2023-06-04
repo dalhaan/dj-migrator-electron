@@ -9,10 +9,8 @@ export class AudioPlayer {
 
   async loadAudioData(audioData: ArrayBuffer) {
     this.buffer = await this.decodeAudioData(audioData);
-    this.sourceNode = this.context.createBufferSource();
-    this.sourceNode.buffer = this.buffer;
-    this.sourceNode.connect(this.context.destination);
-    this.sourceNode.start(0);
+    const sourceNode = this.resetSourceNode();
+    sourceNode.start(0);
     await this.context.suspend();
   }
 
@@ -26,6 +24,20 @@ export class AudioPlayer {
     if (this.context.state === "running") {
       await this.context.suspend();
     }
+  }
+
+  setTime(time: number) {
+    const sourceNode = this.resetSourceNode();
+    sourceNode.start(this.context.currentTime, time / 1000);
+  }
+
+  resetSourceNode() {
+    this.sourceNode?.stop(0);
+    this.sourceNode = this.context.createBufferSource();
+    this.sourceNode.buffer = this.buffer;
+    this.sourceNode.connect(this.context.destination);
+
+    return this.sourceNode;
   }
 
   private decodeAudioData(audioData: ArrayBuffer) {

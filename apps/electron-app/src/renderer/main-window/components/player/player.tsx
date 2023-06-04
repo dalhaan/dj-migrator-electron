@@ -143,13 +143,14 @@ export function Player() {
       audioDurationRef.current * 1000
     );
 
+    audioPlayer.current.setTime(clampedTime);
+
     if (waveform.current) {
       const latency =
         audioPlayer.current.context.baseLatency +
         audioPlayer.current.context.outputLatency;
 
       waveform.current.setLatency(latency * 1000);
-
       waveform.current.setTime(clampedTime);
       // waveform.current.draw(waveform.current.isAnimationPlaying);
       waveform.current.draw(false);
