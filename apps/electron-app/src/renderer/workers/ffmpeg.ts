@@ -12,7 +12,7 @@ async function getFFmpeg() {
   return ffmpegInstance;
 }
 
-export async function generateWaveform(audioFile: Uint8Array) {
+export async function getAudioPcmValues(audioFile: Uint8Array) {
   const ffmpeg = await getFFmpeg();
 
   const virtualFilePath = "audio-file";

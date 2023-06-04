@@ -6,7 +6,7 @@ import { Stack, Button, ButtonToolbar, IconButton, SelectPicker } from "rsuite";
 
 import { WebGLWaveform } from "@/main-window/components/player/webgl-waveform";
 import { useLibrary, useMainStore } from "@/stores/libraryStore";
-import { generateWaveform, getAudioFileDuration } from "@/workers/ffmpeg";
+import { getAudioPcmValues, getAudioFileDuration } from "@/workers/ffmpeg";
 import { transformWaveformDataForWebGL } from "@/workers/pcm-data-to-vertex";
 import { readFile } from "@/workers/readFile";
 
@@ -31,19 +31,17 @@ export function Player() {
       // Load data from worker
       const file = await readFile(track.absolutePath);
       const audioDuration = await getAudioFileDuration(file);
-      const waveformData = await generateWaveform(file);
+      const pcmValues = await getAudioPcmValues(file);
       const waveformVertexData = transformWaveformDataForWebGL(
-        Array.from(waveformData)
+        Array.from(pcmValues) // Read Int16Array as number[]
       );
 
-      console.log({ audioDuration, waveformData });
-
-      if (!waveformData || !audioDuration)
+      if (!pcmValues || !audioDuration)
         throw new Error("Failed to get waveform data");
 
       const cuePoints = track.track.cuePoints;
 
-      if (!waveformData) throw new Error("Failed to get waveform data");
+      if (!pcmValues) throw new Error("Failed to get waveform data");
       if (audioDuration === undefined)
         throw new Error("Failed to get audio duration");
 
