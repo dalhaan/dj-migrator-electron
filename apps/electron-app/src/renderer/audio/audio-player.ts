@@ -2,6 +2,8 @@ export class AudioPlayer {
   buffer: AudioBuffer | null = null;
   context: AudioContext;
   sourceNode: AudioBufferSourceNode | null = null;
+  startTime = 0;
+  offsetTime = 0;
 
   constructor() {
     this.context = new AudioContext();
@@ -12,6 +14,7 @@ export class AudioPlayer {
     const sourceNode = this.resetSourceNode();
     sourceNode.start(0);
     await this.context.suspend();
+    this.startTime = this.context.currentTime;
   }
 
   async play() {
@@ -29,9 +32,15 @@ export class AudioPlayer {
   setTime(time: number) {
     const sourceNode = this.resetSourceNode();
     sourceNode.start(this.context.currentTime, time / 1000);
+    this.startTime = this.context.currentTime;
+    this.offsetTime = time / 1000;
   }
 
-  resetSourceNode() {
+  getCurrentTime() {
+    return this.context.currentTime - this.startTime + this.offsetTime;
+  }
+
+  private resetSourceNode() {
     this.sourceNode?.stop(0);
     this.sourceNode = this.context.createBufferSource();
     this.sourceNode.buffer = this.buffer;

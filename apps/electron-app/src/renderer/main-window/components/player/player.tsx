@@ -122,6 +122,8 @@ export function Player() {
   async function handlePlayPauseToggle() {
     if (!waveform.current) return;
 
+    console.log("currentTime", audioPlayer.current.getCurrentTime());
+
     if (!isPlaying) {
       const latency =
         audioPlayer.current.context.baseLatency +
@@ -158,16 +160,15 @@ export function Player() {
   }
 
   function beatJump(direction: "FORWARDS" | "BACKWARDS") {
-    // if (!bpm.current || !audioElement.current) return;
-    // console.log("beatJump", audioElement.current.currentTime);
-    // const timePerBeatMs = (60 * 1000) / bpm.current;
-    // const newTime =
-    //   direction === "FORWARDS"
-    //     ? audioElement.current.currentTime * 1000 +
-    //       timePerBeatMs * beatsToJump.current
-    //     : audioElement.current.currentTime * 1000 -
-    //       timePerBeatMs * beatsToJump.current;
-    // jumpToTime(newTime);
+    if (!bpm.current) return;
+    const timePerBeatMs = (60 * 1000) / bpm.current;
+    const newTime =
+      direction === "FORWARDS"
+        ? audioPlayer.current.getCurrentTime() * 1000 +
+          timePerBeatMs * beatsToJump.current
+        : audioPlayer.current.getCurrentTime() * 1000 -
+          timePerBeatMs * beatsToJump.current;
+    jumpToTime(newTime);
   }
 
   // Canvas resize listener
