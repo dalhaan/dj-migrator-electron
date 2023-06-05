@@ -19,6 +19,7 @@ export function Player() {
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const waveform = useRef<WebGLWaveform | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const isPlayingRef = useRef(isPlaying);
   const [cuePoints, setCuePoints] = useState<CuePoint[]>([]);
 
   const selectedTrackId = useMainStore((state) => state.selectedTrackId);
@@ -76,6 +77,7 @@ export function Player() {
       console.timeEnd("loadWaveformData");
 
       setIsPlaying(false);
+      isPlayingRef.current = false;
     },
     []
   );
@@ -147,10 +149,10 @@ export function Player() {
     audioPlayer.current.pause();
   }
 
-  async function handlePlayPauseToggle() {
+  const handlePlayPauseToggle = useCallback(async () => {
     if (!waveform.current) return;
 
-    if (!isPlaying) {
+    if (!isPlayingRef.current) {
       const latency =
         audioPlayer.current.context.baseLatency +
         audioPlayer.current.context.outputLatency;
@@ -162,8 +164,11 @@ export function Player() {
       await pause();
     }
 
-    setIsPlaying((isPlaying) => !isPlaying);
-  }
+    setIsPlaying((isPlaying) => {
+      isPlayingRef.current = !isPlaying;
+      return !isPlaying;
+    });
+  }, []);
 
   function jumpToTime(time: number) {
     const clampedTime = Math.min(
@@ -216,6 +221,21 @@ export function Player() {
       }
     };
   }, []);
+
+  // Keyboard listeners
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.code === "Space") {
+        handlePlayPauseToggle();
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [handlePlayPauseToggle]);
 
   return (
     <Stack direction="column" alignItems="stretch" spacing={10}>
