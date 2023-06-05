@@ -25,43 +25,50 @@ export function Player() {
 
   const loadTrack = useCallback(
     async (track: Tracks extends Map<string, infer Track> ? Track : never) => {
-      if (!waveform.current) return;
+      const data = await readFile(track.absolutePath);
+      const file = new File([data.slice()], "song");
 
       // Load data from worker
       // File (fs) -> PCM values (ffmpeg) -> waveform vertex data
-      const data = await readFile(track.absolutePath);
-      const pcmValues = await getAudioPcmValues(data);
-      const waveformVertexData = transformPcmToVertex(
-        Array.from(pcmValues) // Read Int16Array as number[]
-      );
-      const audioDuration = await getAudioFileDuration(data);
+      async function loadWaveformData() {
+        if (!waveform.current) return;
 
-      if (!pcmValues || !audioDuration)
-        throw new Error("Failed to get waveform data");
+        const pcmValues = await getAudioPcmValues(data);
+        const waveformVertexData = transformPcmToVertex(
+          Array.from(pcmValues) // Read Int16Array as number[]
+        );
+        const audioDuration = await getAudioFileDuration(data);
+        if (!pcmValues || !audioDuration)
+          throw new Error("Failed to get waveform data");
 
-      const cuePoints = track.track.cuePoints;
+        const cuePoints = track.track.cuePoints;
 
-      if (!pcmValues) throw new Error("Failed to get waveform data");
-      if (audioDuration === undefined)
-        throw new Error("Failed to get audio duration");
+        if (!pcmValues) throw new Error("Failed to get waveform data");
+        if (audioDuration === undefined)
+          throw new Error("Failed to get audio duration");
 
-      const file = new File([data.slice()], "song");
-      audioPlayer.current.loadAudioData(await file.arrayBuffer());
+        waveform.current.pause();
+        waveform.current.setTime(0);
+        waveform.current.setBpm(track.track.metadata.bpm ?? null);
+        bpm.current = track.track.metadata.bpm ?? null;
+        waveform.current.setAudioDuration(audioDuration);
+        audioDurationRef.current = audioDuration;
+        waveform.current.loadWaveform(waveformVertexData);
+        waveform.current.loadBeatgrid();
+        waveform.current.loadCuePoints(cuePoints);
+        waveform.current.loadMinimapPlayhead();
+        waveform.current.draw(false);
 
-      waveform.current.pause();
-      waveform.current.setTime(0);
-      waveform.current.setBpm(track.track.metadata.bpm ?? null);
-      bpm.current = track.track.metadata.bpm ?? null;
-      waveform.current.setAudioDuration(audioDuration);
-      audioDurationRef.current = audioDuration;
-      waveform.current.loadWaveform(waveformVertexData);
-      waveform.current.loadBeatgrid();
-      waveform.current.loadCuePoints(cuePoints);
-      waveform.current.loadMinimapPlayhead();
-      waveform.current.draw(false);
+        setCuePoints(cuePoints);
+      }
+
+      // Load waveform data and audio buffer in parallel
+      await Promise.all([
+        loadWaveformData(),
+        audioPlayer.current.loadAudioData(await file.arrayBuffer()),
+      ]);
 
       setIsPlaying(false);
-      setCuePoints(cuePoints);
     },
     []
   );
