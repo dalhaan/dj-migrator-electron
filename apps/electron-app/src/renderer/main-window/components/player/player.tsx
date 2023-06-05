@@ -25,19 +25,26 @@ export function Player() {
 
   const loadTrack = useCallback(
     async (track: Tracks extends Map<string, infer Track> ? Track : never) => {
+      console.time("readFile");
       const data = await readFile(track.absolutePath);
-      const file = new File([data.slice()], "song");
+      console.timeEnd("readFile");
 
       // Load data from worker
       // File (fs) -> PCM values (ffmpeg) -> waveform vertex data
       async function loadWaveformData() {
         if (!waveform.current) return;
 
+        console.time("getAudioPcmValues");
         const pcmValues = await getAudioPcmValues(data);
+        console.timeEnd("getAudioPcmValues");
+        console.time("transformPcmToVertex");
         const waveformVertexData = transformPcmToVertex(
           Array.from(pcmValues) // Read Int16Array as number[]
         );
+        console.timeEnd("transformPcmToVertex");
+        console.time("getAudioFileDuration");
         const audioDuration = await getAudioFileDuration(data);
+        console.timeEnd("getAudioFileDuration");
         if (!pcmValues || !audioDuration)
           throw new Error("Failed to get waveform data");
 
@@ -63,10 +70,10 @@ export function Player() {
       }
 
       // Load waveform data and audio buffer in parallel
-      await Promise.all([
-        loadWaveformData(),
-        audioPlayer.current.loadAudioData(await file.arrayBuffer()),
-      ]);
+      audioPlayer.current.loadAudioData(track.absolutePath);
+      console.time("loadWaveformData");
+      await loadWaveformData();
+      console.timeEnd("loadWaveformData");
 
       setIsPlaying(false);
     },
@@ -84,6 +91,8 @@ export function Player() {
   }, [selectedTrackId, loadTrack]);
 
   useEffect(() => {
+    const audioPlayerRef = audioPlayer.current;
+
     if (canvasElement.current) {
       // Set up canvas
       const dpr = window.devicePixelRatio || 1;
@@ -91,10 +100,28 @@ export function Player() {
       canvasElement.current.height = canvasElement.current.offsetHeight * dpr;
 
       const gl = canvasElement.current.getContext("webgl2");
+
       if (gl) {
         waveform.current = new WebGLWaveform(gl);
+
+        audioPlayerRef.onPlay(() => {
+          if (waveform.current) {
+            waveform.current.play();
+            waveform.current.setTime(audioPlayerRef.currentTime);
+          }
+        });
+        audioPlayerRef.onPause(() => {
+          if (waveform.current) {
+            waveform.current.pause();
+            waveform.current.setTime(audioPlayerRef.currentTime);
+          }
+        });
       }
     }
+
+    return () => {
+      audioPlayerRef.cleanUp();
+    };
   }, []);
 
   function zoomIn() {
@@ -114,22 +141,14 @@ export function Player() {
   }
 
   async function play() {
-    if (waveform.current) {
-      await audioPlayer.current.play();
-      waveform.current.play();
-    }
+    audioPlayer.current.play();
   }
   async function pause() {
-    if (waveform.current) {
-      await audioPlayer.current.pause();
-      waveform.current.pause();
-    }
+    audioPlayer.current.pause();
   }
 
   async function handlePlayPauseToggle() {
     if (!waveform.current) return;
-
-    console.log("currentTime", audioPlayer.current.getCurrentTime());
 
     if (!isPlaying) {
       const latency =
@@ -171,10 +190,8 @@ export function Player() {
     const timePerBeatMs = (60 * 1000) / bpm.current;
     const newTime =
       direction === "FORWARDS"
-        ? audioPlayer.current.getCurrentTime() * 1000 +
-          timePerBeatMs * beatsToJump.current
-        : audioPlayer.current.getCurrentTime() * 1000 -
-          timePerBeatMs * beatsToJump.current;
+        ? audioPlayer.current.currentTime + timePerBeatMs * beatsToJump.current
+        : audioPlayer.current.currentTime - timePerBeatMs * beatsToJump.current;
     jumpToTime(newTime);
   }
 

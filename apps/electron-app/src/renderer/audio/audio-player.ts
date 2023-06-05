@@ -1,57 +1,53 @@
 export class AudioPlayer {
-  buffer: AudioBuffer | null = null;
+  player: HTMLAudioElement;
   context: AudioContext;
-  sourceNode: AudioBufferSourceNode | null = null;
-  startTime = 0;
-  offsetTime = 0;
+  sourceNode: MediaElementAudioSourceNode | null = null;
+  playListener: (() => void) | null = null;
+  pauseListener: (() => void) | null = null;
 
   constructor() {
+    this.player = new Audio();
     this.context = new AudioContext();
+    this.sourceNode = this.context.createMediaElementSource(this.player);
+    this.sourceNode.connect(this.context.destination);
   }
 
-  async loadAudioData(audioData: ArrayBuffer) {
-    this.buffer = await this.decodeAudioData(audioData);
-    const sourceNode = this.resetSourceNode();
-    sourceNode.start(0);
-    await this.context.suspend();
-    this.startTime = this.context.currentTime;
+  loadAudioData(filePath: string) {
+    this.player.src = "local://" + filePath;
   }
 
-  async play() {
-    if (this.context.state === "suspended") {
-      await this.context.resume();
-    }
+  play() {
+    this.player.play();
   }
 
-  async pause() {
-    if (this.context.state === "running") {
-      await this.context.suspend();
-    }
+  pause() {
+    this.player.pause();
+  }
+
+  get currentTime() {
+    return this.player.currentTime * 1000;
   }
 
   setTime(time: number) {
-    const sourceNode = this.resetSourceNode();
-    sourceNode.start(this.context.currentTime, time / 1000);
-    this.startTime = this.context.currentTime;
-    this.offsetTime = time / 1000;
+    this.player.currentTime = time / 1000;
   }
 
-  getCurrentTime() {
-    return this.context.currentTime - this.startTime + this.offsetTime;
+  onPlay(callback: () => void) {
+    this.playListener = callback;
+    this.player.addEventListener("play", this.playListener);
   }
 
-  private resetSourceNode() {
-    this.sourceNode?.stop(0);
-    this.sourceNode = this.context.createBufferSource();
-    this.sourceNode.buffer = this.buffer;
-    this.sourceNode.connect(this.context.destination);
-
-    return this.sourceNode;
+  onPause(callback: () => void) {
+    this.pauseListener = callback;
+    this.player.addEventListener("pause", this.pauseListener);
   }
 
-  private decodeAudioData(audioData: ArrayBuffer) {
-    return new Promise<AudioBuffer>((resolve, reject) => {
-      this.context.decodeAudioData(audioData, resolve, reject);
-    });
+  cleanUp() {
+    if (this.playListener) {
+      this.player.removeEventListener("play", this.playListener);
+    }
+    if (this.pauseListener) {
+      this.player.removeEventListener("pause", this.pauseListener);
+    }
   }
 }
