@@ -29,6 +29,7 @@ export const createMainWindow = async () => {
     // visualEffectState: "followWindow",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
+      nodeIntegrationInWorker: true,
     },
     show: false,
   });

@@ -4,55 +4,80 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FaPlay, FaPause } from "react-icons/fa";
 import { Stack, Button, ButtonToolbar, IconButton, SelectPicker } from "rsuite";
 
+import { AudioPlayer } from "@/audio/audio-player";
 import { WebGLWaveform } from "@/main-window/components/player/webgl-waveform";
 import { useLibrary, useMainStore } from "@/stores/libraryStore";
+import { getAudioPcmValues, getAudioFileDuration } from "@/workers/ffmpeg";
+import { transformPcmToVertex } from "@/workers/pcm-data-to-vertex";
+import { readFile } from "@/workers/readFile";
 
 export function Player() {
-  const audioElement = useRef<HTMLAudioElement>(null);
-  const audioContext = useRef<AudioContext | null>(null);
-  const audioTrack = useRef<MediaElementAudioSourceNode | null>(null);
+  const audioPlayer = useRef(new AudioPlayer());
   const audioDurationRef = useRef(0);
   const bpm = useRef<number | null>(null);
   const beatsToJump = useRef(1);
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const waveform = useRef<WebGLWaveform | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const isPlayingRef = useRef(isPlaying);
   const [cuePoints, setCuePoints] = useState<CuePoint[]>([]);
 
   const selectedTrackId = useMainStore((state) => state.selectedTrackId);
 
   const loadTrack = useCallback(
     async (track: Tracks extends Map<string, infer Track> ? Track : never) => {
-      if (!waveform.current) return;
+      console.time("readFile");
+      const data = await readFile(track.absolutePath);
+      console.timeEnd("readFile");
 
-      const data = await window.electronAPI.getWaveformData(track.absolutePath);
+      // Load data from worker
+      // File (fs) -> PCM values (ffmpeg) -> waveform vertex data
+      async function loadWaveformData() {
+        if (!waveform.current) return;
 
-      if (!data) throw new Error("Failed to get waveform data");
+        console.time("getAudioPcmValues");
+        const pcmValues = await getAudioPcmValues(data);
+        console.timeEnd("getAudioPcmValues");
+        console.time("transformPcmToVertex");
+        const waveformVertexData = transformPcmToVertex(
+          Array.from(pcmValues) // Read Int16Array as number[]
+        );
+        console.timeEnd("transformPcmToVertex");
+        console.time("getAudioFileDuration");
+        const audioDuration = await getAudioFileDuration(data);
+        console.timeEnd("getAudioFileDuration");
+        if (!pcmValues || !audioDuration)
+          throw new Error("Failed to get waveform data");
 
-      const { waveformData, duration: audioDuration } = data;
-      const cuePoints = track.track.cuePoints;
+        const cuePoints = track.track.cuePoints;
 
-      if (!waveformData) throw new Error("Failed to get waveform data");
-      if (!audioDuration) throw new Error("Failed to get audio duration");
+        if (!pcmValues) throw new Error("Failed to get waveform data");
+        if (audioDuration === undefined)
+          throw new Error("Failed to get audio duration");
 
-      waveform.current.pause();
-      waveform.current.setTime(0);
-      waveform.current.setBpm(track.track.metadata.bpm ?? null);
-      bpm.current = track.track.metadata.bpm ?? null;
-      waveform.current.setAudioDuration(audioDuration);
-      audioDurationRef.current = audioDuration;
-      waveform.current.loadWaveform(waveformData);
-      waveform.current.loadBeatgrid();
-      waveform.current.loadCuePoints(cuePoints);
-      waveform.current.loadMinimapPlayhead();
-      waveform.current.draw(false);
+        waveform.current.pause();
+        waveform.current.setTime(0);
+        waveform.current.setBpm(track.track.metadata.bpm ?? null);
+        bpm.current = track.track.metadata.bpm ?? null;
+        waveform.current.setAudioDuration(audioDuration);
+        audioDurationRef.current = audioDuration;
+        waveform.current.loadWaveform(waveformVertexData);
+        waveform.current.loadBeatgrid();
+        waveform.current.loadCuePoints(cuePoints);
+        waveform.current.loadMinimapPlayhead();
+        waveform.current.draw(false);
 
-      if (audioElement.current) {
-        audioElement.current.src = "local://" + track.absolutePath;
+        setCuePoints(cuePoints);
       }
 
+      // Load waveform data and audio buffer in parallel
+      audioPlayer.current.loadAudioData(track.absolutePath);
+      console.time("loadWaveformData");
+      await loadWaveformData();
+      console.timeEnd("loadWaveformData");
+
       setIsPlaying(false);
-      setCuePoints(cuePoints);
+      isPlayingRef.current = false;
     },
     []
   );
@@ -68,6 +93,8 @@ export function Player() {
   }, [selectedTrackId, loadTrack]);
 
   useEffect(() => {
+    const audioPlayerRef = audioPlayer.current;
+
     if (canvasElement.current) {
       // Set up canvas
       const dpr = window.devicePixelRatio || 1;
@@ -75,10 +102,28 @@ export function Player() {
       canvasElement.current.height = canvasElement.current.offsetHeight * dpr;
 
       const gl = canvasElement.current.getContext("webgl2");
+
       if (gl) {
         waveform.current = new WebGLWaveform(gl);
+
+        audioPlayerRef.onPlay(() => {
+          if (waveform.current) {
+            waveform.current.play();
+            waveform.current.setTime(audioPlayerRef.currentTime);
+          }
+        });
+        audioPlayerRef.onPause(() => {
+          if (waveform.current) {
+            waveform.current.pause();
+            waveform.current.setTime(audioPlayerRef.currentTime);
+          }
+        });
       }
     }
+
+    return () => {
+      audioPlayerRef.cleanUp();
+    };
   }, []);
 
   function zoomIn() {
@@ -97,24 +142,33 @@ export function Player() {
     }
   }
 
-  function handlePlayPauseToggle() {
+  async function play() {
+    audioPlayer.current.play();
+  }
+  async function pause() {
+    audioPlayer.current.pause();
+  }
+
+  const handlePlayPauseToggle = useCallback(async () => {
     if (!waveform.current) return;
 
-    if (!isPlaying) {
-      if (audioContext.current) {
-        const latency =
-          audioContext.current.baseLatency + audioContext.current.outputLatency;
+    if (!isPlayingRef.current) {
+      const latency =
+        audioPlayer.current.context.baseLatency +
+        audioPlayer.current.context.outputLatency;
 
-        waveform.current.setLatency(latency * 1000);
-      }
+      waveform.current.setLatency(latency * 1000);
 
-      audioTrack.current?.mediaElement.play();
+      await play();
     } else {
-      audioTrack.current?.mediaElement.pause();
+      await pause();
     }
 
-    setIsPlaying((isPlaying) => !isPlaying);
-  }
+    setIsPlaying((isPlaying) => {
+      isPlayingRef.current = !isPlaying;
+      return !isPlaying;
+    });
+  }, []);
 
   function jumpToTime(time: number) {
     const clampedTime = Math.min(
@@ -122,17 +176,14 @@ export function Player() {
       audioDurationRef.current * 1000
     );
 
-    if (audioElement.current) {
-      audioElement.current.currentTime = clampedTime / 1000;
-    }
+    audioPlayer.current.setTime(clampedTime);
+
     if (waveform.current) {
-      if (audioContext.current) {
-        const latency =
-          audioContext.current.baseLatency + audioContext.current.outputLatency;
+      const latency =
+        audioPlayer.current.context.baseLatency +
+        audioPlayer.current.context.outputLatency;
 
-        waveform.current.setLatency(latency * 1000);
-      }
-
+      waveform.current.setLatency(latency * 1000);
       waveform.current.setTime(clampedTime);
       // waveform.current.draw(waveform.current.isAnimationPlaying);
       waveform.current.draw(false);
@@ -140,67 +191,14 @@ export function Player() {
   }
 
   function beatJump(direction: "FORWARDS" | "BACKWARDS") {
-    if (!bpm.current || !audioElement.current) return;
-
-    console.log("beatJump", audioElement.current.currentTime);
-
+    if (!bpm.current) return;
     const timePerBeatMs = (60 * 1000) / bpm.current;
     const newTime =
       direction === "FORWARDS"
-        ? audioElement.current.currentTime * 1000 +
-          timePerBeatMs * beatsToJump.current
-        : audioElement.current.currentTime * 1000 -
-          timePerBeatMs * beatsToJump.current;
-
+        ? audioPlayer.current.currentTime + timePerBeatMs * beatsToJump.current
+        : audioPlayer.current.currentTime - timePerBeatMs * beatsToJump.current;
     jumpToTime(newTime);
   }
-
-  // Audio element listeners
-  useEffect(() => {
-    const audioElementRef = audioElement.current;
-
-    function onTimeUpdate() {
-      console.log("========= onTimeudpate =========");
-      if (audioElementRef && waveform.current) {
-        console.log("audio time: ", audioElementRef.currentTime);
-        console.log("waveform time: ", waveform.current.getTime(false) / 1000);
-        console.log(
-          "difference: ",
-          audioElementRef.currentTime - waveform.current.getTime(false) / 1000
-        );
-        // waveform.current.setTime(audioElementRef.currentTime * 1000);
-      }
-    }
-
-    function onPlay() {
-      if (audioElementRef && waveform.current) {
-        waveform.current.play();
-        waveform.current.setTime(audioElementRef.currentTime * 1000);
-      }
-    }
-    function onPause() {
-      if (audioElementRef && waveform.current) {
-        waveform.current.pause();
-        waveform.current.setTime(audioElementRef.currentTime * 1000);
-      }
-    }
-
-    if (audioElementRef && !audioContext.current) {
-      audioContext.current = new AudioContext();
-      audioTrack.current =
-        audioContext.current.createMediaElementSource(audioElementRef);
-      audioTrack.current.connect(audioContext.current.destination);
-    }
-    audioElementRef?.addEventListener("timeupdate", onTimeUpdate);
-    audioElementRef?.addEventListener("play", onPlay);
-    audioElementRef?.addEventListener("pause", onPause);
-
-    return () => {
-      audioElementRef?.removeEventListener("timeupdate", onTimeUpdate);
-      audioElementRef?.removeEventListener("play", onPlay);
-      audioElementRef?.removeEventListener("pause", onPause);
-    };
-  }, []);
 
   // Canvas resize listener
   useEffect(() => {
@@ -223,6 +221,21 @@ export function Player() {
       }
     };
   }, []);
+
+  // Keyboard listeners
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.code === "Space") {
+        handlePlayPauseToggle();
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [handlePlayPauseToggle]);
 
   return (
     <Stack direction="column" alignItems="stretch" spacing={10}>
@@ -264,7 +277,7 @@ export function Player() {
           );
         })}
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-        <audio
+        {/* <audio
           ref={audioElement}
           // src="local:///Users/dallanfreemantle/Desktop/DALLANS HDD BACKUP/Big Salami (Vocals).wav"
           controls
@@ -274,7 +287,7 @@ export function Player() {
             }
           }}
           style={{ display: "none" }}
-        />
+        /> */}
       </ButtonToolbar>
     </Stack>
   );
