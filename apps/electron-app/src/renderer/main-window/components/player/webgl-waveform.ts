@@ -4,6 +4,10 @@ import defaultFragmentShader from "./default-fragment-shader.glsl";
 import defaultVertexShader from "./default-vertex-shader.glsl";
 import fixedWidthVertexShader from "./fixed-width-vertex-shader.glsl";
 
+import { getAudioPcmValues, getAudioFileDuration } from "@/workers/ffmpeg";
+import { transformPcmToVertex } from "@/workers/pcm-data-to-vertex";
+import { readFile } from "@/workers/readFile";
+
 type Programs = {
   DEFAULT_PROGRAM: WebGLProgram;
   FIXED_WIDTH_PROGRAM: WebGLProgram;
@@ -56,6 +60,37 @@ export class WebGLWaveform {
 
     // Load playhead VAO
     this.loadPlayhead();
+  }
+
+  async loadWaveformData(
+    filePath: string,
+    cuePoints: CuePoint[],
+    bpm: number | undefined,
+    duration: number
+  ) {
+    const data = await readFile(filePath);
+
+    console.time("getAudioPcmValues");
+    const pcmValues = await getAudioPcmValues(data);
+    console.timeEnd("getAudioPcmValues");
+
+    if (!pcmValues) throw new Error("Failed to get waveform data");
+
+    console.time("transformPcmToVertex");
+    const waveformVertexData = transformPcmToVertex(
+      Array.from(pcmValues) // Read Int16Array as number[]
+    );
+    console.timeEnd("transformPcmToVertex");
+
+    this.pause();
+    this.setTime(0);
+    this.setBpm(bpm ?? null);
+    this.setAudioDuration(duration);
+    this.loadWaveform(waveformVertexData);
+    this.loadBeatgrid();
+    this.loadCuePoints(cuePoints);
+    this.loadMinimapPlayhead();
+    this.draw(false);
   }
 
   setAudioDuration(duration: number) {

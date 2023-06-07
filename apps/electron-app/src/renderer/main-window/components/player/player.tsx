@@ -7,13 +7,9 @@ import { Stack, Button, ButtonToolbar, IconButton, SelectPicker } from "rsuite";
 import { AudioPlayer } from "@/audio/audio-player";
 import { WebGLWaveform } from "@/main-window/components/player/webgl-waveform";
 import { useLibrary, useMainStore } from "@/stores/libraryStore";
-import { getAudioPcmValues, getAudioFileDuration } from "@/workers/ffmpeg";
-import { transformPcmToVertex } from "@/workers/pcm-data-to-vertex";
-import { readFile } from "@/workers/readFile";
 
 export function Player() {
   const audioPlayer = useRef(new AudioPlayer());
-  const audioDurationRef = useRef(0);
   const bpm = useRef<number | null>(null);
   const beatsToJump = useRef(1);
   const canvasElement = useRef<HTMLCanvasElement>(null);
@@ -26,55 +22,22 @@ export function Player() {
 
   const loadTrack = useCallback(
     async (track: Tracks extends Map<string, infer Track> ? Track : never) => {
-      console.time("readFile");
-      const data = await readFile(track.absolutePath);
-      console.timeEnd("readFile");
-
-      // Load data from worker
-      // File (fs) -> PCM values (ffmpeg) -> waveform vertex data
-      async function loadWaveformData() {
-        if (!waveform.current) return;
-
-        console.time("getAudioPcmValues");
-        const pcmValues = await getAudioPcmValues(data);
-        console.timeEnd("getAudioPcmValues");
-        console.time("transformPcmToVertex");
-        const waveformVertexData = transformPcmToVertex(
-          Array.from(pcmValues) // Read Int16Array as number[]
-        );
-        console.timeEnd("transformPcmToVertex");
-        console.time("getAudioFileDuration");
-        const audioDuration = await getAudioFileDuration(data);
-        console.timeEnd("getAudioFileDuration");
-        if (!pcmValues || !audioDuration)
-          throw new Error("Failed to get waveform data");
-
-        const cuePoints = track.track.cuePoints;
-
-        if (!pcmValues) throw new Error("Failed to get waveform data");
-        if (audioDuration === undefined)
-          throw new Error("Failed to get audio duration");
-
-        waveform.current.pause();
-        waveform.current.setTime(0);
-        waveform.current.setBpm(track.track.metadata.bpm ?? null);
-        bpm.current = track.track.metadata.bpm ?? null;
-        waveform.current.setAudioDuration(audioDuration);
-        audioDurationRef.current = audioDuration;
-        waveform.current.loadWaveform(waveformVertexData);
-        waveform.current.loadBeatgrid();
-        waveform.current.loadCuePoints(cuePoints);
-        waveform.current.loadMinimapPlayhead();
-        waveform.current.draw(false);
-
-        setCuePoints(cuePoints);
-      }
+      if (!waveform.current) return;
 
       // Load waveform data and audio buffer in parallel
-      audioPlayer.current.loadAudioData(track.absolutePath);
+      bpm.current = track.track.metadata.bpm ?? null;
+
+      await audioPlayer.current.loadAudioData(track.absolutePath);
+
       console.time("loadWaveformData");
-      await loadWaveformData();
+      await waveform.current.loadWaveformData(
+        track.absolutePath,
+        track.track.cuePoints,
+        track.track.metadata.bpm,
+        audioPlayer.current.duration
+      );
       console.timeEnd("loadWaveformData");
+      setCuePoints(track.track.cuePoints);
 
       setIsPlaying(false);
       isPlayingRef.current = false;
@@ -173,7 +136,7 @@ export function Player() {
   function jumpToTime(time: number) {
     const clampedTime = Math.min(
       Math.max(time, 0),
-      audioDurationRef.current * 1000
+      audioPlayer.current.duration * 1000
     );
 
     audioPlayer.current.setTime(clampedTime);

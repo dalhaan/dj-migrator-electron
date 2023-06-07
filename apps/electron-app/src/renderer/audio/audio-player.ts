@@ -13,7 +13,20 @@ export class AudioPlayer {
   }
 
   loadAudioData(filePath: string) {
-    this.player.src = "local://" + filePath;
+    return new Promise<void>((resolve, reject) => {
+      const onLoadedData = (event: Event) => {
+        if (event.target) {
+          this.player.removeEventListener("loadeddata", onLoadedData);
+          resolve();
+        } else {
+          reject();
+        }
+      };
+
+      this.player.addEventListener("loadeddata", onLoadedData);
+
+      this.player.src = "local://" + filePath;
+    });
   }
 
   play() {
@@ -26,6 +39,10 @@ export class AudioPlayer {
 
   get currentTime() {
     return this.player.currentTime * 1000;
+  }
+
+  get duration() {
+    return this.player.duration;
   }
 
   setTime(time: number) {
