@@ -4,7 +4,7 @@ import defaultFragmentShader from "./default-fragment-shader.glsl";
 import defaultVertexShader from "./default-vertex-shader.glsl";
 import fixedWidthVertexShader from "./fixed-width-vertex-shader.glsl";
 
-import { getAudioPcmValues, getAudioFileDuration } from "@/workers/ffmpeg";
+import { getAudioPcmValues } from "@/workers/ffmpeg";
 import { transformPcmToVertex } from "@/workers/pcm-data-to-vertex";
 import { readFile } from "@/workers/readFile";
 
