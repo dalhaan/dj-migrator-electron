@@ -4,16 +4,16 @@ meta:
 seq:
   - id: header
     type: header
-  - id: sections
-    type: entry
+  - id: tags
+    type: tag
     repeat: expr
-    repeat-expr: 3
+    repeat-expr: 6
 types:
   header:
     seq:
       - id: magic
         size: 2
-  entry:
+  tag:
     seq:
       - id: type
         type: strz
@@ -27,19 +27,27 @@ types:
           cases:
             '"COLOR"': color_tag
             '"CUE"': cue_tag
+            '"BPMLOCK"': bpm_lock_tag
             _: unknown_tag
 
   color_tag:
     seq:
+      - size: 1
       - id: color
-        size: 4
+        size: 3
   cue_tag:
     seq:
+      - size: 1
       - id: index
         type: u1
       - id: position
         type: u4be
+      - size: 1
       - id: color
-        size: 4,
+        size: 3,
+  bpm_lock_tag:
+    seq:
+      - id: is_locked
+        type: u1
 
   unknown_tag: {}
