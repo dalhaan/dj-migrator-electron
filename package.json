@@ -5,15 +5,19 @@
   "scripts": {
     "nx": "nx",
     "start": "nx start electron-app",
-    "build": "nx build electron-app"
+    "build": "nx build electron-app",
+    "generate:kaitai": "tsx scripts/compileKaitaiStructs.ts lib/node/src/kaitai/schemas lib/node/src/kaitai/compiled"
   },
   "private": true,
   "dependencies": {},
   "devDependencies": {
     "@tsconfig/vite-react": "^1.0.1",
     "@types/node": "^18.16.1",
+    "kaitai-struct-compiler": "^0.10.0",
     "nx": "15.9.2",
-    "typescript": "^5.0.4"
+    "tsx": "^3.12.7",
+    "typescript": "^5.0.4",
+    "yaml": "^2.3.1"
   },
   "workspaces": {
     "packages": [

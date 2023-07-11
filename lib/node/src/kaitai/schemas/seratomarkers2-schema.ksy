@@ -1,5 +1,5 @@
 meta:
-  id: seratotag
+  id: seratomarkers2
   file-extension: seratotag
 seq:
   - id: header
@@ -46,7 +46,7 @@ types:
         type: u4be
       - size: 1
       - id: color
-        size: 3,
+        size: 3
   bpm_lock_tag:
     seq:
       - id: is_locked
