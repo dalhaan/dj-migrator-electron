@@ -6,13 +6,15 @@ seq:
     type: header
   - id: tags
     type: tag
-    repeat: expr
-    repeat-expr: 6
+    repeat: until
+    repeat-until: _.type == "BPMLOCK"
+  - id: terminator
+    size: 1
 types:
   header:
     seq:
       - id: magic
-        size: 2
+        contents: [0x01, 0x01]
   tag:
     seq:
       - id: type
