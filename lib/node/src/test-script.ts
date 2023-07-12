@@ -4,6 +4,7 @@ import path from "path";
 import SeratoBeatgrid from "./kaitai/compiled/SeratoBeatgrid";
 
 import * as musicMetadata from "music-metadata";
+import SeratoMarkers2 from "./kaitai/compiled/Seratomarkers2";
 const KataiStream = require("kaitai-struct/KaitaiStream");
 
 function getGeobTags(metadata: musicMetadata.IAudioMetadata) {
@@ -20,16 +21,24 @@ function getGeobTags(metadata: musicMetadata.IAudioMetadata) {
   return geobTags;
 }
 
-function getSeratoTags(geobTags: musicMetadata.ITag[]) {
-  const seratoTags: Record<"SeratoBeatGrid", Buffer | null> = {
-    SeratoBeatGrid: null,
-  };
+function getSeratoTags(metadata: musicMetadata.IAudioMetadata) {
+  const geobTags = getGeobTags(metadata);
+
+  const seratoTags: Record<"SeratoBeatGrid" | "SeratoMarkers2", Buffer | null> =
+    {
+      SeratoBeatGrid: null,
+      SeratoMarkers2: null,
+    };
 
   for (const tag of geobTags) {
     const data = tag.value.data as Buffer;
 
+    // Serato Markers2
+    if (data.toString().startsWith("erato Markers2")) {
+      seratoTags.SeratoMarkers2 = data;
+    }
     // Serato BeatGrid
-    if (data.toString().startsWith("erato BeatGrid")) {
+    else if (data.toString().startsWith("erato BeatGrid")) {
       seratoTags.SeratoBeatGrid = data;
     }
   }
@@ -37,12 +46,22 @@ function getSeratoTags(geobTags: musicMetadata.ITag[]) {
   return seratoTags;
 }
 
+function parseSeratoMarkers2Tag(data: Buffer) {
+  const bodyBase64 = data.subarray(data.indexOf(0x00) + 1); // First NULL byte (0x00) marks end of the GEOB header
+
+  const body = Buffer.from(bodyBase64.toString(), "base64");
+
+  const parsed = new SeratoMarkers2(new KataiStream(body));
+
+  return parsed;
+}
+
 function parseSeratoBeatGridTag(data: Buffer) {
   const body = data.subarray(data.indexOf(0x00) + 1); // First NULL byte (0x00) marks end of the GEOB header
 
-  const parsedBeatgrid = new SeratoBeatgrid(new KataiStream(body));
+  const parsed = new SeratoBeatgrid(new KataiStream(body));
 
-  return parsedBeatgrid;
+  return parsed;
 }
 
 async function main() {
@@ -54,13 +73,16 @@ async function main() {
 
   const metadata = await musicMetadata.parseFile(absolutePath);
 
-  const geobTags = getGeobTags(metadata);
+  const seratoTags = getSeratoTags(metadata);
 
-  const seratoTags = getSeratoTags(geobTags);
+  if (seratoTags.SeratoMarkers2) {
+    const parsed = parseSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
+    console.log(parsed);
+  }
 
   if (seratoTags.SeratoBeatGrid) {
     const parsedBeatgrid = parseSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
-    console.log("Parsed: ", parsedBeatgrid);
+    console.log(parsedBeatgrid);
   }
 
   // await fs.writeFile(
