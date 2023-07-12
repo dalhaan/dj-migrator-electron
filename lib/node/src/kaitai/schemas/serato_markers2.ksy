@@ -1,6 +1,5 @@
 meta:
-  id: seratomarkers2
-  file-extension: seratotag
+  id: serato_markers2
 seq:
   - id: header
     type: header
