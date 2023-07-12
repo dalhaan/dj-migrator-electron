@@ -4282,6 +4282,11 @@ kaitai-struct-compiler@^0.10.0:
   resolved "https://registry.yarnpkg.com/kaitai-struct-compiler/-/kaitai-struct-compiler-0.10.0.tgz#2a8861d8e6eaf18446b078531fc04d5a6bdce5fa"
   integrity sha512-zIIGUn6X3UQJ05mwkZ0QUbLTdq9Oopyl9EPSoQHiSpnHFfuQHCphj+doLm6oXD/ouUXpPC860185dGCCzNVi2A==
 
+kaitai-struct@^0.10.0:
+  version "0.10.0"
+  resolved "https://registry.yarnpkg.com/kaitai-struct/-/kaitai-struct-0.10.0.tgz#f0619a056ee4420387d821175ca0a92d3761f712"
+  integrity sha512-81oxVi/OY+LrzgrONX7ciD1wtvq24nb2M9iYixRiQG+1hrDrDRqFVWuQzF1fUexh3Sg/ol6eMAz1MOVYFouzUg==
+
 keyv@^4.0.0:
   version "4.5.2"
   resolved "https://registry.yarnpkg.com/keyv/-/keyv-4.5.2.tgz#0e310ce73bf7851ec702f2eaf46ec4e3805cce56"
