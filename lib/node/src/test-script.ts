@@ -5,72 +5,21 @@ import SeratoBeatgrid from "./kaitai/compiled/SeratoBeatgrid";
 
 import * as musicMetadata from "music-metadata";
 import SeratoMarkers2 from "./kaitai/compiled/SeratoMarkers2";
+import {
+  decodeSeratoBeatGridTag,
+  decodeSeratoMarkers2Tag,
+  getSeratoTags,
+} from "./serato-parser/id3";
 const KataiStream = require("kaitai-struct/KaitaiStream");
 
-function getGeobTags(metadata: musicMetadata.IAudioMetadata) {
-  const id3Version = Object.keys(metadata.native).find((tagType) =>
-    tagType.startsWith("ID3v2")
-  );
-
-  if (!id3Version) throw new Error("No ID3v2 tags found");
-
-  const geobTags = metadata.native[id3Version].filter(
-    (tag) => tag.id === "GEOB"
-  );
-
-  return geobTags;
-}
-
-function getSeratoTags(metadata: musicMetadata.IAudioMetadata) {
-  const geobTags = getGeobTags(metadata);
-
-  const seratoTags: Record<"SeratoBeatGrid" | "SeratoMarkers2", Buffer | null> =
-    {
-      SeratoBeatGrid: null,
-      SeratoMarkers2: null,
-    };
-
-  for (const tag of geobTags) {
-    const data = tag.value.data as Buffer;
-
-    // Serato Markers2
-    if (data.toString().startsWith("erato Markers2")) {
-      seratoTags.SeratoMarkers2 = data;
-    }
-    // Serato BeatGrid
-    else if (data.toString().startsWith("erato BeatGrid")) {
-      seratoTags.SeratoBeatGrid = data;
-    }
-  }
-
-  return seratoTags;
-}
-
 function parseSeratoMarkers2Tag(data: Buffer) {
-  const bodyBase64 = data.subarray(data.indexOf(0x00) + 1); // First NULL byte (0x00) marks end of the GEOB header
-
-  // console.log(bodyBase64.toString());
-
-  const body = Buffer.from(bodyBase64.toString(), "base64");
-
-  // await fs.writeFile(
-  //   "/Users/dallanfreemantle/Desktop/two-markers.octet-stream",
-  //   body
-  // );
-
-  const parsed = new SeratoMarkers2(new KataiStream(body));
-
-  // parsed.tags?.forEach((tag) =>
-  //   console.log(tag.body, tag.body instanceof SeratoMarkers2.CueTag)
-  // );
+  const parsed = new SeratoMarkers2(new KataiStream(data));
 
   return parsed;
 }
 
 function parseSeratoBeatGridTag(data: Buffer) {
-  const body = data.subarray(data.indexOf(0x00) + 1); // First NULL byte (0x00) marks end of the GEOB header
-
-  const parsed = new SeratoBeatgrid(new KataiStream(body));
+  const parsed = new SeratoBeatgrid(new KataiStream(data));
 
   return parsed;
 }
@@ -80,9 +29,9 @@ async function main() {
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/L-side - Zaga Dan.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Nu_Tone - Heaven Sent (Alternative Mix).mp3"
-    // "/Users/dallanfreemantle/Desktop/Netsky - Free.mp3"
+    "/Users/dallanfreemantle/Desktop/Netsky - Free.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DnB To Get Weird To II/Netsky - Tomorrows Another Day VIP.mp3"
-    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 6/Clipz - Again.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 6/Clipz - Again.mp3"
   );
 
   const metadata = await musicMetadata.parseFile(absolutePath);
@@ -90,21 +39,16 @@ async function main() {
   const seratoTags = getSeratoTags(metadata);
 
   if (seratoTags.SeratoMarkers2) {
-    const parsed = parseSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
+    const decoded = decodeSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
+    const parsed = parseSeratoMarkers2Tag(decoded);
     console.log(parsed);
   }
 
   if (seratoTags.SeratoBeatGrid) {
-    const parsedBeatgrid = parseSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
-    console.log(parsedBeatgrid);
+    const decoded = decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
+    const parsed = parseSeratoBeatGridTag(decoded);
+    console.log(parsed);
   }
-
-  // await fs.writeFile(
-  //   path.resolve(
-  //     "/Users/dallanfreemantle/Desktop/Serato Beatgrid.octet-stream"
-  //   ),
-  //   bufferBody
-  // );
 }
 
 main();
