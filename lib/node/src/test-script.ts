@@ -29,9 +29,11 @@ async function main() {
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/L-side - Zaga Dan.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Nu_Tone - Heaven Sent (Alternative Mix).mp3"
-    "/Users/dallanfreemantle/Desktop/Netsky - Free.mp3"
+    // "/Users/dallanfreemantle/Desktop/Netsky - Free.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DnB To Get Weird To II/Netsky - Tomorrows Another Day VIP.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 6/Clipz - Again.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 2/Kenji Kawai - Making of Cyborg (Flite Remix).wav"
+    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/Analysed DnB/02. The Upbeats - Oddity - 9A - 170.mp3"
   );
 
   const metadata = await musicMetadata.parseFile(absolutePath);

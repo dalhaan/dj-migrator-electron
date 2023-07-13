@@ -13,6 +13,7 @@ seq:
     type: non_terminal_marker
     repeat: expr
     repeat-expr: header.no_markers - 1
+    if: header.no_markers > 0
     doc: |
       Every marker except the last marker is a non-terminal marker which
       only has its position and the number of beats until the next marker.
@@ -21,6 +22,7 @@ seq:
       `beats_until_next_marker * (60 / (next_marker_position - position))`
   - id: terminal_marker
     type: terminal_marker
+    if: header.no_markers > 0
     doc: |
       Only the last marker is a terminal marker which has its position and
       the BPM for the rest of the track.
