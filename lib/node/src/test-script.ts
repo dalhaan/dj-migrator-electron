@@ -4,7 +4,7 @@ import path from "path";
 import SeratoBeatgrid from "./kaitai/compiled/SeratoBeatgrid";
 
 import * as musicMetadata from "music-metadata";
-import SeratoMarkers2 from "./kaitai/compiled/Seratomarkers2";
+import SeratoMarkers2 from "./kaitai/compiled/SeratoMarkers2";
 const KataiStream = require("kaitai-struct/KaitaiStream");
 
 function getGeobTags(metadata: musicMetadata.IAudioMetadata) {
