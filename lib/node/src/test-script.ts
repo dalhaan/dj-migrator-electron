@@ -71,8 +71,9 @@ function parseSeratoBeatGridTag(data: Buffer) {
 async function main() {
   const absolutePath = path.resolve(
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/L-side - Zaga Dan.mp3"
-    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Nu_Tone - Heaven Sent (Alternative Mix).mp3"
+    "/Users/dallanfreemantle/Desktop/Netsky - Free.mp3"
   );
 
   const metadata = await musicMetadata.parseFile(absolutePath);
