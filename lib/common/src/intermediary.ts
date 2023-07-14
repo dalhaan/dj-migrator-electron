@@ -38,6 +38,16 @@ export class CuePoint {
   }
 }
 
+export class BeatGrid {
+  position: number;
+  bpm: number;
+
+  constructor({ position, bpm }: { position: number; bpm: number }) {
+    this.position = position;
+    this.bpm = bpm;
+  }
+}
+
 export class Track {
   metadata: IMetadata;
   cuePoints: CuePoint[];
