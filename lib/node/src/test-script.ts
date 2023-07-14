@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import { BeatGrid, CuePoint } from "../../common/src/index";
+import { BeatGrid, CuePoint, rbgToHex } from "../../common/src/index";
 
 import SeratoBeatgrid from "./kaitai/compiled/SeratoBeatgrid";
 
@@ -11,24 +11,10 @@ import {
   decodeSeratoMarkers2Tag,
   getSeratoTags,
 } from "./serato-parser/id3";
-const KataiStream = require("kaitai-struct/KaitaiStream");
-
-/**
- * Converts a decimal to a hex string.
- * Hex strings are trimmed by default so the hex string
- * is padded with "0"s to ensure it is a full byte.
- */
-function decimalToHex(decimal: number) {
-  return decimal.toString(16).padStart(2, "0");
-}
-
-function rbgToHex(red: number, green: number, blue: number) {
-  return `#${decimalToHex(red)}${decimalToHex(green)}${decimalToHex(blue)}`;
-}
+const KaitaiStream = require("kaitai-struct/KaitaiStream");
 
 function parseSeratoMarkers2Tag(data: Buffer) {
-  // Parse tag with Kaitai
-  const parsed = new SeratoMarkers2(new KataiStream(data));
+  const parsed = new SeratoMarkers2(new KaitaiStream(data));
 
   const cuePoints: CuePoint[] = [];
 
@@ -52,13 +38,11 @@ function parseSeratoMarkers2Tag(data: Buffer) {
     }
   }
 
-  console.log(cuePoints);
-
-  return parsed;
+  return cuePoints;
 }
 
 function parseSeratoBeatGridTag(data: Buffer) {
-  const parsed = new SeratoBeatgrid(new KataiStream(data));
+  const parsed = new SeratoBeatgrid(new KaitaiStream(data));
 
   const beatGrids: BeatGrid[] = [];
 
@@ -96,17 +80,15 @@ function parseSeratoBeatGridTag(data: Buffer) {
     );
   }
 
-  console.log(beatGrids);
-
-  return parsed;
+  return beatGrids;
 }
 
 async function main() {
   const absolutePath = path.resolve(
-    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/L-side - Zaga Dan.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/L-side - Zaga Dan.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Nu_Tone - Heaven Sent (Alternative Mix).mp3"
-    // "/Users/dallanfreemantle/Desktop/Netsky - Free.mp3"
+    "/Users/dallanfreemantle/Desktop/Netsky - Free.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DnB To Get Weird To II/Netsky - Tomorrows Another Day VIP.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 6/Clipz - Again.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 2/Kenji Kawai - Making of Cyborg (Flite Remix).wav"
@@ -120,13 +102,13 @@ async function main() {
   if (seratoTags.SeratoMarkers2) {
     const decoded = decodeSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
     const parsed = parseSeratoMarkers2Tag(decoded);
-    // console.log(parsed);
+    console.log(parsed);
   }
 
   if (seratoTags.SeratoBeatGrid) {
     const decoded = decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
     const parsed = parseSeratoBeatGridTag(decoded);
-    // console.log(parsed);
+    console.log(parsed);
   }
 }
 
