@@ -18,19 +18,23 @@ export class CuePoint {
   index: number;
   position: number;
   color: string | undefined;
+  name: string | undefined;
 
   constructor({
     index,
     position,
     color,
+    name,
   }: {
     index: number;
     position: number;
     color?: string;
+    name?: string;
   }) {
     this.index = index;
     this.position = position;
     this.color = color;
+    this.name = name;
   }
 }
 

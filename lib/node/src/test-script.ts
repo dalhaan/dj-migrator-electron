@@ -44,6 +44,7 @@ function parseSeratoMarkers2Tag(data: Buffer) {
               tag.body.color.green,
               tag.body.color.blue
             ),
+            name: tag.body.name || undefined,
           })
         );
       }
