@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import { CuePoint } from "../../common/src/index";
+import { BeatGrid, CuePoint } from "../../common/src/index";
 
 import SeratoBeatgrid from "./kaitai/compiled/SeratoBeatgrid";
 
@@ -34,6 +34,7 @@ function parseSeratoMarkers2Tag(data: Buffer) {
 
   if (parsed.tags) {
     for (const tag of parsed.tags) {
+      // CuePoint
       if (tag.body instanceof SeratoMarkers2.CueTag) {
         cuePoints.push(
           new CuePoint({
@@ -59,16 +60,54 @@ function parseSeratoMarkers2Tag(data: Buffer) {
 function parseSeratoBeatGridTag(data: Buffer) {
   const parsed = new SeratoBeatgrid(new KataiStream(data));
 
+  const beatGrids: BeatGrid[] = [];
+
+  // Non-terminal beat grid
+  if (parsed.nonTerminalMarkers && parsed.terminalMarker) {
+    for (const [
+      index,
+      nonTerminalMarker,
+    ] of parsed.nonTerminalMarkers.entries()) {
+      // Calculate BPM from time to the next marker and beats to next marker
+      const nextMarkersPosition =
+        index < parsed.nonTerminalMarkers.length - 1
+          ? parsed.nonTerminalMarkers[index + 1].position
+          : parsed.terminalMarker.position;
+      const timeUntilNextMarker =
+        nextMarkersPosition - nonTerminalMarker.position;
+      const bpm =
+        nonTerminalMarker.beatsUntilNextMarker * (60 / timeUntilNextMarker);
+
+      beatGrids.push(
+        new BeatGrid({
+          position: nonTerminalMarker.position,
+          bpm: bpm,
+        })
+      );
+    }
+  }
+
+  if (parsed.terminalMarker) {
+    beatGrids.push(
+      new BeatGrid({
+        position: parsed.terminalMarker.position,
+        bpm: parsed.terminalMarker.bpm,
+      })
+    );
+  }
+
+  console.log(beatGrids);
+
   return parsed;
 }
 
 async function main() {
   const absolutePath = path.resolve(
-    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/L-side - Zaga Dan.mp3"
+    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/L-side - Zaga Dan.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Nu_Tone - Heaven Sent (Alternative Mix).mp3"
     // "/Users/dallanfreemantle/Desktop/Netsky - Free.mp3"
-    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DnB To Get Weird To II/Netsky - Tomorrows Another Day VIP.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DnB To Get Weird To II/Netsky - Tomorrows Another Day VIP.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 6/Clipz - Again.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 2/Kenji Kawai - Making of Cyborg (Flite Remix).wav"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/Analysed DnB/02. The Upbeats - Oddity - 9A - 170.mp3"
