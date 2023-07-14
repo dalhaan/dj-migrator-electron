@@ -62,7 +62,7 @@ types:
     seq:
       - size: 1
       - id: color
-        size: 3
+        type: color
     doc: |
       The color tag describes the tracks color in Serato.
       The color is a three byte i8 array: [r,g,b].
@@ -75,7 +75,7 @@ types:
         type: u4
       - size: 1
       - id: color
-        size: 3
+        type: color
       - size: 2
       - id: name
         type: strz
@@ -92,3 +92,13 @@ types:
       The bpmlock tag describes whether the beatgrid is locked.
       The `is_locked` value is a boolean.
   unknown_tag: {}
+  color:
+    seq:
+      - id: red
+        type: u1
+      - id: green
+        type: u1
+      - id: blue
+        type: u1
+    doc: |
+      Colors are represented as a three-byte i8 array of [r, g, b]
