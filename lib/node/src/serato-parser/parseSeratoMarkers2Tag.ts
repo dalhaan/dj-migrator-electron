@@ -1,4 +1,4 @@
-import { CuePoint, rbgToHex } from "@dj-migrator/common";
+import { CuePoint } from "@dj-migrator/common";
 import SeratoMarkers2 from "../kaitai/compiled/SeratoMarkers2-ES2015";
 const KaitaiStream = require("kaitai-struct/KaitaiStream");
 
@@ -15,11 +15,11 @@ export function parseSeratoMarkers2Tag(data: Buffer) {
           new CuePoint({
             index: tag.body.index,
             position: tag.body.position,
-            color: rbgToHex(
+            color: [
               tag.body.color.red,
               tag.body.color.green,
-              tag.body.color.blue
-            ),
+              tag.body.color.blue,
+            ],
             name: tag.body.name || undefined,
           })
         );

@@ -301,11 +301,19 @@ export class WebGLWaveform {
 
       this.gl.bindVertexArray(null);
 
+      let color: [number, number, number, number] | undefined;
+
+      if (cuePoint.color) {
+        if (typeof cuePoint.color === "string") {
+          color = WebGLWaveform.hexColorToRgb(cuePoint.color);
+        } else {
+          color = [...cuePoint.color, 1];
+        }
+      }
+
       this.cuePointVaos.push({
         vao: cuepointVao,
-        color: cuePoint.color
-          ? WebGLWaveform.hexColorToRgb(cuePoint.color)
-          : undefined,
+        color,
       });
     }
   }
@@ -986,7 +994,9 @@ export class WebGLWaveform {
   static hexColorToRgb(
     hexColour: string
   ): [number, number, number, number] | undefined {
-    if (hexColour.length !== 6) return;
+    if (hexColour.length !== 7) return;
+
+    hexColour = hexColour.substring(1);
 
     // 'ccddee' -> 'cc' 'dd' 'ee'
     const rHex = hexColour.substring(0, 2);

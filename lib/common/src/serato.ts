@@ -21,7 +21,7 @@ export class CueEntry {
   constructor(data: Buffer) {
     this.index = data.readUIntBE(1, 1); // one byte integer
     this.position = data.readUInt32BE(2); // four byte integer
-    this.color = data.toString("hex", 7, 10); // three byte hex colour
+    this.color = "#" + data.toString("hex", 7, 10); // three byte hex colour
   }
 }
 

@@ -270,7 +270,12 @@ export function Player() {
               onPointerDown={() => jumpToTime(cuePoint.position)}
               style={
                 cuePoint.color
-                  ? { backgroundColor: `#${cuePoint.color}` }
+                  ? {
+                      backgroundColor:
+                        typeof cuePoint.color === "string"
+                          ? `#${cuePoint.color}`
+                          : `rgb(${cuePoint.color.join(",")})`,
+                    }
                   : undefined
               }
             />
