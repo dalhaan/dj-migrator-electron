@@ -273,7 +273,7 @@ export function Player() {
                   ? {
                       backgroundColor:
                         typeof cuePoint.color === "string"
-                          ? `#${cuePoint.color}`
+                          ? `${cuePoint.color}`
                           : `rgb(${cuePoint.color.join(",")})`,
                     }
                   : undefined
