@@ -51,10 +51,16 @@ export class BeatGrid {
 export class Track {
   metadata: IMetadata;
   cuePoints: CuePoint[];
+  beatGrids: BeatGrid[] | undefined;
 
-  constructor(metadata: IMetadata, cuePoints: CuePoint[]) {
+  constructor(
+    metadata: IMetadata,
+    cuePoints: CuePoint[],
+    beatGrids?: BeatGrid[]
+  ) {
     this.metadata = metadata;
     this.cuePoints = cuePoints;
+    this.beatGrids = beatGrids;
   }
 }
 
