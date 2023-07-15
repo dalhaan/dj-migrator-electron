@@ -3,17 +3,11 @@ import assert from "assert";
 import path from "path";
 import musicMetadata from "music-metadata-browser";
 import ByteStream from "../byte-stream";
-import {
-  BPMLockEntry,
-  ColorEntry,
-  CueEntry,
-  CuePoint,
-  IMetadata,
-  Track,
-} from "@dj-migrator/common";
+import { BeatGrid, CuePoint, IMetadata, Track } from "@dj-migrator/common";
 import * as ID3 from "./id3";
 import * as VORBIS from "./vorbis";
 import { parseSeratoMarkers2Tag } from "./parseSeratoMarkers2Tag";
+import { parseSeratoBeatGridTag } from "./parseSeratoBeatGridTag";
 
 export const SUPPORTED_FILE_TYPES = [".mp3", ".wav", ".flac"];
 
@@ -172,6 +166,7 @@ async function parseMp3OrWav(filePath: string) {
     };
 
     let cuePoints: CuePoint[] = [];
+    let beatGrids: BeatGrid[] = [];
 
     const seratoTags = ID3.getSeratoTags(tags);
 
@@ -180,7 +175,14 @@ async function parseMp3OrWav(filePath: string) {
       cuePoints = parseSeratoMarkers2Tag(decoded);
     }
 
-    return new Track(metadata, cuePoints);
+    if (seratoTags.SeratoBeatGrid) {
+      const decoded = ID3.decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
+      beatGrids = parseSeratoBeatGridTag(decoded);
+    }
+
+    console.log(beatGrids);
+
+    return new Track(metadata, cuePoints, beatGrids);
   } finally {
     // Destroy read stream if anything goes wrong
     readStream.destroy();
