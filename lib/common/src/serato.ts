@@ -16,6 +16,7 @@ export class CueEntry {
   index: number;
   position: number;
   color: string;
+  name: string | undefined;
 
   constructor(data: Buffer) {
     this.index = data.readUIntBE(1, 1); // one byte integer
