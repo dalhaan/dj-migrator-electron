@@ -44,46 +44,6 @@ function getEntryPayload(frameByteStream: ByteStream): Buffer | null {
   return frameByteStream.read(entryLength);
 }
 
-export function parseSeratoMarkers(
-  buffer: Buffer
-): (ColorEntry | CueEntry | BPMLockEntry)[] {
-  // Create byte stream from decoded frame buffer
-  const frameByteStream = new ByteStream(buffer);
-
-  // Assert frame header exists ('0101')
-  const frameHeader = frameByteStream.read(2);
-  assert(
-    frameHeader && frameHeader.toString("hex") === "0101",
-    "Frame header is invalid"
-  );
-
-  let entries: (ColorEntry | CueEntry | BPMLockEntry)[] = [];
-
-  while (true) {
-    // Get entry type
-    const entryType = getEntryType(frameByteStream);
-
-    // Break loop if no more entries
-    if (!entryType) {
-      break;
-    }
-
-    // Get entry payload
-    const entryPayload = getEntryPayload(frameByteStream);
-    assert(entryPayload, "Corrupted entry: Payload failed to parse");
-
-    // Convert Serato tag entries
-    for (const EntryClass of [ColorEntry, CueEntry, BPMLockEntry]) {
-      if (entryType === EntryClass.NAME) {
-        const entry = new EntryClass(entryPayload);
-        entries = [...entries, entry];
-      }
-    }
-  }
-
-  return entries;
-}
-
 /**
  * In FLAC Vorbis comments, marker data is stored as a base64 encoded string. Once decoded, the
  * header 'application/octet-stream\00\00Serato Markers2\00' is stripped from the decoded data
