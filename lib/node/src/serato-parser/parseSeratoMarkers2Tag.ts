@@ -1,5 +1,5 @@
 import { CuePoint } from "@dj-migrator/common";
-import SeratoMarkers2 from "../kaitai/compiled/SeratoMarkers2-ES2015";
+import SeratoMarkers2 from "../kaitai/compiled/SeratoMarkers2-ES6";
 const KaitaiStream = require("kaitai-struct/KaitaiStream");
 
 export function parseSeratoMarkers2Tag(data: Buffer) {
