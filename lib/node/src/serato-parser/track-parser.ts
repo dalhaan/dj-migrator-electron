@@ -96,6 +96,7 @@ async function parseFlac(filePath: string) {
     };
 
     let cuePoints: CuePoint[] = [];
+    let beatGrids: BeatGrid[] = [];
 
     const seratoTags = VORBIS.getSeratoTags(tags);
 
@@ -104,7 +105,14 @@ async function parseFlac(filePath: string) {
       cuePoints = parseSeratoMarkers2Tag(decoded);
     }
 
-    return new Track(metadata, cuePoints);
+    if (seratoTags.SeratoBeatGrid) {
+      const decoded = VORBIS.decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
+      beatGrids = parseSeratoBeatGridTag(decoded);
+    }
+
+    console.log(tags.common?.title, beatGrids);
+
+    return new Track(metadata, cuePoints, beatGrids);
   } finally {
     // Destroy read stream if anything goes wrong
     readStream.destroy();
