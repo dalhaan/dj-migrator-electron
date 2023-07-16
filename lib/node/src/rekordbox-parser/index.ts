@@ -118,9 +118,9 @@ function buildCollectionTag(
             Type: "0",
             Start: `${cuePoint.position / 1000}`,
             Num: `${cuePoint.index}`,
-            Red: "40",
-            Green: "226",
-            Blue: "20",
+            Red: cuePoint.color ? String(cuePoint.color[0]) : "40",
+            Green: cuePoint.color ? String(cuePoint.color[1]) : "226",
+            Blue: cuePoint.color ? String(cuePoint.color[2]) : "20",
           })
           .up();
       }
