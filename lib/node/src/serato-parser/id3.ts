@@ -39,6 +39,19 @@ export function getSeratoTags(metadata: musicMetadata.IAudioMetadata) {
   return seratoTags;
 }
 
+/**
+ * In ID3 GEOB tags, marker data is stored as a base64 encoded string with a header prepended to it 'erato Markers2'.
+ * This header is stripped before decoding the marker data.
+ *
+ * Process:
+ *  'erato Markers2'0x00[base64 encoded marker data (with newline characters)]
+ *                    |
+ *                    \/    1. strip header
+ *   [base64 encoded marker data (with newline characters)]
+ *                    |
+ *                    \/    2. decode (decoding ignores newline chars)
+ *                [marker data]
+ */
 export function decodeSeratoMarkers2Tag(data: Buffer) {
   const bodyBase64 = data.subarray(data.indexOf(0x00) + 1); // First NULL byte (0x00) marks end of the GEOB header
 
@@ -47,6 +60,13 @@ export function decodeSeratoMarkers2Tag(data: Buffer) {
   return body;
 }
 
+/**
+ * Process:
+ *  'erato BeatGrid'0x00[marker data]
+ *                    |
+ *                    \/    1. strip header
+ *              [marker data]
+ */
 export function decodeSeratoBeatGridTag(data: Buffer) {
   const body = data.subarray(data.indexOf(0x00) + 1); // First NULL byte (0x00) marks end of the GEOB header
 
