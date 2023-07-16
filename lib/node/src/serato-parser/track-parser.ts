@@ -110,7 +110,7 @@ async function parseFlac(filePath: string) {
       beatGrids = parseSeratoBeatGridTag(decoded);
     }
 
-    console.log(tags.common?.title, beatGrids);
+    // console.log(tags.common?.title, beatGrids);
 
     return new Track(metadata, cuePoints, beatGrids);
   } finally {
