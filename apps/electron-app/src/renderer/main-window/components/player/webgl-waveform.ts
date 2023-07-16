@@ -1,4 +1,4 @@
-import { CuePoint } from "@dj-migrator/common";
+import { BeatGrid, CuePoint } from "@dj-migrator/common";
 
 import defaultFragmentShader from "./default-fragment-shader.glsl";
 import defaultVertexShader from "./default-vertex-shader.glsl";
@@ -136,7 +136,7 @@ export class WebGLWaveform {
     this.gl.bindVertexArray(null);
   }
 
-  loadBeatgrid() {
+  loadBeatgrid(beatGrids: BeatGrid[]) {
     if (!this.gl)
       throw new Error("Could not load waveform. No GL2 rendering context");
 
@@ -145,41 +145,71 @@ export class WebGLWaveform {
     this.gl.deleteVertexArray(this.bargridVao);
 
     // If there's no bpm, we cannot know the beatgrid, therefore we cannot load the beatgrid
-    if (!this.bpm || !this.audioDuration) {
+    if (beatGrids.length === 0 || !this.audioDuration) {
       return;
     }
 
-    // Generate beatgrid line vertices
-
-    // Calculate number of beats in the track
-    const durationMins = this.audioDuration / 60;
-    const noBeats = this.bpm * durationMins;
-    const timePerBeatMs = (60 * 1000) / this.bpm;
-
-    console.log({
-      bpm: this.bpm,
-      durationMins,
-      noBeats,
-      timePerBeatMs,
-    });
-
     const beatgridVertexData = [];
     const bargridVertexData = [];
-    for (let i = 0; i < noBeats; i++) {
-      const xPos = WebGLWaveform.timeToX(i * timePerBeatMs, this.audioDuration);
 
-      // beats
-      beatgridVertexData.push(xPos); // x
-      beatgridVertexData.push(-1); // y
-      beatgridVertexData.push(xPos); // x
-      beatgridVertexData.push(1); // y
+    for (const [index, beatGrid] of beatGrids.entries()) {
+      if (index < beatGrids.length - 1) {
+        // All beat grids up until the last one
 
-      // bars
-      if (i % 4 === 0) {
-        bargridVertexData.push(xPos); // x
-        bargridVertexData.push(-1); // y
-        bargridVertexData.push(xPos); // x
-        bargridVertexData.push(1); // y
+        // Calculate beats until next beat grid
+        const nextBeatGridPos = beatGrids[index + 1].position;
+        const timeToNextBeatGrid = nextBeatGridPos - beatGrid.position;
+        const beatsUntilNextMarker = Math.floor(
+          beatGrid.bpm * (timeToNextBeatGrid / 60)
+        );
+        const timePerBeatMs = (60 * 1000) / beatGrid.bpm;
+
+        for (let i = 0; i < beatsUntilNextMarker; i++) {
+          const xPos = WebGLWaveform.timeToX(
+            beatGrid.position * 1000 + i * timePerBeatMs,
+            this.audioDuration
+          );
+
+          // beats
+          beatgridVertexData.push(xPos); // x
+          beatgridVertexData.push(-1); // y
+          beatgridVertexData.push(xPos); // x
+          beatgridVertexData.push(1); // y
+
+          // bars
+          if (i % 4 === 0) {
+            bargridVertexData.push(xPos); // x
+            bargridVertexData.push(-1); // y
+            bargridVertexData.push(xPos); // x
+            bargridVertexData.push(1); // y
+          }
+        }
+      } else {
+        // Last beat grid
+        const timePerBeatMs = (60 * 1000) / beatGrid.bpm;
+        const beatsUntilEnd =
+          beatGrid.bpm * ((this.audioDuration - beatGrid.position) / 60);
+
+        for (let i = 0; i < beatsUntilEnd; i++) {
+          const xPos = WebGLWaveform.timeToX(
+            beatGrid.position * 1000 + i * timePerBeatMs,
+            this.audioDuration
+          );
+
+          // beats
+          beatgridVertexData.push(xPos); // x
+          beatgridVertexData.push(-1); // y
+          beatgridVertexData.push(xPos); // x
+          beatgridVertexData.push(1); // y
+
+          // bars
+          if (i % 4 === 0) {
+            bargridVertexData.push(xPos); // x
+            bargridVertexData.push(-1); // y
+            bargridVertexData.push(xPos); // x
+            bargridVertexData.push(1); // y
+          }
+        }
       }
     }
 
@@ -301,11 +331,15 @@ export class WebGLWaveform {
 
       this.gl.bindVertexArray(null);
 
+      let color: [number, number, number, number] | undefined;
+
+      if (cuePoint.color) {
+        color = [...cuePoint.color, 1];
+      }
+
       this.cuePointVaos.push({
         vao: cuepointVao,
-        color: cuePoint.color
-          ? WebGLWaveform.hexColorToRgb(cuePoint.color)
-          : undefined,
+        color,
       });
     }
   }
@@ -986,7 +1020,9 @@ export class WebGLWaveform {
   static hexColorToRgb(
     hexColour: string
   ): [number, number, number, number] | undefined {
-    if (hexColour.length !== 6) return;
+    if (hexColour.length !== 7) return;
+
+    hexColour = hexColour.substring(1);
 
     // 'ccddee' -> 'cc' 'dd' 'ee'
     const rHex = hexColour.substring(0, 2);

@@ -2,14 +2,11 @@ import fs from "fs";
 import assert from "assert";
 import path from "path";
 import musicMetadata from "music-metadata-browser";
-import ByteStream from "../byte-stream";
-import {
-  BPMLockEntry,
-  ColorEntry,
-  CueEntry,
-  IMetadata,
-  Track,
-} from "@dj-migrator/common";
+import { BeatGrid, CuePoint, IMetadata, Track } from "@dj-migrator/common";
+import * as ID3 from "./id3";
+import * as VORBIS from "./vorbis";
+import { parseSeratoMarkers2Tag } from "./parseSeratoMarkers2Tag";
+import { parseSeratoBeatGridTag } from "./parseSeratoBeatGridTag";
 
 export const SUPPORTED_FILE_TYPES = [".mp3", ".wav", ".flac"];
 
@@ -17,91 +14,6 @@ export const SUPPORTED_FILE_TYPES = [".mp3", ".wav", ".flac"];
 // FUNCTIONS
 // ====================
 
-function getEntryType(frameByteStream: ByteStream): string {
-  let entryType = "";
-
-  let nextByte = frameByteStream.read(1);
-  while (nextByte && nextByte.toString("hex") !== "00") {
-    entryType += nextByte.toString("binary");
-
-    nextByte = frameByteStream.read(1);
-  }
-
-  return entryType;
-}
-
-function getEntryPayload(frameByteStream: ByteStream): Buffer | null {
-  // Find entry length
-  const entryLength = frameByteStream.read(4)?.readUInt32BE();
-
-  // Assert the entry length is greater than 0
-  assert(entryLength && entryLength > 0, "Entry length must be greater than 0");
-
-  return frameByteStream.read(entryLength);
-}
-
-export function parseSeratoMarkers(
-  buffer: Buffer
-): (ColorEntry | CueEntry | BPMLockEntry)[] {
-  // Create byte stream from decoded frame buffer
-  const frameByteStream = new ByteStream(buffer);
-
-  // Assert frame header exists ('0101')
-  const frameHeader = frameByteStream.read(2);
-  assert(
-    frameHeader && frameHeader.toString("hex") === "0101",
-    "Frame header is invalid"
-  );
-
-  let entries: (ColorEntry | CueEntry | BPMLockEntry)[] = [];
-
-  while (true) {
-    // Get entry type
-    const entryType = getEntryType(frameByteStream);
-
-    // Break loop if no more entries
-    if (!entryType) {
-      break;
-    }
-
-    // Get entry payload
-    const entryPayload = getEntryPayload(frameByteStream);
-    assert(entryPayload, "Corrupted entry: Payload failed to parse");
-
-    // Convert Serato tag entries
-    for (const EntryClass of [ColorEntry, CueEntry, BPMLockEntry]) {
-      if (entryType === EntryClass.NAME) {
-        const entry = new EntryClass(entryPayload);
-        entries = [...entries, entry];
-      }
-    }
-  }
-
-  return entries;
-}
-
-/**
- * In FLAC Vorbis comments, marker data is stored as a base64 encoded string. Once decoded, the
- * header 'application/octet-stream\00\00Serato Markers2\00' is stripped from the decoded data
- *
- * Process:
- *   [base64 encoded data (with newline characters)]
- *                |
- *                \/    1. strip newline characters
- *      [base64 encoded data]
- *                |
- *                \/    2. decode base64
- *   'application/octet-stream\00\00Serato Markers2\00[base64 encoded marker data (with newline characters)]'
- *                |
- *                \/    3. strip header
- *          [base64 encoded marker data (with newline characters)]
- *                |
- *                \/    4. strip newline characters again
- *          [base64 encoded marker data]
- *                |
- *                \/    5. decode base64
- *          [marker data]
- */
 async function parseFlac(filePath: string) {
   // Verify that file is an MP3 or WAV
   const fileExtension = path.extname(filePath).toLowerCase();
@@ -137,64 +49,30 @@ async function parseFlac(filePath: string) {
       fileExtension,
     };
 
-    // Init array to hold parsed Serato markers
-    let convertedMarkers: (CueEntry | ColorEntry | BPMLockEntry)[] = [];
+    let cuePoints: CuePoint[] = [];
+    let beatGrids: BeatGrid[] = [];
 
-    // Find song tag that Serato stores marker data in
-    const rawVorbisData = tags.native.vorbis?.find(
-      (tag) => tag.id === "SERATO_MARKERS_V2"
-    )?.value;
+    const seratoTags = VORBIS.getSeratoTags(tags);
 
-    // Decode and extract markers FLAC Vorbis comment Serato marker tag
-    if (rawVorbisData) {
-      // Strip newline characters to normalise the base64 string
-      const newlinesStripped = rawVorbisData.replace(/\n/g, "");
-
-      // Decode the base64 string
-      const base64Decoded = Buffer.from(newlinesStripped, "base64");
-
-      // Strip header 'application/octet-stream\00\00Serato Markers2\00' revealing the final base64 string
-      const headerStripped = base64Decoded.subarray(42).toString();
-
-      // Strip newline characters again (because Serato loves newline characters with base64)
-      const newlinesStrippedAgain = headerStripped.replace(/\n/g, "");
-
-      // Decode the remaining base64 string to get the actual marker data
-      const base64DecodedAgain = Buffer.from(newlinesStrippedAgain, "base64");
-
-      // Parse the marker data for the intermediary format
-      convertedMarkers = parseSeratoMarkers(base64DecodedAgain);
+    if (seratoTags.SeratoMarkers2) {
+      const decoded = VORBIS.decodeSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
+      cuePoints = parseSeratoMarkers2Tag(decoded);
     }
 
-    // Filter out all other markers apart from cues (as that is all we are interested in at this point)
-    const onlyCueMarkers = convertedMarkers.filter(
-      (entry): entry is CueEntry => entry instanceof CueEntry
-    );
+    if (seratoTags.SeratoBeatGrid) {
+      const decoded = VORBIS.decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
+      beatGrids = parseSeratoBeatGridTag(decoded);
+    }
 
-    // Create intermediary format Track record
-    return new Track(metadata, onlyCueMarkers);
+    // console.log(tags.common?.title, beatGrids);
+
+    return new Track(metadata, cuePoints, beatGrids);
   } finally {
     // Destroy read stream if anything goes wrong
     readStream.destroy();
   }
 }
 
-/**
- * In ID3 GEOB tags, marker data is stored as a base64 encoded string with a header prepended to it 'erato Markers2'.
- * This header is stripped before decoding the marker data.
- *
- * Process:
- *  'erato Markers2[base64 encoded marker data (with newline characters)]'
- *                    |
- *                    \/    1. strip header
- *   [base64 encoded marker data (with newline characters)]
- *                    |
- *                    \/    2. strip newline characters
- *          [base64 encoded marker data]
- *                    |
- *                    \/    3. decode
- *                [marker data]
- */
 async function parseMp3OrWav(filePath: string) {
   // Verify that the file is an MP3 or WAV
   const fileExtension = path.extname(filePath).toLowerCase();
@@ -233,44 +111,24 @@ async function parseMp3OrWav(filePath: string) {
       fileExtension,
     };
 
-    // Init array to hold parsed Serato markers
-    let convertedMarkers: (CueEntry | ColorEntry | BPMLockEntry)[] = [];
+    let cuePoints: CuePoint[] = [];
+    let beatGrids: BeatGrid[] = [];
 
-    // Find the ID3 version as the marker data can be stored under different ones
-    const id3Version = Object.keys(tags.native).find((tagType) =>
-      tagType.startsWith("ID3")
-    );
+    const seratoTags = ID3.getSeratoTags(tags);
 
-    // Find song tag that Serato stores marker data in
-    const rawID3Data =
-      id3Version &&
-      tags.native[id3Version]?.find(
-        (tag) =>
-          tag.id === "GEOB" && tag.value.description === "Serato Markers2"
-      )?.value.data;
-
-    // Decode and extract markers from ID3 GEOB Serato marker tag
-    if (rawID3Data) {
-      // Strip header leaving just the base64 string
-      const headerStripped = rawID3Data.subarray(17).toString();
-
-      // Strip newline characters (as Serato loves newlines characters in their base64)
-      const newlinesStripped = headerStripped.replace(/\n/g, "");
-
-      // Decode the base64 string revealing the actual marker data
-      const base64Decoded = Buffer.from(newlinesStripped, "base64");
-
-      // Parse the marker data for the intermediary format
-      convertedMarkers = parseSeratoMarkers(base64Decoded);
+    if (seratoTags.SeratoMarkers2) {
+      const decoded = ID3.decodeSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
+      cuePoints = parseSeratoMarkers2Tag(decoded);
     }
 
-    // Filter out all other markers apart from cues (as that is all we are interested in at this point)
-    const onlyCueMarkers = convertedMarkers.filter(
-      (entry): entry is CueEntry => entry instanceof CueEntry
-    );
+    if (seratoTags.SeratoBeatGrid) {
+      const decoded = ID3.decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
+      beatGrids = parseSeratoBeatGridTag(decoded);
+    }
 
-    // Create intermediary format Track record
-    return new Track(metadata, onlyCueMarkers);
+    // console.log(tags.common?.title, beatGrids);
+
+    return new Track(metadata, cuePoints, beatGrids);
   } finally {
     // Destroy read stream if anything goes wrong
     readStream.destroy();
