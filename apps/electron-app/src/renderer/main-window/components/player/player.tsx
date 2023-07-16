@@ -62,7 +62,7 @@ export function Player() {
         waveform.current.setAudioDuration(audioDuration);
         audioDurationRef.current = audioDuration;
         waveform.current.loadWaveform(waveformVertexData);
-        waveform.current.loadBeatgrid();
+        waveform.current.loadBeatgrid(track.track.beatGrids);
         waveform.current.loadCuePoints(cuePoints);
         waveform.current.loadMinimapPlayhead();
         waveform.current.draw(false);
