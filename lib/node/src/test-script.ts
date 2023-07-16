@@ -6,11 +6,8 @@ import SeratoBeatgrid from "./kaitai/compiled/SeratoBeatgrid";
 
 import * as musicMetadata from "music-metadata";
 import SeratoMarkers2 from "./kaitai/compiled/SeratoMarkers2";
-import {
-  decodeSeratoBeatGridTag,
-  decodeSeratoMarkers2Tag,
-  getSeratoTags,
-} from "./serato-parser/id3";
+import * as ID3 from "./serato-parser/id3";
+import * as VORBIS from "./serato-parser/vorbis";
 const KaitaiStream = require("kaitai-struct/KaitaiStream");
 
 function parseSeratoMarkers2Tag(data: Buffer) {
@@ -83,33 +80,60 @@ function parseSeratoBeatGridTag(data: Buffer) {
   return beatGrids;
 }
 
-async function main() {
-  const absolutePath = path.resolve(
-    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/L-side - Zaga Dan.mp3"
-    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
-    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Nu_Tone - Heaven Sent (Alternative Mix).mp3"
-    "/Users/dallanfreemantle/Desktop/Netsky - Free.mp3"
-    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DnB To Get Weird To II/Netsky - Tomorrows Another Day VIP.mp3"
-    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 6/Clipz - Again.mp3"
-    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 2/Kenji Kawai - Making of Cyborg (Flite Remix).wav"
-    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/Analysed DnB/02. The Upbeats - Oddity - 9A - 170.mp3"
-  );
-
-  const metadata = await musicMetadata.parseFile(absolutePath);
-
-  const seratoTags = getSeratoTags(metadata);
+function parseId3(metadata: musicMetadata.IAudioMetadata) {
+  const seratoTags = ID3.getSeratoTags(metadata);
 
   if (seratoTags.SeratoMarkers2) {
-    const decoded = decodeSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
+    const decoded = ID3.decodeSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
     const parsed = parseSeratoMarkers2Tag(decoded);
     console.log(parsed);
   }
 
   if (seratoTags.SeratoBeatGrid) {
-    const decoded = decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
+    const decoded = ID3.decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
     const parsed = parseSeratoBeatGridTag(decoded);
     console.log(parsed);
   }
+}
+
+function parseVorbis(metadata: musicMetadata.IAudioMetadata) {
+  const seratoTags = VORBIS.getSeratoTags(metadata);
+
+  console.log(seratoTags);
+
+  if (seratoTags.SeratoMarkers2) {
+    const decoded = VORBIS.decodeSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
+    const parsed = parseSeratoMarkers2Tag(decoded);
+    console.log(parsed);
+  }
+
+  if (seratoTags.SeratoBeatGrid) {
+    const decoded = VORBIS.decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
+    const parsed = parseSeratoBeatGridTag(decoded);
+    console.log(parsed);
+  }
+}
+
+async function main() {
+  const absolutePath = path.resolve(
+    // MP3
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/L-side - Zaga Dan.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Nu_Tone - Heaven Sent (Alternative Mix).mp3"
+    // "/Users/dallanfreemantle/Desktop/Netsky - Free.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DnB To Get Weird To II/Netsky - Tomorrows Another Day VIP.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 6/Clipz - Again.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 2/Kenji Kawai - Making of Cyborg (Flite Remix).wav"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/Analysed DnB/02. The Upbeats - Oddity - 9A - 170.mp3"
+    // FLAC
+    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 6/Gonda - Hold Up (Rise Remix).flac"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 6/Trex - Stress Test.flac"
+  );
+
+  const metadata = await musicMetadata.parseFile(absolutePath);
+
+  parseVorbis(metadata);
+  // parseId3(metadata);
 }
 
 main();

@@ -14,6 +14,11 @@ export function getSeratoTags(metadata: musicMetadata.IAudioMetadata) {
     if (tag.id === "SERATO_MARKERS_V2") {
       seratoTags.SeratoMarkers2 = tag.value;
     }
+
+    // Serato BeatGrid
+    if (tag.id === "SERATO_BEATGRID") {
+      seratoTags.SeratoBeatGrid = tag.value;
+    }
   }
 
   return seratoTags;
@@ -52,4 +57,23 @@ export function decodeSeratoMarkers2Tag(data: string) {
   const base64DecodedAgain = Buffer.from(headerStripped, "base64");
 
   return base64DecodedAgain;
+}
+
+/**
+ * [base64 encoded data]
+ *            |
+ *            \/        1. decode base64
+ * application/octet-stream\00\00Serato BeatGrid\00[marker data]
+ *            |
+ *            \/        2. strip header
+ *          [marker data]
+ */
+export function decodeSeratoBeatGridTag(data: string) {
+  // Decode the base64 string
+  const base64Decoded = Buffer.from(data, "base64");
+
+  // Strip header 'application/octet-stream\00\00Serato BeatGrid\00' revealing the final base64 string
+  const headerStripped = base64Decoded.subarray(42);
+
+  return headerStripped;
 }
