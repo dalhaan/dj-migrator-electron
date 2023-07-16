@@ -22,7 +22,8 @@
 - [x] add track minimap
 - [ ] edit/create cue points
 - [ ] playlist organisation
-- [ ] decode Serato beat grid
+- [x] decode Serato beat grid
+- [x] display decoded beatgrid
 - [ ] latency compensation
 - [ ] frequency colour-coded waveform
 - [ ] handle MP3 VBR encodings (this could be solved be loading the entire track to a buffer. Need to investigate)

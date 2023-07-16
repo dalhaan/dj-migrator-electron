@@ -86,6 +86,18 @@ function buildCollectionTag(
       Mix: "",
     });
 
+    // Beat Grid
+    for (const beatGrid of track.track.beatGrids) {
+      collectionXML = collectionXML
+        .ele("TEMPO", {
+          Inizio: String(beatGrid.position),
+          Bpm: String(beatGrid.bpm),
+          Metro: "4/4",
+          Battito: "1",
+        })
+        .up();
+    }
+
     // Add the track's cue points as memory cues
     for (const cuePoint of track.track.cuePoints) {
       if (saveCuesAsMemoryCues) {
@@ -106,9 +118,9 @@ function buildCollectionTag(
             Type: "0",
             Start: `${cuePoint.position / 1000}`,
             Num: `${cuePoint.index}`,
-            Red: "40",
-            Green: "226",
-            Blue: "20",
+            Red: cuePoint.color ? String(cuePoint.color[0]) : "40",
+            Green: cuePoint.color ? String(cuePoint.color[1]) : "226",
+            Blue: cuePoint.color ? String(cuePoint.color[2]) : "20",
           })
           .up();
       }
