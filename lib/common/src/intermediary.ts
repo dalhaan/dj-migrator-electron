@@ -17,7 +17,7 @@ export interface IMetadata {
 export class CuePoint {
   index: number;
   position: number;
-  color: [number, number, number] | string | undefined;
+  color: [red: number, green: number, blue: number] | undefined;
   name: string | undefined;
 
   constructor({
@@ -28,7 +28,7 @@ export class CuePoint {
   }: {
     index: number;
     position: number;
-    color?: [number, number, number] | string;
+    color?: [red: number, green: number, blue: number];
     name?: string;
   }) {
     this.index = index;

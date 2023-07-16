@@ -304,11 +304,7 @@ export class WebGLWaveform {
       let color: [number, number, number, number] | undefined;
 
       if (cuePoint.color) {
-        if (typeof cuePoint.color === "string") {
-          color = WebGLWaveform.hexColorToRgb(cuePoint.color);
-        } else {
-          color = [...cuePoint.color, 1];
-        }
+        color = [...cuePoint.color, 1];
       }
 
       this.cuePointVaos.push({
