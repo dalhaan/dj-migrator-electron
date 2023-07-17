@@ -11,12 +11,12 @@ Serato stores its data in seven different tags:
 - Serato Analysis: Serato version information
 - Serato Autotags: BPM and gain values
 - [Serato BeatGrid: Beat grid markers](serato-beatgrid-tag.md)
-- Serato Markers2: Hot cues, loops, etc
+- [Serato Markers2: Hot cues, loops, etc](serato-markers2-tag.md)
 - Serato Markers\_: Hot cues, loops, etc
 - Serato Offsets\_
 - Serato Overview: Waveform data
 
-The only tags that we need are the Serato Markers2 and [Serato BeatGrid](serato-beatgrid-tag.md) tags, for converting the hot cues and beat grids.
+The only tags that we need are the [Serato Markers2](serato-markers2-tag.md) and [Serato BeatGrid](serato-beatgrid-tag.md) tags, for converting the hot cues and beat grids.
 
 ## Decoding documentation
 
