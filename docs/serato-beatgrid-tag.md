@@ -32,7 +32,7 @@ Hex View  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
 | `42 04 8F 39 43 2E 06 C8` | Marker 3 (terminal)     | `[position: 33.1399, bpm: 174.026]`              |
 | `00`                      | Footer                  |                                                  |
 
-## Kaitai struct
+## Kaitai struct schema
 
 [lib/node/src/kaitai/schemas/serato_beatgrid.ksy](../lib/node/src/kaitai/schemas/serato_beatgrid.ksy)
 

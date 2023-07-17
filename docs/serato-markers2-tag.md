@@ -14,7 +14,7 @@ Hex View  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
 00000040  4B 00 00 00 00 01 00 00                           K.......
 ```
 
-## Kaitai struct
+## Kaitai struct schema
 
 [lib/node/src/kaitai/schemas/serato_markers2.ksy](../lib/node/src/kaitai/schemas/serato_markers2.ksy)
 
