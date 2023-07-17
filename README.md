@@ -31,7 +31,7 @@
 
 ## Documentation
 
-- [[decoding]]
+- [Decoding documentation](docs/decoding.md)
 
 ## Motivation
 
