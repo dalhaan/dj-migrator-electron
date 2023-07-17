@@ -1,117 +1,69 @@
 import fs from "fs/promises";
 import path from "path";
-import { BeatGrid, CuePoint, rbgToHex } from "../../common/src/index";
+// import { BeatGrid, CuePoint, rbgToHex } from "../../common/src/index";
 
-import SeratoBeatgrid from "./kaitai/compiled/SeratoBeatgrid";
+import SeratoCrate from "./kaitai/compiled/SeratoCrate-ES6";
 
 import * as musicMetadata from "music-metadata";
-import SeratoMarkers2 from "./kaitai/compiled/SeratoMarkers2";
+
 import * as ID3 from "./serato-parser/id3";
 import * as VORBIS from "./serato-parser/vorbis";
+// import { parseSeratoMarkers2Tag } from "./serato-parser/parseSeratoMarkers2Tag";
+// import { parseSeratoBeatGridTag } from "./serato-parser/parseSeratoBeatGridTag";
 const KaitaiStream = require("kaitai-struct/KaitaiStream");
 
-function parseSeratoMarkers2Tag(data: Buffer) {
-  const parsed = new SeratoMarkers2(new KaitaiStream(data));
+// function parseId3(metadata: musicMetadata.IAudioMetadata) {
+//   const seratoTags = ID3.getSeratoTags(metadata);
 
-  const cuePoints: CuePoint[] = [];
+//   if (seratoTags.SeratoMarkers2) {
+//     const decoded = ID3.decodeSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
+//     const parsed = parseSeratoMarkers2Tag(decoded);
+//     console.log(parsed);
+//   }
 
-  if (parsed.tags) {
-    for (const tag of parsed.tags) {
-      // CuePoint
-      if (tag.body instanceof SeratoMarkers2.CueTag) {
-        cuePoints.push(
-          new CuePoint({
-            index: tag.body.index,
-            position: tag.body.position,
-            color: rbgToHex(
-              tag.body.color.red,
-              tag.body.color.green,
-              tag.body.color.blue
-            ),
-            name: tag.body.name || undefined,
-          })
-        );
+//   if (seratoTags.SeratoBeatGrid) {
+//     const decoded = ID3.decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
+//     const parsed = parseSeratoBeatGridTag(decoded);
+//     console.log(parsed);
+//   }
+// }
+
+// function parseVorbis(metadata: musicMetadata.IAudioMetadata) {
+//   const seratoTags = VORBIS.getSeratoTags(metadata);
+
+//   console.log(seratoTags);
+
+//   if (seratoTags.SeratoMarkers2) {
+//     const decoded = VORBIS.decodeSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
+//     const parsed = parseSeratoMarkers2Tag(decoded);
+//     console.log(parsed);
+//   }
+
+//   if (seratoTags.SeratoBeatGrid) {
+//     const decoded = VORBIS.decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
+//     const parsed = parseSeratoBeatGridTag(decoded);
+//     console.log(parsed);
+//   }
+// }
+
+function parseCrate(data: Buffer) {
+  const parsed = new SeratoCrate(new KaitaiStream(data));
+
+  // console.log(parsed);
+
+  const trackFilePaths: string[] = [];
+
+  for (const tag of parsed.tags) {
+    if (tag.body instanceof SeratoCrate.TrackTag) {
+      for (const trackTagTag of tag.body.tags) {
+        if (trackTagTag.body instanceof SeratoCrate.FilePathTag) {
+          trackFilePaths.push(trackTagTag.body.filePath);
+        }
       }
     }
   }
 
-  return cuePoints;
-}
-
-function parseSeratoBeatGridTag(data: Buffer) {
-  const parsed = new SeratoBeatgrid(new KaitaiStream(data));
-
-  const beatGrids: BeatGrid[] = [];
-
-  // Non-terminal beat grid
-  if (parsed.nonTerminalMarkers && parsed.terminalMarker) {
-    for (const [
-      index,
-      nonTerminalMarker,
-    ] of parsed.nonTerminalMarkers.entries()) {
-      // Calculate BPM from time to the next marker and beats to next marker
-      const nextMarkersPosition =
-        index < parsed.nonTerminalMarkers.length - 1
-          ? parsed.nonTerminalMarkers[index + 1].position
-          : parsed.terminalMarker.position;
-      const timeUntilNextMarker =
-        nextMarkersPosition - nonTerminalMarker.position;
-      const bpm =
-        nonTerminalMarker.beatsUntilNextMarker * (60 / timeUntilNextMarker);
-
-      beatGrids.push(
-        new BeatGrid({
-          position: nonTerminalMarker.position,
-          bpm: bpm,
-        })
-      );
-    }
-  }
-
-  if (parsed.terminalMarker) {
-    beatGrids.push(
-      new BeatGrid({
-        position: parsed.terminalMarker.position,
-        bpm: parsed.terminalMarker.bpm,
-      })
-    );
-  }
-
-  return beatGrids;
-}
-
-function parseId3(metadata: musicMetadata.IAudioMetadata) {
-  const seratoTags = ID3.getSeratoTags(metadata);
-
-  if (seratoTags.SeratoMarkers2) {
-    const decoded = ID3.decodeSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
-    const parsed = parseSeratoMarkers2Tag(decoded);
-    console.log(parsed);
-  }
-
-  if (seratoTags.SeratoBeatGrid) {
-    const decoded = ID3.decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
-    const parsed = parseSeratoBeatGridTag(decoded);
-    console.log(parsed);
-  }
-}
-
-function parseVorbis(metadata: musicMetadata.IAudioMetadata) {
-  const seratoTags = VORBIS.getSeratoTags(metadata);
-
-  console.log(seratoTags);
-
-  if (seratoTags.SeratoMarkers2) {
-    const decoded = VORBIS.decodeSeratoMarkers2Tag(seratoTags.SeratoMarkers2);
-    const parsed = parseSeratoMarkers2Tag(decoded);
-    console.log(parsed);
-  }
-
-  if (seratoTags.SeratoBeatGrid) {
-    const decoded = VORBIS.decodeSeratoBeatGridTag(seratoTags.SeratoBeatGrid);
-    const parsed = parseSeratoBeatGridTag(decoded);
-    console.log(parsed);
-  }
+  return trackFilePaths;
 }
 
 async function main() {
@@ -126,14 +78,20 @@ async function main() {
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 2/Kenji Kawai - Making of Cyborg (Flite Remix).wav"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/Analysed DnB/02. The Upbeats - Oddity - 9A - 170.mp3"
     // FLAC
-    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 6/Gonda - Hold Up (Rise Remix).flac"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 6/Gonda - Hold Up (Rise Remix).flac"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 6/Trex - Stress Test.flac"
+    // Crate
+    "/Users/dallanfreemantle/Desktop/Serato USB Latest/_Serato_/Subcrates/D - Love not Lost 2.crate"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/_Serato_/Subcrates/D - DEYS.crate"
   );
 
-  const metadata = await musicMetadata.parseFile(absolutePath);
+  // const metadata = await musicMetadata.parseFile(absolutePath);
+  const crate = await fs.readFile(absolutePath);
 
-  parseVorbis(metadata);
+  // parseVorbis(metadata);
   // parseId3(metadata);
+  const crateTracks = parseCrate(crate);
+  console.log(crateTracks);
 }
 
 main();
