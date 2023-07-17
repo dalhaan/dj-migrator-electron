@@ -1,6 +1,6 @@
 meta:
   id: serato_crate
-  encoding: ASCII
+  encoding: UTF-16BE
   endian: be
 
 seq:
@@ -13,6 +13,7 @@ types:
     seq:
       - id: type
         type: str
+        encoding: ASCII
         size: 4
       - id: length
         type: u4
