@@ -1,4 +1,4 @@
-# Serato Markers2 tag
+# Serato Markers2 Tag
 
 https://github.com/Holzhaus/serato-tags/blob/master/docs/serato_markers2.md
 

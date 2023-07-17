@@ -1,4 +1,4 @@
-# Serato BeatGrid tag
+# Serato BeatGrid Tag
 
 https://github.com/Holzhaus/serato-tags/blob/master/docs/serato_beatgrid.md
 
