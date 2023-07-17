@@ -2,10 +2,13 @@
 
 https://github.com/Holzhaus/serato-tags/blob/master/docs/serato_beatgrid.md
 
-**Example Serato BeatGrid ID3 GEOB tag body with three markers:**
+**Example Serato BeatGrid tag with three markers:**
 
 ```
-01 00 | 00 00 00 03 | 3D 3C 3E 82 00 00 00 40 | 41 B0 E1 48 00 00 00 14 | 42 04 8F 39 43 2E 06 C8 | 00
+Hex View  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
+
+00000000  01 00 00 00 00 03 3D 3C  3E 82 00 00 00 40 41 B0  ......=<>....@A.
+00000010  E1 48 00 00 00 14 42 04  8F 39 43 2E 06 C8 00     .H....B..9C....
 ```
 
 ## Binary sequence breakdown
@@ -31,7 +34,7 @@ https://github.com/Holzhaus/serato-tags/blob/master/docs/serato_beatgrid.md
 
 ## Kaitai struct
 
-[lib/node/src/kaitai/schemas/serato_beatgrid.ksy](lib/node/src/kaitai/schemas/serato_beatgrid.ksy)
+[lib/node/src/kaitai/schemas/serato_beatgrid.ksy](../lib/node/src/kaitai/schemas/serato_beatgrid.ksy)
 
 ```yaml
 meta:
@@ -42,16 +45,31 @@ meta:
 seq:
   - id: header
     type: header
+    doc: |
+      The header of the Serato BeatGrid ID3 tag contains a magic signature
+      and the number of beatgrid markers.
   - id: non_terminal_markers
     type: non_terminal_marker
     repeat: expr
     repeat-expr: header.no_markers - 1
     if: header.no_markers > 0
+    doc: |
+      Every marker except the last marker is a non-terminal marker which
+      only has its position and the number of beats until the next marker.
+      The BPM of this section is calculated from the number of beats until
+      the next marker multiplied by the time until the next marker:
+      `beats_until_next_marker * (60 / (next_marker_position - position))`
   - id: terminal_marker
     type: terminal_marker
     if: header.no_markers > 0
+    doc: |
+      Only the last marker is a terminal marker which has its position and
+      the BPM for the rest of the track.
   - id: footer
     size: 1
+    doc: |
+      The last byte of the body is the terminating byte. This seems to be
+      random and probably has some meaning but we don't need it.
 
 types:
   header:

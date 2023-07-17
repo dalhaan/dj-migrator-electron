@@ -20,4 +20,5 @@ The only tags that we need are the Serato Markers2 and [Serato BeatGrid](serato-
 
 ## Decoding documentation
 
+- [Serato Markers2](serato-markers2-tag.md)
 - [Serato BeatGrid](serato-beatgrid-tag.md)
