@@ -1,7 +1,7 @@
 # DJ Migrator
 
 <div align="center">
-  <img src="docs/current-state-updated.png" alt="Screenshot of the current state of DJ Migrator">
+  <img src="docs/current-state-updated-2.png" alt="Screenshot of the current state of DJ Migrator">
   <em>The current WIP state of DJ Migrator</em>
 </div>
 
