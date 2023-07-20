@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FaPlay, FaPause } from "react-icons/fa";
 import { Stack, Button, ButtonToolbar, IconButton, SelectPicker } from "rsuite";
 
+import * as styles from "./player.css";
+
 import { AudioPlayer } from "@/audio/audio-player";
 import { WebGLWaveform } from "@/main-window/components/player/webgl-waveform";
 import { useLibrary, useMainStore } from "@/stores/libraryStore";
@@ -243,7 +245,7 @@ export function Player() {
         ref={canvasElement}
         style={{ width: "100%", height: 210, minHeight: 210 }}
       />
-      <ButtonToolbar>
+      <ButtonToolbar className={styles.controlToolbar}>
         <IconButton
           icon={<Icon as={isPlaying ? FaPause : FaPlay} />}
           appearance="ghost"
@@ -262,44 +264,46 @@ export function Player() {
           cleanable={false}
         ></SelectPicker>
         <Button onPointerDown={() => beatJump("FORWARDS")}>&gt;</Button>
-        {cuePoints.map((cuePoint, index) => {
-          return (
-            <IconButton
-              key={`cuepoint:${selectedTrackId}:${index}`}
-              icon={<Icon as={FaPlay} />}
-              onPointerDown={() => jumpToTime(cuePoint.position)}
-              size="xs"
-              appearance="primary"
-              style={
-                cuePoint.color
-                  ? {
-                      "--cue-color": `rgb(${cuePoint.color.join(",")})`,
-                      "--rs-btn-primary-bg": `var(--cue-color)`,
-                      "--rs-iconbtn-primary-addon": `color-mix(in srgb, var(--cue-color) 70%, black)`,
-                      // Hover
-                      "--rs-btn-primary-hover-bg": `color-mix(in srgb, var(--cue-color) 70%, black)`,
-                      "--rs-iconbtn-primary-activated-addon": `color-mix(in srgb, var(--cue-color) 50%, black)`,
-                      // Active
-                      "--rs-btn-primary-active-bg": `var(--cue-color)`,
-                      "--rs-iconbtn-primary-pressed-addon": `color-mix(in srgb, var(--cue-color) 70%, black)`,
-                      width: 92,
-                    }
-                  : undefined
-              }
-            >
-              {cuePoint.name ? (
-                <span
-                  style={{
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {cuePoint.name}
-                </span>
-              ) : undefined}
-            </IconButton>
-          );
-        })}
+        <div className={styles.cuepointToolbar}>
+          {cuePoints.map((cuePoint, index) => {
+            return (
+              <IconButton
+                key={`cuepoint:${selectedTrackId}:${index}`}
+                icon={<Icon as={FaPlay} />}
+                onPointerDown={() => jumpToTime(cuePoint.position)}
+                size="xs"
+                appearance="primary"
+                style={
+                  cuePoint.color
+                    ? {
+                        "--cue-color": `rgb(${cuePoint.color.join(",")})`,
+                        "--rs-btn-primary-bg": `var(--cue-color)`,
+                        "--rs-iconbtn-primary-addon": `color-mix(in srgb, var(--cue-color) 70%, black)`,
+                        // Hover
+                        "--rs-btn-primary-hover-bg": `color-mix(in srgb, var(--cue-color) 70%, black)`,
+                        "--rs-iconbtn-primary-activated-addon": `color-mix(in srgb, var(--cue-color) 50%, black)`,
+                        // Active
+                        "--rs-btn-primary-active-bg": `var(--cue-color)`,
+                        "--rs-iconbtn-primary-pressed-addon": `color-mix(in srgb, var(--cue-color) 70%, black)`,
+                        width: 92,
+                      }
+                    : undefined
+                }
+              >
+                {cuePoint.name ? (
+                  <span
+                    style={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {cuePoint.name}
+                  </span>
+                ) : undefined}
+              </IconButton>
+            );
+          })}
+        </div>
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         {/* <audio
           ref={audioElement}
