@@ -51,6 +51,7 @@ class ColumnNameTag extends SeratoCrateTag {
     return Buffer.concat([this.type, length, body]);
   }
 }
+
 class FirstColumnTag extends SeratoCrateTag {
   tags: SeratoCrateTag[] = [];
 
@@ -91,6 +92,45 @@ class ColumnTag extends SeratoCrateTag {
   }
 }
 
+class TrackTag extends SeratoCrateTag {
+  tags: SeratoCrateTag[] = [];
+
+  constructor() {
+    super("otrk");
+  }
+
+  addFilePathTag(filePath: string) {
+    this.tags.push(new FilePathTag(filePath));
+  }
+
+  serialize(): Buffer {
+    const body = Buffer.concat(this.tags.map((tag) => tag.serialize()));
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(body.byteLength);
+
+    return Buffer.concat([this.type, length, body]);
+  }
+}
+
+class FilePathTag extends SeratoCrateTag {
+  filePath: Buffer;
+
+  constructor(filePath: string) {
+    super("ptrk");
+
+    // Encode string as UTF16BE
+    this.filePath = Buffer.from(filePath, "utf16le").swap16();
+  }
+
+  serialize(): Buffer {
+    const body = this.filePath;
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(body.byteLength);
+
+    return Buffer.concat([this.type, length, body]);
+  }
+}
+
 class SeratoCrate {
   tags: SeratoCrateTag[] = [];
 
@@ -107,6 +147,12 @@ class SeratoCrate {
   addColumnTag(name: string) {
     const tag = new ColumnTag();
     tag.addColumnNameTag(name);
+    this.tags.push(tag);
+  }
+
+  addTrackTag(filePath: string) {
+    const tag = new TrackTag();
+    tag.addFilePathTag(filePath);
     this.tags.push(tag);
   }
 
@@ -331,8 +377,9 @@ async function main() {
 
   const crate = new SeratoCrate();
   crate.addVersionTag("1.0/Serato ScratchLive Crate");
-  // crate.addFirstColumnTag("song");
-  // crate.addColumnTag("song");
+  crate.addFirstColumnTag("song");
+  crate.addColumnTag("song");
+  crate.addTrackTag("music/DnB");
   console.log(crate.serialize());
 }
 
