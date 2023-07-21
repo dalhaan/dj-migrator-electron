@@ -4,7 +4,52 @@ const NULL_BYTE = new Uint8Array([0x00]);
 // Beat Grid
 // ==================================
 
-class NonTerminalMarker {
+abstract class SeratoCrateTag {
+  type: Buffer;
+
+  constructor(type: "vrsn" | "osrt" | "tvcn" | "ovct" | "otrk" | "ptrk") {
+    this.type = Buffer.from(type, "ascii");
+  }
+
+  abstract serialize(): Buffer;
+}
+
+class VersionTag extends SeratoCrateTag {
+  versionMetadata: Buffer;
+
+  constructor(versionMetadata: string) {
+    super("vrsn");
+
+    // Encode string as UTF16BE
+    this.versionMetadata = Buffer.from(versionMetadata, "utf16le").swap16();
+  }
+
+  serialize(): Buffer {
+    const body = this.versionMetadata;
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(body.byteLength);
+
+    return Buffer.concat([this.type, length, body]);
+  }
+}
+
+class SeratoCrate {
+  tags: SeratoCrateTag[] = [];
+
+  addVersionTag(versionMetadata: string) {
+    this.tags.push(new VersionTag(versionMetadata));
+  }
+
+  serialize(): Buffer {
+    return Buffer.concat(this.tags.map((tag) => tag.serialize()));
+  }
+}
+
+interface SeratoBeatGridTag {
+  serialize(): Buffer;
+}
+
+class NonTerminalMarker implements SeratoBeatGridTag {
   static size = 8;
   buffer: Buffer;
 
@@ -19,9 +64,13 @@ class NonTerminalMarker {
 
     this.buffer = buffer;
   }
+
+  serialize() {
+    return this.buffer;
+  }
 }
 
-class TerminalMarker {
+class TerminalMarker implements SeratoBeatGridTag {
   static size = 8;
   buffer: Buffer;
 
@@ -35,6 +84,10 @@ class TerminalMarker {
     buffer.writeFloatBE(bpm, 4);
 
     this.buffer = buffer;
+  }
+
+  serialize() {
+    return this.buffer;
   }
 }
 
@@ -66,7 +119,7 @@ class SeratoBeatGrid {
   }
 }
 
-abstract class Tag {
+abstract class SeratoMarkers2Tag {
   type: Buffer;
 
   constructor(type: "COLOR" | "CUE" | "BPMLOCK") {
@@ -74,10 +127,10 @@ abstract class Tag {
     this.type.write(type, "ascii");
   }
 
-  abstract build(): Buffer;
+  abstract serialize(): Buffer;
 }
 
-class CueTag extends Tag {
+class CueTag extends SeratoMarkers2Tag {
   index: Buffer;
   position: Buffer;
   color: Buffer;
@@ -109,7 +162,7 @@ class CueTag extends Tag {
     }
   }
 
-  build() {
+  serialize() {
     const body = Buffer.concat([
       NULL_BYTE,
       this.index,
@@ -127,7 +180,7 @@ class CueTag extends Tag {
   }
 }
 
-class ColorTag extends Tag {
+class ColorTag extends SeratoMarkers2Tag {
   color: Buffer;
 
   constructor(color: [number, number, number]) {
@@ -135,7 +188,7 @@ class ColorTag extends Tag {
     this.color = Buffer.from(color);
   }
 
-  build() {
+  serialize() {
     const body = Buffer.concat([NULL_BYTE, this.color]);
     const length = Buffer.alloc(4);
     length.writeUInt32BE(body.byteLength);
@@ -144,7 +197,7 @@ class ColorTag extends Tag {
   }
 }
 
-class BpmLockTag extends Tag {
+class BpmLockTag extends SeratoMarkers2Tag {
   isLocked: Buffer;
 
   constructor(isLocked: boolean) {
@@ -153,7 +206,7 @@ class BpmLockTag extends Tag {
     this.isLocked.writeUintBE(isLocked ? 1 : 0, 0, 1);
   }
 
-  build() {
+  serialize() {
     const body = this.isLocked;
     const length = Buffer.alloc(4);
     length.writeUInt32BE(body.byteLength);
@@ -164,7 +217,7 @@ class BpmLockTag extends Tag {
 
 class SeratoMarkers2 {
   private static magic = new Uint8Array([0x01, 0x01]);
-  tags: Tag[] = [];
+  tags: SeratoMarkers2Tag[] = [];
   footer = NULL_BYTE;
 
   addCueTag(
@@ -184,10 +237,10 @@ class SeratoMarkers2 {
     this.tags.push(new BpmLockTag(isLocked));
   }
 
-  build() {
+  serialize() {
     return Buffer.concat([
       SeratoMarkers2.magic,
-      ...this.tags.map((tag) => tag.build()),
+      ...this.tags.map((tag) => tag.serialize()),
       this.footer,
     ]);
   }
@@ -198,15 +251,17 @@ async function main() {
   beatGrid.addNonTerminalMarker(1.2, 64);
   beatGrid.addNonTerminalMarker(2.4, 64);
   beatGrid.addTerminalMarker(5.0, 178);
-  console.log(beatGrid);
   console.log(beatGrid.build());
 
-  const marker = new SeratoMarkers2();
-  marker.addColorTag([255, 0, 0]);
-  marker.addCueTag(1, 2020, [255, 255, 255], "Energy 7");
-  marker.addBpmLockTag(false);
+  const markers = new SeratoMarkers2();
+  markers.addColorTag([255, 0, 0]);
+  markers.addCueTag(1, 2020, [255, 255, 255], "Energy 7");
+  markers.addBpmLockTag(false);
+  console.log(markers.serialize());
 
-  console.log(marker.build());
+  const crate = new SeratoCrate();
+  crate.addVersionTag("AAAAA");
+  console.log(crate.serialize());
 }
 
 main();
