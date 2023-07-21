@@ -33,11 +33,81 @@ class VersionTag extends SeratoCrateTag {
   }
 }
 
+class ColumnNameTag extends SeratoCrateTag {
+  name: Buffer;
+
+  constructor(name: string) {
+    super("tvcn");
+
+    // Encode string as UTF16BE
+    this.name = Buffer.from(name, "utf16le").swap16();
+  }
+
+  serialize(): Buffer {
+    const body = this.name;
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(body.byteLength);
+
+    return Buffer.concat([this.type, length, body]);
+  }
+}
+class FirstColumnTag extends SeratoCrateTag {
+  tags: SeratoCrateTag[] = [];
+
+  constructor() {
+    super("osrt");
+  }
+
+  addColumnNameTag(name: string) {
+    this.tags.push(new ColumnNameTag(name));
+  }
+
+  serialize(): Buffer {
+    const body = Buffer.concat(this.tags.map((tag) => tag.serialize()));
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(body.byteLength);
+
+    return Buffer.concat([this.type, length, body]);
+  }
+}
+
+class ColumnTag extends SeratoCrateTag {
+  tags: SeratoCrateTag[] = [];
+
+  constructor() {
+    super("ovct");
+  }
+
+  addColumnNameTag(name: string) {
+    this.tags.push(new ColumnNameTag(name));
+  }
+
+  serialize(): Buffer {
+    const body = Buffer.concat(this.tags.map((tag) => tag.serialize()));
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(body.byteLength);
+
+    return Buffer.concat([this.type, length, body]);
+  }
+}
+
 class SeratoCrate {
   tags: SeratoCrateTag[] = [];
 
   addVersionTag(versionMetadata: string) {
     this.tags.push(new VersionTag(versionMetadata));
+  }
+
+  addFirstColumnTag(name: string) {
+    const tag = new FirstColumnTag();
+    tag.addColumnNameTag(name);
+    this.tags.push(tag);
+  }
+
+  addColumnTag(name: string) {
+    const tag = new ColumnTag();
+    tag.addColumnNameTag(name);
+    this.tags.push(tag);
   }
 
   serialize(): Buffer {
@@ -260,7 +330,9 @@ async function main() {
   console.log(markers.serialize());
 
   const crate = new SeratoCrate();
-  crate.addVersionTag("AAAAA");
+  crate.addVersionTag("1.0/Serato ScratchLive Crate");
+  // crate.addFirstColumnTag("song");
+  // crate.addColumnTag("song");
   console.log(crate.serialize());
 }
 
