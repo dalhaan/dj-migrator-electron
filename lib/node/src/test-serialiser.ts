@@ -17,7 +17,11 @@ const TAG_TYPES = {
 
 type TagType = (typeof TAG_TYPES)[keyof typeof TAG_TYPES];
 
-abstract class SeratoCrateTag {
+interface Serializable {
+  serialize(): Buffer;
+}
+
+abstract class SeratoCrateTag implements Serializable {
   type: Buffer;
 
   constructor(type: TagType) {
@@ -167,7 +171,7 @@ class FilePathTag extends SeratoCrateTag {
   }
 }
 
-class SeratoCrate {
+class SeratoCrate implements Serializable {
   tags: SeratoCrateTag[] = [];
 
   addVersionTag(versionMetadata: string) {
@@ -202,11 +206,7 @@ class SeratoCrate {
 // Serato BeatGrid
 // ==================================
 
-interface SeratoBeatGridTag {
-  serialize(): Buffer;
-}
-
-class NonTerminalMarker implements SeratoBeatGridTag {
+class NonTerminalMarker implements Serializable {
   static size = 8;
   buffer: Buffer;
 
@@ -227,7 +227,7 @@ class NonTerminalMarker implements SeratoBeatGridTag {
   }
 }
 
-class TerminalMarker implements SeratoBeatGridTag {
+class TerminalMarker implements Serializable {
   static size = 8;
   buffer: Buffer;
 
@@ -248,7 +248,7 @@ class TerminalMarker implements SeratoBeatGridTag {
   }
 }
 
-class SeratoBeatGrid {
+class SeratoBeatGrid implements Serializable {
   private static magic = new Uint8Array([0x01, 0x00]);
   private nonTerminalMarkers: NonTerminalMarker[] = [];
   private terminalMarker: TerminalMarker | undefined;
@@ -265,7 +265,7 @@ class SeratoBeatGrid {
     this.terminalMarker = new TerminalMarker(position, bpm);
   }
 
-  build() {
+  serialize() {
     const buffer = Buffer.concat([
       SeratoBeatGrid.magic,
       ...this.nonTerminalMarkers.map((marker) => marker.buffer),
@@ -280,7 +280,7 @@ class SeratoBeatGrid {
 // Serato Markers2
 // ==================================
 
-abstract class SeratoMarkers2Tag {
+abstract class SeratoMarkers2Tag implements Serializable {
   type: Buffer;
 
   constructor(type: "COLOR" | "CUE" | "BPMLOCK") {
@@ -375,7 +375,7 @@ class BpmLockTag extends SeratoMarkers2Tag {
   }
 }
 
-class SeratoMarkers2 {
+class SeratoMarkers2 implements Serializable {
   private static magic = new Uint8Array([0x01, 0x01]);
   tags: SeratoMarkers2Tag[] = [];
   private footer = NULL_BYTE;
@@ -411,7 +411,7 @@ async function main() {
   beatGrid.addNonTerminalMarker(1.2, 64);
   beatGrid.addNonTerminalMarker(2.4, 64);
   beatGrid.addTerminalMarker(5.0, 178);
-  console.log(beatGrid.build());
+  console.log(beatGrid.serialize());
 
   const markers = new SeratoMarkers2();
   markers.addColorTag([255, 0, 0]);
