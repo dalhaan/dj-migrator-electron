@@ -307,6 +307,7 @@ class SeratoBeatGrid implements Serializable {
   private static magic = new Uint8Array([0x01, 0x00]);
   private nonTerminalMarkers: NonTerminalMarker[] = [];
   private terminalMarker: TerminalMarker | undefined;
+  private footer = NULL_BYTE;
 
   constructor() {}
 
@@ -325,10 +326,17 @@ class SeratoBeatGrid implements Serializable {
   }
 
   serialize() {
+    const noMarkers = Buffer.alloc(4);
+    noMarkers.writeUInt32BE(
+      this.nonTerminalMarkers.length + (this.terminalMarker ? 1 : 0)
+    );
+
     const buffer = Buffer.concat([
       SeratoBeatGrid.magic,
+      noMarkers,
       ...this.nonTerminalMarkers.map((marker) => marker.buffer),
       ...(this.terminalMarker ? [this.terminalMarker.buffer] : []),
+      this.footer,
     ]);
 
     return buffer;
@@ -470,23 +478,29 @@ class SeratoMarkers2 implements Serializable {
 }
 
 async function main() {
-  // const beatGrid = new SeratoBeatGrid();
-  // beatGrid.addNonTerminalMarker(1.2, 64);
-  // beatGrid.addNonTerminalMarker(2.4, 64);
-  // beatGrid.addTerminalMarker(5.0, 178);
-  // console.log(beatGrid.serialize());
+  const beatGrid = new SeratoBeatGrid();
+  // beatGrid
+  //   .addNonTerminalMarker(0.04595804959535599, 64)
+  //   .addNonTerminalMarker(22.110000610351562, 20)
+  //   .addTerminalMarker(33.13986587524414, 174.0264892578125);
+  beatGrid.addTerminalMarker(0.17129819095134735, 172);
+  console.log(beatGrid.serialize());
+  // await fs.writeFile(
+  //   "/Users/dallanfreemantle/Desktop/three-beat-grids-S.octet-stream",
+  //   beatGrid.serialize()
+  // );
 
-  const markers = new SeratoMarkers2();
-  markers
-    .addColorTag([255, 255, 255])
-    .addCueTag(2, 41, [0, 0, 204], "")
-    .addCueTag(3, 8317, [204, 204, 0], "")
-    .addBpmLockTag(false);
-  console.log(markers.serialize());
-  await fs.writeFile(
-    "/Users/dallanfreemantle/Desktop/two-markers-S.octet-stream",
-    markers.serialize()
-  );
+  // const markers = new SeratoMarkers2();
+  // markers
+  //   .addColorTag([255, 255, 255])
+  //   .addCueTag(2, 41, [0, 0, 204], "")
+  //   .addCueTag(3, 8317, [204, 204, 0], "")
+  //   .addBpmLockTag(false);
+  // console.log(markers.serialize());
+  // await fs.writeFile(
+  //   "/Users/dallanfreemantle/Desktop/two-markers-S.octet-stream",
+  //   markers.serialize()
+  // );
 
   // const crate = new SeratoCrate();
   // crate
