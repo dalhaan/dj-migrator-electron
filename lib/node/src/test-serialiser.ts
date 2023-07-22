@@ -1,15 +1,26 @@
 const NULL_BYTE = new Uint8Array([0x00]);
 
 // ==================================
-// Beat Grid
+// Serato Crate
 // ==================================
+
+const TAG_TYPES = {
+  VERSION_TAG: "vrsn",
+  SORT_BY_COLUMN_TAG: "osrt",
+  SORT_DIR_TAG: "brev",
+  COLUMN_TAG: "ovct",
+  COLUMN_NAME_TAG: "tvcn",
+  COLUMN_WIDTH_TAG: "tvcw",
+  TRACK_TAG: "otrk",
+  FILE_PATH_TAG: "ptrk",
+} as const;
+
+type TagType = (typeof TAG_TYPES)[keyof typeof TAG_TYPES];
 
 abstract class SeratoCrateTag {
   type: Buffer;
 
-  constructor(
-    type: "vrsn" | "osrt" | "tvcn" | "ovct" | "otrk" | "ptrk" | "brev"
-  ) {
+  constructor(type: TagType) {
     this.type = Buffer.from(type, "ascii");
   }
 
@@ -20,7 +31,7 @@ class VersionTag extends SeratoCrateTag {
   versionMetadata: Buffer;
 
   constructor(versionMetadata: string) {
-    super("vrsn");
+    super(TAG_TYPES.VERSION_TAG);
 
     // Encode string as UTF16BE
     this.versionMetadata = Buffer.from(versionMetadata, "utf16le").swap16();
@@ -35,11 +46,74 @@ class VersionTag extends SeratoCrateTag {
   }
 }
 
+class SortByColumnTag extends SeratoCrateTag {
+  tags: SeratoCrateTag[] = [];
+
+  constructor() {
+    super(TAG_TYPES.SORT_BY_COLUMN_TAG);
+  }
+
+  addColumnNameTag(name: string) {
+    this.tags.push(new ColumnNameTag(name));
+  }
+
+  addSortDirTag(isDescending: boolean) {
+    this.tags.push(new SortDirTag(isDescending));
+  }
+
+  serialize(): Buffer {
+    const body = Buffer.concat(this.tags.map((tag) => tag.serialize()));
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(body.byteLength);
+
+    return Buffer.concat([this.type, length, body]);
+  }
+}
+
+class SortDirTag extends SeratoCrateTag {
+  isDescending: Buffer;
+
+  constructor(isDescending: boolean) {
+    super(TAG_TYPES.SORT_DIR_TAG);
+
+    this.isDescending = Buffer.alloc(1);
+    this.isDescending.set([isDescending ? 0x01 : 0x00]);
+  }
+
+  serialize(): Buffer {
+    const body = this.isDescending;
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(body.byteLength);
+
+    return Buffer.concat([this.type, length, body]);
+  }
+}
+
+class ColumnTag extends SeratoCrateTag {
+  tags: SeratoCrateTag[] = [];
+
+  constructor() {
+    super(TAG_TYPES.COLUMN_TAG);
+  }
+
+  addColumnNameTag(name: string) {
+    this.tags.push(new ColumnNameTag(name));
+  }
+
+  serialize(): Buffer {
+    const body = Buffer.concat(this.tags.map((tag) => tag.serialize()));
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(body.byteLength);
+
+    return Buffer.concat([this.type, length, body]);
+  }
+}
+
 class ColumnNameTag extends SeratoCrateTag {
   name: Buffer;
 
   constructor(name: string) {
-    super("tvcn");
+    super(TAG_TYPES.COLUMN_NAME_TAG);
 
     // Encode string as UTF16BE
     this.name = Buffer.from(name, "utf16le").swap16();
@@ -54,75 +128,11 @@ class ColumnNameTag extends SeratoCrateTag {
   }
 }
 
-class ColumnSortDirTag extends SeratoCrateTag {
-  isDescending: Buffer;
-
-  constructor(isDescending: boolean) {
-    super("brev");
-
-    // Encode string as UTF16BE
-    this.isDescending = Buffer.alloc(1);
-    this.isDescending.set([isDescending ? 0x01 : 0x00]);
-  }
-
-  serialize(): Buffer {
-    const body = this.isDescending;
-    const length = Buffer.alloc(4);
-    length.writeUInt32BE(body.byteLength);
-
-    return Buffer.concat([this.type, length, body]);
-  }
-}
-
-class ColumnSortTag extends SeratoCrateTag {
-  tags: SeratoCrateTag[] = [];
-
-  constructor() {
-    super("osrt");
-  }
-
-  addColumnNameTag(name: string) {
-    this.tags.push(new ColumnNameTag(name));
-  }
-
-  addColumnSortDirTag(isDescending: boolean) {
-    this.tags.push(new ColumnSortDirTag(isDescending));
-  }
-
-  serialize(): Buffer {
-    const body = Buffer.concat(this.tags.map((tag) => tag.serialize()));
-    const length = Buffer.alloc(4);
-    length.writeUInt32BE(body.byteLength);
-
-    return Buffer.concat([this.type, length, body]);
-  }
-}
-
-class ColumnTag extends SeratoCrateTag {
-  tags: SeratoCrateTag[] = [];
-
-  constructor() {
-    super("ovct");
-  }
-
-  addColumnNameTag(name: string) {
-    this.tags.push(new ColumnNameTag(name));
-  }
-
-  serialize(): Buffer {
-    const body = Buffer.concat(this.tags.map((tag) => tag.serialize()));
-    const length = Buffer.alloc(4);
-    length.writeUInt32BE(body.byteLength);
-
-    return Buffer.concat([this.type, length, body]);
-  }
-}
-
 class TrackTag extends SeratoCrateTag {
   tags: SeratoCrateTag[] = [];
 
   constructor() {
-    super("otrk");
+    super(TAG_TYPES.TRACK_TAG);
   }
 
   addFilePathTag(filePath: string) {
@@ -142,7 +152,7 @@ class FilePathTag extends SeratoCrateTag {
   filePath: Buffer;
 
   constructor(filePath: string) {
-    super("ptrk");
+    super(TAG_TYPES.FILE_PATH_TAG);
 
     // Encode string as UTF16BE
     this.filePath = Buffer.from(filePath, "utf16le").swap16();
@@ -164,10 +174,10 @@ class SeratoCrate {
     this.tags.push(new VersionTag(versionMetadata));
   }
 
-  addColumnSortTag(name: string, isDescending: boolean) {
-    const tag = new ColumnSortTag();
+  addSortByColumnTag(name: string, isDescending: boolean) {
+    const tag = new SortByColumnTag();
     tag.addColumnNameTag(name);
-    tag.addColumnSortDirTag(isDescending);
+    tag.addSortDirTag(isDescending);
     this.tags.push(tag);
   }
 
@@ -187,6 +197,10 @@ class SeratoCrate {
     return Buffer.concat(this.tags.map((tag) => tag.serialize()));
   }
 }
+
+// ==================================
+// Serato BeatGrid
+// ==================================
 
 interface SeratoBeatGridTag {
   serialize(): Buffer;
@@ -262,6 +276,10 @@ class SeratoBeatGrid {
   }
 }
 
+// ==================================
+// Serato Markers2
+// ==================================
+
 abstract class SeratoMarkers2Tag {
   type: Buffer;
 
@@ -279,7 +297,6 @@ class CueTag extends SeratoMarkers2Tag {
   color: Buffer;
   name: Buffer | undefined;
 
-  // constructor(index: number, position: number, color: [number, number, number], name?: string) {
   constructor(
     index: number,
     position: number,
@@ -404,7 +421,7 @@ async function main() {
 
   const crate = new SeratoCrate();
   // crate.addVersionTag("1.0/Serato ScratchLive Crate");
-  crate.addColumnSortTag("key", false);
+  crate.addSortByColumnTag("key", false);
   // crate.addColumnTag("song");
   // crate.addTrackTag("music/DnB");
   console.log(crate.serialize());
