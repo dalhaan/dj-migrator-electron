@@ -23,11 +23,12 @@ types:
           switch-on: type
           cases:
             '"vrsn"': version_tag
-            '"osrt"': first_column_tag
+            '"osrt"': column_sort_tag
             '"tvcn"': column_name_tag
             '"ovct"': column_tag
             '"otrk"': track_tag
             '"ptrk"': file_path_tag
+            '"brev"': column_sort_dir_tag
             _: unknown_tag
 
   version_tag:
@@ -35,7 +36,7 @@ types:
       - id: body
         type: str
         size-eos: true
-  first_column_tag:
+  column_sort_tag:
     seq:
       - id: tags
         type: tag
@@ -60,6 +61,10 @@ types:
       - id: file_path
         type: str
         size-eos: true
+  column_sort_dir_tag:
+    seq:
+      - id: is_descending
+        type: u1
   unknown_tag:
     seq:
       - id: body

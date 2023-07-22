@@ -3,7 +3,8 @@ export default class SeratoCrate {
   static Tag: typeof Tag;
   static TrackTag: typeof TrackTag;
   static FilePathTag: typeof FilePathTag;
-  static FirstColumnTag: typeof FirstColumnTag;
+  static ColumnSortTag: typeof ColumnSortTag;
+  static ColumnSortDirTag: typeof ColumnSortDirTag;
   static VersionTag: typeof VersionTag;
   static UnknownTag: typeof UnknownTag;
   static ColumnNameTag: typeof ColumnNameTag;
@@ -26,7 +27,7 @@ class Tag {
     | TrackTag
     | ColumnNameTag
     | FilePathTag
-    | FirstColumnTag
+    | ColumnSortTag
     | ColumnTag
     | VersionTag
     | UnknownTag;
@@ -46,7 +47,7 @@ class FilePathTag {
   constructor(...args: any);
 }
 
-class FirstColumnTag {
+class ColumnSortTag {
   tags: Tag[];
 
   constructor(...args: any);
@@ -54,6 +55,12 @@ class FirstColumnTag {
 
 class VersionTag {
   body: string;
+
+  constructor(...args: any);
+}
+
+class ColumnSortDirTag {
+  isDescending: number;
 
   constructor(...args: any);
 }
