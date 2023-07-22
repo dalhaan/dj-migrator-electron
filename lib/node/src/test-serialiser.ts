@@ -7,7 +7,9 @@ const NULL_BYTE = new Uint8Array([0x00]);
 abstract class SeratoCrateTag {
   type: Buffer;
 
-  constructor(type: "vrsn" | "osrt" | "tvcn" | "ovct" | "otrk" | "ptrk") {
+  constructor(
+    type: "vrsn" | "osrt" | "tvcn" | "ovct" | "otrk" | "ptrk" | "brev"
+  ) {
     this.type = Buffer.from(type, "ascii");
   }
 
@@ -52,7 +54,27 @@ class ColumnNameTag extends SeratoCrateTag {
   }
 }
 
-class FirstColumnTag extends SeratoCrateTag {
+class ColumnSortDirTag extends SeratoCrateTag {
+  isDescending: Buffer;
+
+  constructor(isDescending: boolean) {
+    super("brev");
+
+    // Encode string as UTF16BE
+    this.isDescending = Buffer.alloc(1);
+    this.isDescending.set([isDescending ? 0x01 : 0x00]);
+  }
+
+  serialize(): Buffer {
+    const body = this.isDescending;
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(body.byteLength);
+
+    return Buffer.concat([this.type, length, body]);
+  }
+}
+
+class ColumnSortTag extends SeratoCrateTag {
   tags: SeratoCrateTag[] = [];
 
   constructor() {
@@ -61,6 +83,10 @@ class FirstColumnTag extends SeratoCrateTag {
 
   addColumnNameTag(name: string) {
     this.tags.push(new ColumnNameTag(name));
+  }
+
+  addColumnSortDirTag(isDescending: boolean) {
+    this.tags.push(new ColumnSortDirTag(isDescending));
   }
 
   serialize(): Buffer {
@@ -138,9 +164,10 @@ class SeratoCrate {
     this.tags.push(new VersionTag(versionMetadata));
   }
 
-  addFirstColumnTag(name: string) {
-    const tag = new FirstColumnTag();
+  addColumnSortTag(name: string, isDescending: boolean) {
+    const tag = new ColumnSortTag();
     tag.addColumnNameTag(name);
+    tag.addColumnSortDirTag(isDescending);
     this.tags.push(tag);
   }
 
@@ -334,7 +361,7 @@ class BpmLockTag extends SeratoMarkers2Tag {
 class SeratoMarkers2 {
   private static magic = new Uint8Array([0x01, 0x01]);
   tags: SeratoMarkers2Tag[] = [];
-  footer = NULL_BYTE;
+  private footer = NULL_BYTE;
 
   addCueTag(
     index: number,
@@ -376,10 +403,10 @@ async function main() {
   console.log(markers.serialize());
 
   const crate = new SeratoCrate();
-  crate.addVersionTag("1.0/Serato ScratchLive Crate");
-  crate.addFirstColumnTag("song");
-  crate.addColumnTag("song");
-  crate.addTrackTag("music/DnB");
+  // crate.addVersionTag("1.0/Serato ScratchLive Crate");
+  crate.addColumnSortTag("key", false);
+  // crate.addColumnTag("song");
+  // crate.addTrackTag("music/DnB");
   console.log(crate.serialize());
 }
 
