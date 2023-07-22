@@ -6,7 +6,7 @@ const NULL_BYTE = new Uint8Array([0x00]);
 // Serato Crate
 // ==================================
 
-const TAG_TYPES = {
+const TagType = {
   VERSION_TAG: "vrsn",
   SORT_BY_COLUMN_TAG: "osrt",
   SORT_DIR_TAG: "brev",
@@ -17,7 +17,7 @@ const TAG_TYPES = {
   FILE_PATH_TAG: "ptrk",
 } as const;
 
-type TagType = (typeof TAG_TYPES)[keyof typeof TAG_TYPES];
+type TagType = (typeof TagType)[keyof typeof TagType];
 
 interface Serializable {
   serialize(): Buffer;
@@ -37,7 +37,7 @@ class VersionTag extends SeratoCrateTag {
   versionMetadata: Buffer;
 
   constructor(versionMetadata: string) {
-    super(TAG_TYPES.VERSION_TAG);
+    super(TagType.VERSION_TAG);
 
     // Encode string as UTF16BE
     this.versionMetadata = Buffer.from(versionMetadata, "utf16le").swap16();
@@ -56,7 +56,7 @@ class SortByColumnTag extends SeratoCrateTag {
   tags: SeratoCrateTag[] = [];
 
   constructor() {
-    super(TAG_TYPES.SORT_BY_COLUMN_TAG);
+    super(TagType.SORT_BY_COLUMN_TAG);
   }
 
   addColumnNameTag(name: string) {
@@ -84,7 +84,7 @@ class SortDirTag extends SeratoCrateTag {
   isDescending: Buffer;
 
   constructor(isDescending: boolean) {
-    super(TAG_TYPES.SORT_DIR_TAG);
+    super(TagType.SORT_DIR_TAG);
 
     this.isDescending = Buffer.alloc(1);
     this.isDescending.set([isDescending ? 0x01 : 0x00]);
@@ -103,7 +103,7 @@ class ColumnTag extends SeratoCrateTag {
   tags: SeratoCrateTag[] = [];
 
   constructor() {
-    super(TAG_TYPES.COLUMN_TAG);
+    super(TagType.COLUMN_TAG);
   }
 
   addColumnNameTag(name: string) {
@@ -135,7 +135,7 @@ class ColumnNameTag extends SeratoCrateTag {
   name: Buffer;
 
   constructor(name: string) {
-    super(TAG_TYPES.COLUMN_NAME_TAG);
+    super(TagType.COLUMN_NAME_TAG);
 
     // Encode string as UTF16BE
     this.name = Buffer.from(name, "utf16le").swap16();
@@ -154,7 +154,7 @@ class ColumnWidthTag extends SeratoCrateTag {
   width: Buffer;
 
   constructor(width: string) {
-    super(TAG_TYPES.COLUMN_WIDTH_TAG);
+    super(TagType.COLUMN_WIDTH_TAG);
 
     // Encode string as UTF16BE
     this.width = Buffer.from(width, "utf16le").swap16();
@@ -173,7 +173,7 @@ class TrackTag extends SeratoCrateTag {
   tags: SeratoCrateTag[] = [];
 
   constructor() {
-    super(TAG_TYPES.TRACK_TAG);
+    super(TagType.TRACK_TAG);
   }
 
   addFilePathTag(filePath: string) {
@@ -197,7 +197,7 @@ class FilePathTag extends SeratoCrateTag {
   filePath: Buffer;
 
   constructor(filePath: string) {
-    super(TAG_TYPES.FILE_PATH_TAG);
+    super(TagType.FILE_PATH_TAG);
 
     // Encode string as UTF16BE
     this.filePath = Buffer.from(filePath, "utf16le").swap16();
@@ -479,42 +479,42 @@ class SeratoMarkers2 implements Serializable {
 
 async function main() {
   const beatGrid = new SeratoBeatGrid();
-  // beatGrid
-  //   .addNonTerminalMarker(0.04595804959535599, 64)
-  //   .addNonTerminalMarker(22.110000610351562, 20)
-  //   .addTerminalMarker(33.13986587524414, 174.0264892578125);
-  beatGrid.addTerminalMarker(0.17129819095134735, 172);
+  beatGrid
+    .addNonTerminalMarker(0.04595804959535599, 64)
+    .addNonTerminalMarker(22.110000610351562, 20)
+    .addTerminalMarker(33.13986587524414, 174.0264892578125);
+  // beatGrid.addTerminalMarker(0.17129819095134735, 172);
   console.log(beatGrid.serialize());
-  // await fs.writeFile(
-  //   "/Users/dallanfreemantle/Desktop/three-beat-grids-S.octet-stream",
-  //   beatGrid.serialize()
-  // );
+  // // await fs.writeFile(
+  // //   "/Users/dallanfreemantle/Desktop/three-beat-grids-S.octet-stream",
+  // //   beatGrid.serialize()
+  // // );
 
-  // const markers = new SeratoMarkers2();
-  // markers
-  //   .addColorTag([255, 255, 255])
-  //   .addCueTag(2, 41, [0, 0, 204], "")
-  //   .addCueTag(3, 8317, [204, 204, 0], "")
-  //   .addBpmLockTag(false);
-  // console.log(markers.serialize());
+  const markers = new SeratoMarkers2();
+  markers
+    .addColorTag([255, 255, 255])
+    .addCueTag(2, 41, [0, 0, 204], "")
+    .addCueTag(3, 8317, [204, 204, 0], "")
+    .addBpmLockTag(false);
+  console.log(markers.serialize());
   // await fs.writeFile(
   //   "/Users/dallanfreemantle/Desktop/two-markers-S.octet-stream",
   //   markers.serialize()
   // );
 
-  // const crate = new SeratoCrate();
-  // crate
-  //   .addVersionTag("1.0/Serato ScratchLive Crate")
-  //   .addSortByColumnTag("song", false)
-  //   .addColumnTag("song", "551")
-  //   .addColumnTag("playCount", "0")
-  //   .addColumnTag("bpm", "0")
-  //   .addColumnTag("length", "0")
-  //   .addColumnTag("artist", "0")
-  //   .addColumnTag("album", "0")
-  //   .addColumnTag("comment", "0")
-  //   .addTrackTag("music/DnB To Get Weird To II/Alix Perez - Good To Me.mp3");
-  // console.log(crate.serialize());
+  const crate = new SeratoCrate();
+  crate
+    .addVersionTag("1.0/Serato ScratchLive Crate")
+    .addSortByColumnTag("song", false)
+    .addColumnTag("song", "551")
+    .addColumnTag("playCount", "0")
+    .addColumnTag("bpm", "0")
+    .addColumnTag("length", "0")
+    .addColumnTag("artist", "0")
+    .addColumnTag("album", "0")
+    .addColumnTag("comment", "0")
+    .addTrackTag("music/DnB To Get Weird To II/Alix Perez - Good To Me.mp3");
+  console.log(crate.serialize());
   // await fs.writeFile(
   //   "/Users/dallanfreemantle/Desktop/FLAAC-S.crate",
   //   crate.serialize()
