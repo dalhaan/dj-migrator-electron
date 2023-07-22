@@ -1,3 +1,5 @@
+import fs from "fs/promises";
+
 const NULL_BYTE = new Uint8Array([0x00]);
 
 // ==================================
@@ -59,10 +61,14 @@ class SortByColumnTag extends SeratoCrateTag {
 
   addColumnNameTag(name: string) {
     this.tags.push(new ColumnNameTag(name));
+
+    return this;
   }
 
   addSortDirTag(isDescending: boolean) {
     this.tags.push(new SortDirTag(isDescending));
+
+    return this;
   }
 
   serialize(): Buffer {
@@ -101,11 +107,19 @@ class ColumnTag extends SeratoCrateTag {
   }
 
   addColumnNameTag(name: string) {
-    this.tags.push(new ColumnNameTag(name));
+    const tag = new ColumnNameTag(name);
+
+    this.tags.push(tag);
+
+    return this;
   }
 
   addColumnWidthTag(width: string) {
-    this.tags.push(new ColumnWidthTag(width));
+    const tag = new ColumnWidthTag(width);
+
+    this.tags.push(tag);
+
+    return this;
   }
 
   serialize(): Buffer {
@@ -163,7 +177,11 @@ class TrackTag extends SeratoCrateTag {
   }
 
   addFilePathTag(filePath: string) {
-    this.tags.push(new FilePathTag(filePath));
+    const tag = new FilePathTag(filePath);
+
+    this.tags.push(tag);
+
+    return this;
   }
 
   serialize(): Buffer {
@@ -198,27 +216,40 @@ class SeratoCrate implements Serializable {
   tags: SeratoCrateTag[] = [];
 
   addVersionTag(versionMetadata: string) {
-    this.tags.push(new VersionTag(versionMetadata));
+    const tag = new VersionTag(versionMetadata);
+
+    this.tags.push(tag);
+
+    return this;
   }
 
   addSortByColumnTag(name: string, isDescending: boolean) {
     const tag = new SortByColumnTag();
+
     tag.addColumnNameTag(name);
     tag.addSortDirTag(isDescending);
     this.tags.push(tag);
+
+    return this;
   }
 
   addColumnTag(name: string, width: string) {
     const tag = new ColumnTag();
+
     tag.addColumnNameTag(name);
     tag.addColumnWidthTag(width);
     this.tags.push(tag);
+
+    return this;
   }
 
   addTrackTag(filePath: string) {
     const tag = new TrackTag();
+
     tag.addFilePathTag(filePath);
     this.tags.push(tag);
+
+    return this;
   }
 
   serialize(): Buffer {
@@ -283,10 +314,14 @@ class SeratoBeatGrid implements Serializable {
     this.nonTerminalMarkers.push(
       new NonTerminalMarker(position, beatsToNextMarker)
     );
+
+    return this;
   }
 
   addTerminalMarker(position: number, bpm: number) {
     this.terminalMarker = new TerminalMarker(position, bpm);
+
+    return this;
   }
 
   serialize() {
@@ -325,7 +360,7 @@ class CueTag extends SeratoMarkers2Tag {
     index: number,
     position: number,
     color: [number, number, number],
-    name?: string
+    name: string
   ) {
     super("CUE");
 
@@ -341,9 +376,7 @@ class CueTag extends SeratoMarkers2Tag {
     this.color = Buffer.from(color);
 
     // Name
-    if (name) {
-      this.name = Buffer.from(name, "ascii");
-    }
+    this.name = Buffer.from(name, "ascii");
   }
 
   serialize() {
@@ -411,14 +444,20 @@ class SeratoMarkers2 implements Serializable {
     name: string
   ) {
     this.tags.push(new CueTag(index, position, color, name));
+
+    return this;
   }
 
   addColorTag(color: [number, number, number]) {
     this.tags.push(new ColorTag(color));
+
+    return this;
   }
 
   addBpmLockTag(isLocked: boolean) {
     this.tags.push(new BpmLockTag(isLocked));
+
+    return this;
   }
 
   serialize() {
@@ -431,24 +470,41 @@ class SeratoMarkers2 implements Serializable {
 }
 
 async function main() {
-  const beatGrid = new SeratoBeatGrid();
-  beatGrid.addNonTerminalMarker(1.2, 64);
-  beatGrid.addNonTerminalMarker(2.4, 64);
-  beatGrid.addTerminalMarker(5.0, 178);
-  console.log(beatGrid.serialize());
+  // const beatGrid = new SeratoBeatGrid();
+  // beatGrid.addNonTerminalMarker(1.2, 64);
+  // beatGrid.addNonTerminalMarker(2.4, 64);
+  // beatGrid.addTerminalMarker(5.0, 178);
+  // console.log(beatGrid.serialize());
 
   const markers = new SeratoMarkers2();
-  markers.addColorTag([255, 0, 0]);
-  markers.addCueTag(1, 2020, [255, 255, 255], "Energy 7");
-  markers.addBpmLockTag(false);
+  markers
+    .addColorTag([255, 255, 255])
+    .addCueTag(2, 41, [0, 0, 204], "")
+    .addCueTag(3, 8317, [204, 204, 0], "")
+    .addBpmLockTag(false);
   console.log(markers.serialize());
+  await fs.writeFile(
+    "/Users/dallanfreemantle/Desktop/two-markers-S.octet-stream",
+    markers.serialize()
+  );
 
-  const crate = new SeratoCrate();
-  // crate.addVersionTag("1.0/Serato ScratchLive Crate");
-  // crate.addSortByColumnTag("key", false);
-  crate.addColumnTag("song", "551");
-  // crate.addTrackTag("music/DnB");
-  console.log(crate.serialize());
+  // const crate = new SeratoCrate();
+  // crate
+  //   .addVersionTag("1.0/Serato ScratchLive Crate")
+  //   .addSortByColumnTag("song", false)
+  //   .addColumnTag("song", "551")
+  //   .addColumnTag("playCount", "0")
+  //   .addColumnTag("bpm", "0")
+  //   .addColumnTag("length", "0")
+  //   .addColumnTag("artist", "0")
+  //   .addColumnTag("album", "0")
+  //   .addColumnTag("comment", "0")
+  //   .addTrackTag("music/DnB To Get Weird To II/Alix Perez - Good To Me.mp3");
+  // console.log(crate.serialize());
+  // await fs.writeFile(
+  //   "/Users/dallanfreemantle/Desktop/FLAAC-S.crate",
+  //   crate.serialize()
+  // );
 }
 
 main();
