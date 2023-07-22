@@ -104,6 +104,10 @@ class ColumnTag extends SeratoCrateTag {
     this.tags.push(new ColumnNameTag(name));
   }
 
+  addColumnWidthTag(width: string) {
+    this.tags.push(new ColumnWidthTag(width));
+  }
+
   serialize(): Buffer {
     const body = Buffer.concat(this.tags.map((tag) => tag.serialize()));
     const length = Buffer.alloc(4);
@@ -125,6 +129,25 @@ class ColumnNameTag extends SeratoCrateTag {
 
   serialize(): Buffer {
     const body = this.name;
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(body.byteLength);
+
+    return Buffer.concat([this.type, length, body]);
+  }
+}
+
+class ColumnWidthTag extends SeratoCrateTag {
+  width: Buffer;
+
+  constructor(width: string) {
+    super(TAG_TYPES.COLUMN_WIDTH_TAG);
+
+    // Encode string as UTF16BE
+    this.width = Buffer.from(width, "utf16le").swap16();
+  }
+
+  serialize(): Buffer {
+    const body = this.width;
     const length = Buffer.alloc(4);
     length.writeUInt32BE(body.byteLength);
 
@@ -185,9 +208,10 @@ class SeratoCrate implements Serializable {
     this.tags.push(tag);
   }
 
-  addColumnTag(name: string) {
+  addColumnTag(name: string, width: string) {
     const tag = new ColumnTag();
     tag.addColumnNameTag(name);
+    tag.addColumnWidthTag(width);
     this.tags.push(tag);
   }
 
@@ -421,8 +445,8 @@ async function main() {
 
   const crate = new SeratoCrate();
   // crate.addVersionTag("1.0/Serato ScratchLive Crate");
-  crate.addSortByColumnTag("key", false);
-  // crate.addColumnTag("song");
+  // crate.addSortByColumnTag("key", false);
+  crate.addColumnTag("song", "551");
   // crate.addTrackTag("music/DnB");
   console.log(crate.serialize());
 }
