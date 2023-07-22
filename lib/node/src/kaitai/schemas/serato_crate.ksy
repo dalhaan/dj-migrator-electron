@@ -25,6 +25,7 @@ types:
             '"vrsn"': version_tag
             '"osrt"': column_sort_tag
             '"tvcn"': column_name_tag
+            '"tvcw"': column_width_tag
             '"ovct"': column_tag
             '"otrk"': track_tag
             '"ptrk"': file_path_tag
@@ -44,6 +45,11 @@ types:
   column_name_tag:
     seq:
       - id: name
+        type: str
+        size-eos: true
+  column_width_tag:
+    seq:
+      - id: width
         type: str
         size-eos: true
   column_tag:
