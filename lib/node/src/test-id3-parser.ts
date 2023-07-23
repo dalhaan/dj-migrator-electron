@@ -81,7 +81,7 @@ function getUint32Synch(view: Buffer, offset: number = 0): number {
   return getSynch(view.readUint32BE(offset));
 }
 
-async function parseID3Tags(buffer: Buffer) {
+function parseID3Tags(buffer: Buffer) {
   let offset = 0;
 
   // Magic [0x49 0x44 0x33] (ASCII3)
@@ -93,7 +93,9 @@ async function parseID3Tags(buffer: Buffer) {
   );
 
   // Version (2B)
-  offset += 2;
+  const minorVersion = buffer.readUint8(offset++);
+  const patchVersion = buffer.readUint8(offset++);
+  // offset += 2;
 
   // Flags (1) (abcd0000)
   // a - Unsynchronisation
@@ -105,15 +107,15 @@ async function parseID3Tags(buffer: Buffer) {
 
   // Size (SynchsafeInt4)
   // ID3 body size === Size - (header size (10) + footer size( 10))
-  // [ header ][ body (frames) ][ footer ]
-  // <-- 10B -><----- size ----><-- 10B ->
-  const synchSafeSize = buffer.subarray(offset, (offset += 4));
-  const size = getUint32Synch(synchSafeSize);
-  const id3TagSize = hasFooter ? size + 20 : size + 10;
-  console.log({ offsetAfterHeader: offset });
-  const endOfFramesOffset = size + 10;
+  // [ header ][ extended header ][ body (frames) ][ padding ][ footer ]
+  // <-- 10B -><-------------------- size -------------------><-- 10B ->
+  // const synchSafeSize = buffer.subarray(offset, (offset += 4));
+  const size = getUint32Synch(buffer, offset);
+  offset += 4;
+  const id3TagSize = hasFooter ? size + 20 : size + 10; // header size + size + footer size
+  const endOfFramesOffset = size + 10; // header size + size
 
-  const ID3tag = buffer.subarray(0, id3TagSize);
+  const ID3TagBuffer = buffer.subarray(0, id3TagSize);
 
   // await fs.writeFile(
   //   "/Users/dallanfreemantle/Desktop/Skank-ID3Tag.octet-stream",
@@ -121,9 +123,11 @@ async function parseID3Tags(buffer: Buffer) {
   // );
 
   const id3Data: {
+    version: string;
     id3TagSize: number;
     GEOB: GeobFrame[];
   } = {
+    version: `3.${minorVersion}.${patchVersion}`,
     id3TagSize,
     GEOB: [],
   };
@@ -135,7 +139,11 @@ async function parseID3Tags(buffer: Buffer) {
     const type = buffer.subarray(offset, (offset += 4)).toString("ascii");
 
     // Size (Uint32BE)
-    const tagSize = buffer.readUint32BE(offset);
+    const tagSize =
+      minorVersion === 4
+        ? getUint32Synch(buffer, offset)
+        : buffer.readUint32BE(offset);
+    // const tagSize = getUint32Synch(buffer, offset); // buffer.readUint32BE(offset);
     offset += 4;
     console.log(type, tagSize);
 
@@ -163,7 +171,8 @@ async function main() {
   const file = await fs.readFile(
     // "/Users/dallanfreemantle/Desktop/Deadline - Dreamer.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Justin Hawkes - Lift off the Roof.mp3"
-    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
+    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DUBZ/Mefjus & Emperor vs Jam Thieves - Flashizm vs Criminal Thugs (Emperor Edit).mp3"
   );
   const data = Buffer.from([
     0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x02, 0x0f, 0x54, 0x49,
@@ -192,12 +201,12 @@ async function main() {
   ]);
 
   const id3Data = parseID3Tags(file);
-
   console.log(id3Data);
 
   // console.log(toSynch(203 + 68));
 
   // console.log(toSynch(203));
+  // console.log(getSynch(7725));
 }
 
 main();
