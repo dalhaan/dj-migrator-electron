@@ -68,7 +68,7 @@ function getSynch(num: number): number {
  * @param view View to read
  * @param offset Offset to read from
  */
-function getUint8Synch(view: Buffer, offset: number = 0): number {
+function readUint8SyncSafe(view: Buffer, offset: number = 0): number {
   return getSynch(view.readUInt8(offset));
 }
 
@@ -77,7 +77,7 @@ function getUint8Synch(view: Buffer, offset: number = 0): number {
  * @param view View to read
  * @param offset Offset to read from
  */
-function getUint32Synch(view: Buffer, offset: number = 0): number {
+function readUint32SyncSafe(view: Buffer, offset: number = 0): number {
   return getSynch(view.readUint32BE(offset));
 }
 
@@ -110,7 +110,7 @@ function parseID3Tags(buffer: Buffer) {
   // [ header ][ extended header ][ body (frames) ][ padding ][ footer ]
   // <-- 10B -><-------------------- size -------------------><-- 10B ->
   // const synchSafeSize = buffer.subarray(offset, (offset += 4));
-  const size = getUint32Synch(buffer, offset);
+  const size = readUint32SyncSafe(buffer, offset);
   offset += 4;
   const id3TagSize = hasFooter ? size + 20 : size + 10; // header size + size + footer size
   const endOfFramesOffset = size + 10; // header size + size
@@ -141,7 +141,7 @@ function parseID3Tags(buffer: Buffer) {
     // Size (Uint32BE)
     const tagSize =
       minorVersion === 4
-        ? getUint32Synch(buffer, offset)
+        ? readUint32SyncSafe(buffer, offset)
         : buffer.readUint32BE(offset);
     // const tagSize = getUint32Synch(buffer, offset); // buffer.readUint32BE(offset);
     offset += 4;
