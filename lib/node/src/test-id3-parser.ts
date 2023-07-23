@@ -81,7 +81,7 @@ function getUint32Synch(view: Buffer, offset: number = 0): number {
   return getSynch(view.readUint32BE(offset));
 }
 
-function parseID3Tags(buffer: Buffer) {
+async function parseID3Tags(buffer: Buffer) {
   let offset = 0;
 
   // Magic [0x49 0x44 0x33] (ASCII3)
@@ -105,18 +105,26 @@ function parseID3Tags(buffer: Buffer) {
 
   // Size (SynchsafeInt4)
   // ID3 body size === Size - (header size (10) + footer size( 10))
-  // [header][body (frames)][footer]
-  // <----------- size ------------>
-  //         <- body size ->
+  // [ header ][ body (frames) ][ footer ]
+  // <-- 10B -><----- size ----><-- 10B ->
   const synchSafeSize = buffer.subarray(offset, (offset += 4));
   const size = getUint32Synch(synchSafeSize);
-  const endOfFramesOffset = hasFooter ? size - 10 : size;
+  const id3TagSize = hasFooter ? size + 20 : size + 10;
+  console.log({ offsetAfterHeader: offset });
+  const endOfFramesOffset = size + 10;
+
+  const ID3tag = buffer.subarray(0, id3TagSize);
+
+  // await fs.writeFile(
+  //   "/Users/dallanfreemantle/Desktop/Skank-ID3Tag.octet-stream",
+  //   ID3tag
+  // );
 
   const id3Data: {
     id3TagSize: number;
     GEOB: GeobFrame[];
   } = {
-    id3TagSize: size,
+    id3TagSize,
     GEOB: [],
   };
 
