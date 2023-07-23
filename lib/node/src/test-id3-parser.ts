@@ -2,34 +2,45 @@ import fs from "fs/promises";
 import assert from "assert";
 
 class GeobFrame {
+  textEncoding: number;
   mimeType: string;
+  fileName: string;
   description: string;
   body: Buffer;
-  offset: number;
+  frameOffset: number;
   size: number;
 
   // cursor: number = 0;
 
-  constructor(buffer: Buffer, offset: number, size: number) {
-    this.offset = offset;
+  constructor(buffer: Buffer, frameOffset: number, size: number) {
+    let offset = 0;
+
+    this.frameOffset = frameOffset;
     this.size = size;
 
-    // NULL byte
-    let cursor = 1;
+    this.textEncoding = buffer.readUInt8(offset);
+
+    offset += 1;
 
     this.mimeType = buffer
-      .subarray(cursor, (cursor = buffer.indexOf(0, cursor)))
+      .subarray(offset, (offset = buffer.indexOf(0, offset)))
       .toString("ascii");
 
-    cursor += 2;
+    offset += 1;
+
+    this.fileName = buffer
+      .subarray(offset, (offset = buffer.indexOf(0, offset)))
+      .toString("ascii");
+
+    offset += 1;
 
     this.description = buffer
-      .subarray(cursor, (cursor = buffer.indexOf(0x00, cursor)))
+      .subarray(offset, (offset = buffer.indexOf(0x00, offset)))
       .toString("ascii");
 
-    cursor += 1;
+    offset += 1;
 
-    this.body = buffer.subarray(cursor);
+    this.body = buffer.subarray(offset);
   }
 }
 
