@@ -1,46 +1,87 @@
 import fs from "fs/promises";
 import assert from "assert";
 
-class GeobFrame {
+abstract class ID3Frame {
+  type: string;
+  size: number;
+  frameOffset?: number;
+
+  constructor(type: string, size: number, frameOffset?: number) {
+    this.type = type;
+    this.size = size;
+    this.frameOffset = frameOffset;
+  }
+
+  abstract serialize(): Buffer;
+}
+
+class GeobFrame extends ID3Frame {
   textEncoding: number;
   mimeType: string;
   fileName: string;
   description: string;
   body: Buffer;
-  frameOffset: number;
-  size: number;
 
   // cursor: number = 0;
 
-  constructor(buffer: Buffer, frameOffset: number, size: number) {
+  constructor(
+    textEncoding: number,
+    mimeType: string,
+    fileName: string,
+    description: string,
+    body: Buffer,
+    size: number,
+    frameOffset?: number
+  ) {
+    super("GEOB", size, frameOffset);
+
+    this.textEncoding = textEncoding;
+    this.mimeType = mimeType;
+    this.fileName = fileName;
+    this.description = description;
+    this.body = body;
+  }
+
+  static parse(buffer: Buffer, size: number, frameOffset?: number) {
     let offset = 0;
 
-    this.frameOffset = frameOffset;
-    this.size = size;
-
-    this.textEncoding = buffer.readUInt8(offset);
+    const textEncoding = buffer.readUInt8(offset);
 
     offset += 1;
 
-    this.mimeType = buffer
+    const mimeType = buffer
       .subarray(offset, (offset = buffer.indexOf(0, offset)))
       .toString("ascii");
 
     offset += 1;
 
-    this.fileName = buffer
+    const fileName = buffer
       .subarray(offset, (offset = buffer.indexOf(0, offset)))
       .toString("ascii");
 
     offset += 1;
 
-    this.description = buffer
+    const description = buffer
       .subarray(offset, (offset = buffer.indexOf(0x00, offset)))
       .toString("ascii");
 
     offset += 1;
 
-    this.body = buffer.subarray(offset);
+    const body = buffer.subarray(offset);
+
+    return new GeobFrame(
+      textEncoding,
+      mimeType,
+      fileName,
+      description,
+      body,
+      size,
+      frameOffset
+    );
+  }
+
+  serialize() {
+    return Buffer.alloc(0);
   }
 }
 
@@ -186,10 +227,10 @@ function parseID3Tags(buffer: Buffer) {
     // Body (Tag.Size)
     if (type === "GEOB") {
       id3Data.GEOB.push(
-        new GeobFrame(
+        GeobFrame.parse(
           buffer.subarray(offset, offset + tagSize),
-          offset,
-          tagSize
+          tagSize,
+          offset
         )
       );
     }
