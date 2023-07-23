@@ -103,7 +103,14 @@ function parseID3Tags(buffer: Buffer) {
   // c - Experimental indicator
   // d - Footer present
   // e.g. 11110000 & 00010000 (16) === 00010000 (16)
-  const hasFooter = (buffer.at(offset++)! & 16) !== 0;
+  const flags = {
+    unsynchronisation: (buffer.at(offset)! & 0b10000000) !== 0,
+    hasExtendedHeader: (buffer.at(offset)! & 0b01000000) !== 0,
+    experimentalIndicator: (buffer.at(offset)! & 0b00100000) !== 0,
+    hasFooter: (buffer.at(offset)! & 0b00010000) !== 0,
+  };
+
+  offset += 1;
 
   // Size (SynchsafeInt4)
   // ID3 body size === Size - (header size (10) + footer size( 10))
@@ -112,10 +119,23 @@ function parseID3Tags(buffer: Buffer) {
   // const synchSafeSize = buffer.subarray(offset, (offset += 4));
   const size = readUint32SyncSafe(buffer, offset);
   offset += 4;
-  const id3TagSize = hasFooter ? size + 20 : size + 10; // header size + size + footer size
+  const id3TagSize = flags.hasFooter ? size + 20 : size + 10; // header size + size + footer size
   const endOfFramesOffset = size + 10; // header size + size
 
   const ID3TagBuffer = buffer.subarray(0, id3TagSize);
+
+  // Extended header
+  if (flags.hasExtendedHeader) {
+    // Size (2.4: uint32syncsafebe, 2.3: uint32be)
+    const extendedHeaderSize =
+      minorVersion === 4
+        ? readUint32SyncSafe(buffer, offset)
+        : buffer.readUint32BE(offset);
+    offset += 4;
+
+    // Body (Size - 4B)
+    offset += extendedHeaderSize - 4;
+  }
 
   // await fs.writeFile(
   //   "/Users/dallanfreemantle/Desktop/Skank-ID3Tag.octet-stream",
@@ -124,11 +144,13 @@ function parseID3Tags(buffer: Buffer) {
 
   const id3Data: {
     version: string;
-    id3TagSize: number;
+    size: number;
+    flags: any;
     GEOB: GeobFrame[];
   } = {
     version: `3.${minorVersion}.${patchVersion}`,
-    id3TagSize,
+    size: id3TagSize,
+    flags,
     GEOB: [],
   };
 
@@ -147,7 +169,7 @@ function parseID3Tags(buffer: Buffer) {
     offset += 4;
     console.log(type, tagSize);
 
-    // Padding (2)
+    // Flags (2)
     offset += 2;
 
     // Body (Tag.Size)
