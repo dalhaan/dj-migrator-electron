@@ -1,4 +1,6 @@
 import fs from "fs/promises";
+import Mp3Tag from "mp3tag.js";
+import * as musicMetadata from "music-metadata";
 
 const NULL_BYTE = new Uint8Array([0x00]);
 
@@ -478,47 +480,172 @@ class SeratoMarkers2 implements Serializable {
 }
 
 async function main() {
-  const beatGrid = new SeratoBeatGrid();
-  beatGrid
-    .addNonTerminalMarker(0.04595804959535599, 64)
-    .addNonTerminalMarker(22.110000610351562, 20)
-    .addTerminalMarker(33.13986587524414, 174.0264892578125);
-  // beatGrid.addTerminalMarker(0.17129819095134735, 172);
-  console.log(beatGrid.serialize());
+  // const beatGrid = new SeratoBeatGrid();
+  // beatGrid
+  //   .addNonTerminalMarker(0.04595804959535599, 64)
+  //   .addNonTerminalMarker(22.110000610351562, 20)
+  //   .addTerminalMarker(33.13986587524414, 174.0264892578125);
+  // // beatGrid.addTerminalMarker(0.17129819095134735, 172);
+  // console.log(beatGrid.serialize());
   // // await fs.writeFile(
   // //   "/Users/dallanfreemantle/Desktop/three-beat-grids-S.octet-stream",
   // //   beatGrid.serialize()
   // // );
+  // const markers = new SeratoMarkers2();
+  // markers
+  //   .addColorTag([255, 255, 255])
+  //   .addCueTag(2, 41, [0, 0, 204], "")
+  //   .addCueTag(3, 8317, [204, 204, 0], "")
+  //   .addBpmLockTag(false);
+  // console.log(markers.serialize());
+  // // await fs.writeFile(
+  // //   "/Users/dallanfreemantle/Desktop/two-markers-S.octet-stream",
+  // //   markers.serialize()
+  // // );
+  // const crate = new SeratoCrate();
+  // crate
+  //   .addVersionTag("1.0/Serato ScratchLive Crate")
+  //   .addSortByColumnTag("song", false)
+  //   .addColumnTag("song", "551")
+  //   .addColumnTag("playCount", "0")
+  //   .addColumnTag("bpm", "0")
+  //   .addColumnTag("length", "0")
+  //   .addColumnTag("artist", "0")
+  //   .addColumnTag("album", "0")
+  //   .addColumnTag("comment", "0")
+  //   .addTrackTag("music/DnB To Get Weird To II/Alix Perez - Good To Me.mp3");
+  // console.log(crate.serialize());
+  // // await fs.writeFile(
+  // //   "/Users/dallanfreemantle/Desktop/FLAAC-S.crate",
+  // //   crate.serialize()
+  // // );
 
-  const markers = new SeratoMarkers2();
-  markers
-    .addColorTag([255, 255, 255])
-    .addCueTag(2, 41, [0, 0, 204], "")
-    .addCueTag(3, 8317, [204, 204, 0], "")
-    .addBpmLockTag(false);
-  console.log(markers.serialize());
+  // const tags = await NodeID3.read(
+  //   "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/L-side - Zaga Dan.mp3"
+  // );
+
+  // WRITE
+
+  // const file = await fs.readFile(
+  //   "/Users/dallanfreemantle/Desktop/Deadline - Dreamer.mp3"
+  // );
+
+  // const tag = new Mp3Tag(file);
+
+  // tag.read();
+
+  // const seratoBeatGridTag = tag.tags.v2.GEOB.find(
+  //   (tag) => tag.description === "Serato BeatGrid"
+  // );
+
+  // // console.log(tag.tags.v2.GEOB);
+
+  // seratoBeatGridTag.object = [1, 0, 0, 0, 0, 0, 0];
+
+  // tag.save();
+
   // await fs.writeFile(
-  //   "/Users/dallanfreemantle/Desktop/two-markers-S.octet-stream",
+  //   "/Users/dallanfreemantle/Desktop/Deadline - Dreamer-S.mp3",
+  //   Buffer.from(tag.buffer)
+  // );
+
+  // READ
+
+  // const file = await fs.readFile(
+  //   "/Users/dallanfreemantle/Desktop/Deadline - Dreamer-S.mp3"
+  // );
+
+  // const tag = new Mp3Tag(file);
+
+  // tag.read();
+
+  // // const seratoBeatGridTag = tag.tags.v2.GEOB.find(
+  // //   (tag) => tag.description === "Serato BeatGrid"
+  // // );
+
+  // console.log(tag.tags.v2.GEOB);
+
+  const file = await fs.readFile(
+    "/Users/dallanfreemantle/Desktop/Deadline - Dreamer.mp3"
+  );
+
+  // const metadata = await musicMetadata.parseFile(
+  //   "/Users/dallanfreemantle/Desktop/Deadline - Dreamer.mp3"
+  // );
+
+  // const musicMetaDataSeratoMarkers2 = metadata.native["ID3v2.3"].find(
+  //   (tag) => tag.value.description === "Serato Markers2"
+  // );
+
+  // let musicMetadataData = musicMetaDataSeratoMarkers2?.value.data;
+  // musicMetadataData = musicMetadataData.subarray(
+  //   musicMetadataData.indexOf(0x00) + 1
+  // );
+
+  // console.log(musicMetadataData);
+
+  // Buffer.from(musicMetaDataSeratoMarkers2?.value.data.toString(), "base64");
+
+  // await fs.writeFile(
+  //   "/Users/dallanfreemantle/Desktop/music-metadata-dreamer-markers2.octet-stream",
+  //   musicMetaDataSeratoMarkers2?.value.data
+  // );
+
+  const tag = new Mp3Tag(file);
+
+  tag.read();
+
+  // const seratoMarkers2Tag = tag.tags.v2.GEOB.find(
+  //   (tag) => tag.description === "Serato Markers2"
+  // );
+
+  // console.log(seratoMarkers2Tag);
+
+  // function seratoMarkers2BufferToMp3TagArray(buffer: Buffer): number[] {
+  //   const lineLength = 72;
+
+  //   const lines: string[] = [];
+  //   let remainder = buffer.toString("base64");
+  //   while (remainder) {
+  //     const line = remainder.slice(0, lineLength);
+  //     lines.push(line);
+  //     remainder = remainder.slice(lineLength);
+  //   }
+
+  //   const encoded = lines.join("\n");
+  //   // const encodedBuffer = Buffer.from(encoded);
+  //   const encodedBuffer = Buffer.alloc(468);
+  //   encodedBuffer.set(Buffer.from(encoded));
+  //   const encodedArray = [1, 1, ...Array.from(encodedBuffer)];
+
+  //   return encodedArray;
+  // }
+
+  // const markers = new SeratoMarkers2();
+  // markers
+  //   .addColorTag([255, 255, 255])
+  //   .addCueTag(1, 1000, [204, 0, 0], "Cue 1")
+  //   .addCueTag(2, 2000, [0, 204, 0], "Cue 2")
+  //   .addCueTag(3, 3000, [0, 0, 204], "Cue 3")
+  //   .addBpmLockTag(false);
+
+  // const seratoMarkers2Array = seratoMarkers2BufferToMp3TagArray(
   //   markers.serialize()
   // );
 
-  const crate = new SeratoCrate();
-  crate
-    .addVersionTag("1.0/Serato ScratchLive Crate")
-    .addSortByColumnTag("song", false)
-    .addColumnTag("song", "551")
-    .addColumnTag("playCount", "0")
-    .addColumnTag("bpm", "0")
-    .addColumnTag("length", "0")
-    .addColumnTag("artist", "0")
-    .addColumnTag("album", "0")
-    .addColumnTag("comment", "0")
-    .addTrackTag("music/DnB To Get Weird To II/Alix Perez - Good To Me.mp3");
-  console.log(crate.serialize());
-  // await fs.writeFile(
-  //   "/Users/dallanfreemantle/Desktop/FLAAC-S.crate",
-  //   crate.serialize()
-  // );
+  // seratoMarkers2Tag.object = seratoMarkers2Array;
+
+  // console.log(seratoMarkers2Tag);
+
+  tag.save({
+    // strict: true,
+    unsynch: true,
+  });
+
+  await fs.writeFile(
+    "/Users/dallanfreemantle/Desktop/dreamer-S-unstrict-unsync.mp3",
+    Buffer.from(tag.buffer)
+  );
 }
 
 main();

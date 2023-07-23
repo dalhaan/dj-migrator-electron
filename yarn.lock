@@ -4697,6 +4697,11 @@ mlly@^1.1.0, mlly@^1.2.0:
     pkg-types "^1.0.2"
     ufo "^1.1.1"
 
+mp3tag.js@^3.3.2:
+  version "3.3.2"
+  resolved "https://registry.yarnpkg.com/mp3tag.js/-/mp3tag.js-3.3.2.tgz#0e8482f96928efddf4e22541377b9380b28d6bbc"
+  integrity sha512-w95j0Wtiqic4WdGhPRBki22Tkg1n2nXApcXI4I188Mt2OaFhV4HQ633ypQi6a5rlySY8wwdgsHh8tcbod/bvtQ==
+
 ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
