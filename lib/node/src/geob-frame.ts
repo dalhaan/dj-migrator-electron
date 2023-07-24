@@ -89,7 +89,7 @@ export class GeobFrame extends ID3Frame {
     );
   }
 
-  serialize(id3Version: 3 | 4) {
+  serialize(id3Version: number) {
     const buffer = Buffer.alloc(4 + 4 + 2 + this.size);
     let offset = 0;
 

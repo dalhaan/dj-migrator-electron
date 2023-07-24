@@ -18,5 +18,5 @@ export abstract class ID3Frame {
     frameOffset?: number
   ) => ID3Frame;
 
-  abstract serialize(id3Version: 3 | 4): Buffer;
+  abstract serialize(id3Version: number): Buffer;
 }

@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import assert from "assert";
-import { readUint32SyncSafe } from "./utils";
+import { readUint32SyncSafe, toSynch } from "./utils";
 import { GeobFrame } from "./geob-frame";
 import { ID3Frame } from "./id3-frame";
 
@@ -57,8 +57,6 @@ function parseID3Tag(buffer: Buffer): Id3Tag {
   const id3TagSize = flags.hasFooter ? size + 20 : size + 10; // header size + size + footer size
   const endOfFramesOffset = size + 10; // header size + size
 
-  const ID3TagBuffer = buffer.subarray(0, id3TagSize);
-
   // Extended header
   if (flags.hasExtendedHeader) {
     // Size (2.4: uint32syncsafebe, 2.3: uint32be)
@@ -72,21 +70,8 @@ function parseID3Tag(buffer: Buffer): Id3Tag {
     offset += extendedHeaderSize - 4;
   }
 
-  // const paddingSize = calculatePaddingLength(ID3TagBuffer);
-
-  const id3Tag: Id3Tag = {
-    buffer: ID3TagBuffer,
-    version: {
-      minor: minorVersion,
-      patch: patchVersion,
-    },
-    size: id3TagSize,
-    paddingSize: 0,
-    flags,
-    GEOB: [],
-  };
-
   let paddingStartOffset = endOfFramesOffset;
+  const geobFrames: GeobFrame[] = [];
 
   // Tags (Tag)
   while (offset < endOfFramesOffset) {
@@ -110,7 +95,7 @@ function parseID3Tag(buffer: Buffer): Id3Tag {
 
     // Body (Tag.Size)
     if (type === "GEOB") {
-      id3Tag.GEOB.push(
+      geobFrames.push(
         GeobFrame.parse(
           buffer.subarray(offset, offset + 10 + tagSize),
           minorVersion,
@@ -122,30 +107,29 @@ function parseID3Tag(buffer: Buffer): Id3Tag {
     offset += tagSize + 10;
   }
 
-  // Padding size calculation
-  id3Tag.paddingSize = endOfFramesOffset - paddingStartOffset;
+  const id3Tag: Id3Tag = {
+    buffer: buffer.subarray(0, paddingStartOffset),
+    version: {
+      minor: minorVersion,
+      patch: patchVersion,
+    },
+    size: id3TagSize,
+    paddingSize: endOfFramesOffset - paddingStartOffset,
+    flags,
+    GEOB: geobFrames,
+  };
 
   return id3Tag;
 }
 
 function writeSeratoFrames(frames: GeobFrame[], id3Tag: Id3Tag) {
   // Find existing frames that will be replaced
-  const geobFrameDescriptions = frames.map((frame) => frame.description);
-  const matchingFrames = id3Tag.GEOB.filter((frame) =>
-    geobFrameDescriptions.includes(frame.description)
-  );
-
-  // --------------
-  // Update ID3 tag
-  // --------------
-
-  // Replace existing frames
-
-  // Append new frames
-
-  // -----------------
-  // Write new ID3 tag
-  // -----------------
+  // const geobFrameDescriptions = frames.map((frame) => frame.description);
+  // const matchingFrames = id3Tag.GEOB.filter((frame) =>
+  //   geobFrameDescriptions.includes(frame.description)
+  // ).sort((frameA, frameB) => frameA.frameOffset! - frameB.frameOffset!);
+  const matchingFrames: [oldFrame: GeobFrame, newFrame: GeobFrame][] = [];
+  const newFrames: GeobFrame[] = [];
 
   // Calculate total sizes of new frames and matching frames
   const totalSizeOfNewFrames = frames.reduce(
@@ -153,17 +137,80 @@ function writeSeratoFrames(frames: GeobFrame[], id3Tag: Id3Tag) {
     0
   );
   const totalSizeOfMatchingFrames = matchingFrames.reduce(
-    (totalSize, frame) => totalSize + frame.size + ID3Frame.HEADER_SIZE,
+    (totalSize, [oldFrame]) => totalSize + oldFrame.size + ID3Frame.HEADER_SIZE,
     0
   );
+  const totalSizeOfFrames = totalSizeOfNewFrames - totalSizeOfMatchingFrames;
 
   const remainingPadding =
     id3Tag.paddingSize - (totalSizeOfNewFrames - totalSizeOfMatchingFrames);
 
+  for (const frame of frames) {
+    const matchingOldFrame = id3Tag.GEOB.find(
+      (oldFrame) => oldFrame.description === frame.description
+    );
+
+    if (matchingOldFrame) {
+      // Only match first instance (incase there are multiple frames with same description)
+      if (
+        !matchingFrames.some(
+          (matchedFrame) =>
+            matchedFrame[0] === matchingOldFrame || matchedFrame[1] === frame
+        )
+      ) {
+        matchingFrames.push([matchingOldFrame, frame]);
+      }
+    } else {
+      newFrames.push(frame);
+    }
+  }
+
+  // Sort by matching old frame offset
+  matchingFrames.sort(
+    ([oldFrameA], [oldFrameB]) =>
+      oldFrameA.frameOffset! - oldFrameB.frameOffset!
+  );
+
+  // --------------
+  // Update ID3 tag
+  // --------------
+
+  // Split ID3 tag & replace existing frames
+  const segments: Buffer[] = [];
+  let offset = 0;
+
+  for (const [oldFrame, newFrame] of matchingFrames) {
+    const segment = id3Tag.buffer.subarray(offset, oldFrame.frameOffset!);
+
+    segments.push(segment, newFrame.serialize(id3Tag.version.minor));
+
+    offset = oldFrame.frameOffset! + oldFrame.size + ID3Frame.HEADER_SIZE;
+  }
+
+  // Append new frames
+  for (const frame of newFrames) {
+    segments.push(frame.serialize(id3Tag.version.minor));
+  }
+
+  // TODO: Append footer
+
+  let newId3TagBuffer: Buffer | undefined;
+  const newBuffer = Buffer.concat(segments);
   if (remainingPadding >= 0) {
     // There is enough padding to fit new frames
+    newId3TagBuffer = Buffer.alloc(10 + id3Tag.size); // TODO: include size for footer
+
+    newBuffer.copy(newId3TagBuffer);
+
+    // TODO: Write new ID3 tag to MP3 file buffer
   } else {
     // Not enough room, need to create new buffer for MP3 file.
+    newId3TagBuffer = newBuffer; // TODO: include footer
+
+    // Update ID3 tag size
+    newId3TagBuffer.writeUInt32BE(toSynch(newBuffer.byteLength - 10), 6);
+
+    // TODO: Write new ID3 tag to MP3 file buffer
   }
 
   console.log("new frames:", frames);
@@ -219,7 +266,15 @@ async function main() {
     ])
   );
 
-  writeSeratoFrames([exampleBeatGrid], id3Tag);
+  const exampleAnalysis = new GeobFrame(
+    0,
+    "application/octet-stream",
+    "",
+    "Serato Analysis",
+    Buffer.from([0x02, 0x01])
+  );
+
+  writeSeratoFrames([exampleBeatGrid, exampleAnalysis], id3Tag);
   // const serialized = exampleBeatGrid.serialize(4);
   // const reparsed = GeobFrame.parse(serialized, 4);
   // console.log("example", exampleBeatGrid);
