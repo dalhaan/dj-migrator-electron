@@ -12,7 +12,7 @@ abstract class ID3Frame {
     this.frameOffset = frameOffset;
   }
 
-  abstract serialize(): Buffer;
+  abstract serialize(id3Version: 3 | 4): Buffer;
 }
 
 class GeobFrame extends ID3Frame {
@@ -30,9 +30,20 @@ class GeobFrame extends ID3Frame {
     fileName: string,
     description: string,
     body: Buffer,
-    size: number,
+    // size: number,
+    id3Version: number,
     frameOffset?: number
   ) {
+    const size =
+      1 +
+      mimeType.length +
+      1 +
+      fileName.length +
+      1 +
+      description.length +
+      1 +
+      body.byteLength;
+
     super("GEOB", size, frameOffset);
 
     this.textEncoding = textEncoding;
@@ -42,31 +53,48 @@ class GeobFrame extends ID3Frame {
     this.body = body;
   }
 
-  static parse(buffer: Buffer, size: number, frameOffset?: number) {
+  static parse(buffer: Buffer, id3Version: number, frameOffset?: number) {
     let offset = 0;
 
-    const textEncoding = buffer.readUInt8(offset);
+    // == Tag ==
+    // Type (ASCII4)
+    const type = buffer.subarray(offset, offset + 4).toString("ascii");
+    offset += 4;
 
+    // Size (Uint32BE)
+    const tagSize =
+      id3Version === 4
+        ? readUint32SyncSafe(buffer, offset)
+        : buffer.readUint32BE(offset);
+    offset += 4;
+
+    // Flags (2)
+    offset += 2;
+
+    // GEOB frame body
+    // Text encoding (1)
+    const textEncoding = buffer.readUInt8(offset);
     offset += 1;
 
+    // Mime type (null-terminated ascii string)
     const mimeType = buffer
       .subarray(offset, (offset = buffer.indexOf(0, offset)))
       .toString("ascii");
-
     offset += 1;
 
+    // Filename (null-terminated ascii string)
     const fileName = buffer
       .subarray(offset, (offset = buffer.indexOf(0, offset)))
       .toString("ascii");
-
     offset += 1;
 
+    // Description (null-terminated ascii string)
     const description = buffer
       .subarray(offset, (offset = buffer.indexOf(0x00, offset)))
       .toString("ascii");
-
     offset += 1;
 
+    // Body
     const body = buffer.subarray(offset);
 
     return new GeobFrame(
@@ -75,13 +103,51 @@ class GeobFrame extends ID3Frame {
       fileName,
       description,
       body,
-      size,
+      id3Version,
       frameOffset
     );
   }
 
-  serialize() {
-    return Buffer.alloc(0);
+  serialize(id3Version: 3 | 4) {
+    const buffer = Buffer.alloc(4 + 4 + 2 + this.size);
+    let offset = 0;
+
+    // Type
+    offset += buffer.write(this.type, offset, "ascii");
+
+    // Size
+    offset = buffer.writeUInt32BE(
+      id3Version === 4 ? toSynch(this.size) : this.size,
+      offset
+    );
+
+    // Flags
+    offset = buffer.writeUint16BE(0, offset);
+
+    // Body
+    // Text encoding
+    offset = buffer.writeUInt8(this.textEncoding, offset);
+
+    // Mime type
+    offset += buffer.write(this.mimeType, offset, "ascii");
+    // NULL terminated
+    offset = buffer.writeUInt8(0, offset);
+
+    // File name
+    offset += buffer.write(this.fileName, offset, "ascii");
+    // NULL terminated
+    offset = buffer.writeUInt8(0, offset);
+
+    // Description
+    offset += buffer.write(this.description, offset, "ascii");
+    // NULL terminated
+    offset = buffer.writeUInt8(0, offset);
+
+    // Body
+    buffer.fill(this.body, offset, offset + this.body.byteLength);
+    offset += this.body.byteLength;
+
+    return buffer;
   }
 }
 
@@ -210,32 +276,29 @@ function parseID3Tags(buffer: Buffer) {
   while (offset < endOfFramesOffset) {
     // == Tag ==
     // Type (ASCII4)
-    const type = buffer.subarray(offset, (offset += 4)).toString("ascii");
+    const type = buffer.subarray(offset, offset + 4).toString("ascii");
 
     // Size (Uint32BE)
     const tagSize =
       minorVersion === 4
-        ? readUint32SyncSafe(buffer, offset)
-        : buffer.readUint32BE(offset);
+        ? readUint32SyncSafe(buffer, offset + 4)
+        : buffer.readUint32BE(offset + 4);
     // const tagSize = getUint32Synch(buffer, offset); // buffer.readUint32BE(offset);
-    offset += 4;
-    console.log(type, tagSize);
 
-    // Flags (2)
-    offset += 2;
+    console.log(type, tagSize);
 
     // Body (Tag.Size)
     if (type === "GEOB") {
       id3Data.GEOB.push(
         GeobFrame.parse(
           buffer.subarray(offset, offset + tagSize),
-          tagSize,
+          minorVersion,
           offset
         )
       );
     }
 
-    offset += tagSize;
+    offset += tagSize + 10;
   }
 
   return id3Data;
@@ -276,6 +339,25 @@ async function main() {
 
   const id3Data = parseID3Tags(file);
   console.log(id3Data);
+
+  const exampleBeatGrid = new GeobFrame(
+    0,
+    "application/octet-stream",
+    "",
+    "Serato Autotags",
+    Buffer.from([
+      0x01, 0x01, 0x38, 0x37, 0x2e, 0x30, 0x30, 0x00, 0x2d, 0x35, 0x2e,
+    ]),
+    4
+  );
+
+  const serialized = exampleBeatGrid.serialize(4);
+
+  const reparsed = GeobFrame.parse(serialized, 4);
+
+  console.log("example", exampleBeatGrid);
+  console.log("serialized", serialized);
+  console.log("reparsed", reparsed);
 
   // console.log(toSynch(203 + 68));
 
