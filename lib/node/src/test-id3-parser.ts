@@ -3,6 +3,16 @@ import assert from "assert";
 import { readUint32SyncSafe } from "./utils";
 import { GeobFrame } from "./geob-frame";
 
+function calculatePaddingLength(buffer: Buffer) {
+  for (let i = 0; i < buffer.byteLength; i++) {
+    if (buffer.at(buffer.byteLength - i - 1) !== 0x00) {
+      return i;
+    }
+  }
+
+  return 0;
+}
+
 function parseID3Tags(buffer: Buffer) {
   let offset = 0;
 
@@ -59,12 +69,15 @@ function parseID3Tags(buffer: Buffer) {
     offset += extendedHeaderSize - 4;
   }
 
+  const paddingSize = calculatePaddingLength(ID3TagBuffer);
+
   const id3Data: {
     version: {
       minor: number;
       patch: number;
     };
     size: number;
+    paddingSize: number;
     flags: any;
     GEOB: GeobFrame[];
   } = {
@@ -73,6 +86,7 @@ function parseID3Tags(buffer: Buffer) {
       patch: patchVersion,
     },
     size: id3TagSize,
+    paddingSize,
     flags,
     GEOB: [],
   };
@@ -111,9 +125,9 @@ function parseID3Tags(buffer: Buffer) {
 async function main() {
   const file = await fs.readFile(
     // "/Users/dallanfreemantle/Desktop/Deadline - Dreamer.mp3"
-    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Justin Hawkes - Lift off the Roof.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Justin Hawkes - Lift off the Roof.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
-    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DUBZ/Mefjus & Emperor vs Jam Thieves - Flashizm vs Criminal Thugs (Emperor Edit).mp3"
+    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DUBZ/Mefjus & Emperor vs Jam Thieves - Flashizm vs Criminal Thugs (Emperor Edit).mp3"
   );
   const data = Buffer.from([
     0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x02, 0x0f, 0x54, 0x49,
