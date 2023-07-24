@@ -2,9 +2,9 @@ import fs from "fs/promises";
 import assert from "assert";
 
 abstract class ID3Frame {
-  type: string;
-  size: number;
-  frameOffset?: number;
+  protected type: string;
+  protected size: number;
+  protected frameOffset?: number;
 
   constructor(type: string, size: number, frameOffset?: number) {
     this.type = type;
@@ -22,11 +22,11 @@ abstract class ID3Frame {
 }
 
 class GeobFrame extends ID3Frame {
-  textEncoding: number;
-  mimeType: string;
-  fileName: string;
-  description: string;
-  body: Buffer;
+  private textEncoding: number;
+  private mimeType: string;
+  private fileName: string;
+  private description: string;
+  private body: Buffer;
 
   constructor(
     textEncoding: number,
@@ -256,11 +256,6 @@ function parseID3Tags(buffer: Buffer) {
     offset += extendedHeaderSize - 4;
   }
 
-  // await fs.writeFile(
-  //   "/Users/dallanfreemantle/Desktop/Skank-ID3Tag.octet-stream",
-  //   ID3tag
-  // );
-
   const id3Data: {
     version: string;
     size: number;
@@ -284,7 +279,6 @@ function parseID3Tags(buffer: Buffer) {
       minorVersion === 4
         ? readUint32SyncSafe(buffer, offset + 4)
         : buffer.readUint32BE(offset + 4);
-    // const tagSize = getUint32Synch(buffer, offset); // buffer.readUint32BE(offset);
 
     console.log(type, tagSize);
 
@@ -348,8 +342,7 @@ async function main() {
     "Serato Autotags",
     Buffer.from([
       0x01, 0x01, 0x38, 0x37, 0x2e, 0x30, 0x30, 0x00, 0x2d, 0x35, 0x2e,
-    ]),
-    4
+    ])
   );
 
   const serialized = exampleBeatGrid.serialize(4);
