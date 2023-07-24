@@ -60,12 +60,18 @@ function parseID3Tags(buffer: Buffer) {
   }
 
   const id3Data: {
-    version: string;
+    version: {
+      minor: number;
+      patch: number;
+    };
     size: number;
     flags: any;
     GEOB: GeobFrame[];
   } = {
-    version: `3.${minorVersion}.${patchVersion}`,
+    version: {
+      minor: minorVersion,
+      patch: patchVersion,
+    },
     size: id3TagSize,
     flags,
     GEOB: [],
@@ -105,8 +111,8 @@ function parseID3Tags(buffer: Buffer) {
 async function main() {
   const file = await fs.readFile(
     // "/Users/dallanfreemantle/Desktop/Deadline - Dreamer.mp3"
-    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Justin Hawkes - Lift off the Roof.mp3"
-    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
+    "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Justin Hawkes - Lift off the Roof.mp3"
+    // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DUBZ/Mefjus & Emperor vs Jam Thieves - Flashizm vs Criminal Thugs (Emperor Edit).mp3"
   );
   const data = Buffer.from([
