@@ -2,8 +2,21 @@ import fs from "fs/promises";
 import assert from "assert";
 import { readUint32SyncSafe } from "./utils";
 import { GeobFrame } from "./geob-frame";
+import { ID3Frame } from "./id3-frame";
 
-function parseID3Tags(buffer: Buffer) {
+type Id3Tag = {
+  buffer: Buffer;
+  version: {
+    minor: number;
+    patch: number;
+  };
+  size: number;
+  paddingSize: number;
+  flags: any;
+  GEOB: GeobFrame[];
+};
+
+function parseID3Tag(buffer: Buffer): Id3Tag {
   let offset = 0;
 
   // Magic [0x49 0x44 0x33] (ASCII3)
@@ -61,16 +74,8 @@ function parseID3Tags(buffer: Buffer) {
 
   // const paddingSize = calculatePaddingLength(ID3TagBuffer);
 
-  const id3Data: {
-    version: {
-      minor: number;
-      patch: number;
-    };
-    size: number;
-    paddingSize: number;
-    flags: any;
-    GEOB: GeobFrame[];
-  } = {
+  const id3Tag: Id3Tag = {
+    buffer: ID3TagBuffer,
     version: {
       minor: minorVersion,
       patch: patchVersion,
@@ -105,7 +110,7 @@ function parseID3Tags(buffer: Buffer) {
 
     // Body (Tag.Size)
     if (type === "GEOB") {
-      id3Data.GEOB.push(
+      id3Tag.GEOB.push(
         GeobFrame.parse(
           buffer.subarray(offset, offset + 10 + tagSize),
           minorVersion,
@@ -118,10 +123,12 @@ function parseID3Tags(buffer: Buffer) {
   }
 
   // Padding size calculation
-  id3Data.paddingSize = endOfFramesOffset - paddingStartOffset;
+  id3Tag.paddingSize = endOfFramesOffset - paddingStartOffset;
 
-  return id3Data;
+  return id3Tag;
 }
+
+function writeID3Frames(frames: ID3Frame[], id3Tag: Buffer) {}
 
 async function main() {
   const file = await fs.readFile(
@@ -156,8 +163,8 @@ async function main() {
     0x3e, 0x82, 0x43, 0x2e, 0x00, 0x00, 0x00,
   ]);
 
-  const id3Data = parseID3Tags(file);
-  console.log(id3Data);
+  const id3Tag = parseID3Tag(file);
+  console.log(id3Tag);
 
   const exampleBeatGrid = new GeobFrame(
     0,
