@@ -2,11 +2,11 @@ import { ID3Frame } from "./id3-frame";
 import { readUint32SyncSafe, toSynch } from "./utils";
 
 export class GeobFrame extends ID3Frame {
-  private textEncoding: number;
-  private mimeType: string;
-  private fileName: string;
-  private description: string;
-  private body: Buffer;
+  textEncoding: number;
+  mimeType: string;
+  fileName: string;
+  description: string;
+  body: Buffer;
 
   constructor(
     textEncoding: number,

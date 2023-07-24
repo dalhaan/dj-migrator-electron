@@ -128,7 +128,50 @@ function parseID3Tag(buffer: Buffer): Id3Tag {
   return id3Tag;
 }
 
-function writeID3Frames(frames: ID3Frame[], id3Tag: Buffer) {}
+function writeSeratoFrames(frames: GeobFrame[], id3Tag: Id3Tag) {
+  // Find existing frames that will be replaced
+  const geobFrameDescriptions = frames.map((frame) => frame.description);
+  const matchingFrames = id3Tag.GEOB.filter((frame) =>
+    geobFrameDescriptions.includes(frame.description)
+  );
+
+  // --------------
+  // Update ID3 tag
+  // --------------
+
+  // Replace existing frames
+
+  // Append new frames
+
+  // -----------------
+  // Write new ID3 tag
+  // -----------------
+
+  // Calculate total sizes of new frames and matching frames
+  const totalSizeOfNewFrames = frames.reduce(
+    (totalSize, frame) => totalSize + frame.size + ID3Frame.HEADER_SIZE,
+    0
+  );
+  const totalSizeOfMatchingFrames = matchingFrames.reduce(
+    (totalSize, frame) => totalSize + frame.size + ID3Frame.HEADER_SIZE,
+    0
+  );
+
+  const remainingPadding =
+    id3Tag.paddingSize - (totalSizeOfNewFrames - totalSizeOfMatchingFrames);
+
+  if (remainingPadding >= 0) {
+    // There is enough padding to fit new frames
+  } else {
+    // Not enough room, need to create new buffer for MP3 file.
+  }
+
+  console.log("new frames:", frames);
+  console.log("matching frames:", matchingFrames);
+  console.log("total size of new frames:", totalSizeOfNewFrames);
+  console.log("total size of matching frames:", totalSizeOfMatchingFrames);
+  console.log("remaining padding:", remainingPadding);
+}
 
 async function main() {
   const file = await fs.readFile(
@@ -175,6 +218,8 @@ async function main() {
       0x01, 0x01, 0x38, 0x37, 0x2e, 0x30, 0x30, 0x00, 0x2d, 0x35, 0x2e,
     ])
   );
+
+  writeSeratoFrames([exampleBeatGrid], id3Tag);
   // const serialized = exampleBeatGrid.serialize(4);
   // const reparsed = GeobFrame.parse(serialized, 4);
   // console.log("example", exampleBeatGrid);

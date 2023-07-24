@@ -1,7 +1,10 @@
 export abstract class ID3Frame {
-  protected type: string;
-  protected size: number;
-  protected frameOffset?: number;
+  // Type (ascii32) + Size (UInt32BE/UIntSyncSafe32BE) = 64bits/8bytes
+  static HEADER_SIZE = 8;
+
+  type: string;
+  size: number;
+  frameOffset?: number;
 
   constructor(type: string, size: number, frameOffset?: number) {
     this.type = type;
