@@ -12,6 +12,12 @@ abstract class ID3Frame {
     this.frameOffset = frameOffset;
   }
 
+  static parse: (
+    buffer: Buffer,
+    id3Version: number,
+    frameOffset?: number
+  ) => ID3Frame;
+
   abstract serialize(id3Version: 3 | 4): Buffer;
 }
 
@@ -22,16 +28,12 @@ class GeobFrame extends ID3Frame {
   description: string;
   body: Buffer;
 
-  // cursor: number = 0;
-
   constructor(
     textEncoding: number,
     mimeType: string,
     fileName: string,
     description: string,
     body: Buffer,
-    // size: number,
-    id3Version: number,
     frameOffset?: number
   ) {
     const size =
@@ -103,7 +105,6 @@ class GeobFrame extends ID3Frame {
       fileName,
       description,
       body,
-      id3Version,
       frameOffset
     );
   }
