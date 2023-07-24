@@ -69,7 +69,7 @@ function parseID3Tags(buffer: Buffer) {
     offset += extendedHeaderSize - 4;
   }
 
-  const paddingSize = calculatePaddingLength(ID3TagBuffer);
+  // const paddingSize = calculatePaddingLength(ID3TagBuffer);
 
   const id3Data: {
     version: {
@@ -86,13 +86,21 @@ function parseID3Tags(buffer: Buffer) {
       patch: patchVersion,
     },
     size: id3TagSize,
-    paddingSize,
+    paddingSize: 0,
     flags,
     GEOB: [],
   };
 
+  let paddingStartOffset = endOfFramesOffset;
+
   // Tags (Tag)
   while (offset < endOfFramesOffset) {
+    // Stop parsing tags when padding or end of frame is reached
+    if (offset + 4 > endOfFramesOffset || buffer.readUInt32BE(offset) === 0) {
+      paddingStartOffset = offset;
+      break;
+    }
+
     // == Tag ==
     // Type (ASCII4)
     const type = buffer.subarray(offset, offset + 4).toString("ascii");
@@ -118,6 +126,9 @@ function parseID3Tags(buffer: Buffer) {
 
     offset += tagSize + 10;
   }
+
+  // Padding size calculation
+  id3Data.paddingSize = endOfFramesOffset - paddingStartOffset;
 
   return id3Data;
 }
