@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import assert from "assert";
-import { readUint32SyncSafe, toSynch } from "./utils";
+import { readUint32SyncSafe, toSynch, writeUInt32SyncSafeBE } from "./utils";
 import { GeobFrame } from "./geob-frame";
 import { ID3Frame } from "./id3-frame";
 
@@ -12,7 +12,12 @@ type Id3Tag = {
   };
   size: number;
   paddingSize: number;
-  flags: any;
+  flags: {
+    unsynchronisation: boolean;
+    hasExtendedHeader: boolean;
+    experimentalIndicator: boolean;
+    hasFooter: boolean;
+  };
   GEOB: GeobFrame[];
 };
 
@@ -70,6 +75,7 @@ function parseID3Tag(buffer: Buffer): Id3Tag {
     offset += extendedHeaderSize - 4;
   }
 
+  const startOfFramesOffset = offset;
   let paddingStartOffset = endOfFramesOffset;
   const geobFrames: GeobFrame[] = [];
 
@@ -114,12 +120,46 @@ function parseID3Tag(buffer: Buffer): Id3Tag {
       patch: patchVersion,
     },
     size: id3TagSize,
-    paddingSize: endOfFramesOffset - paddingStartOffset,
     flags,
+    paddingSize: endOfFramesOffset - paddingStartOffset,
     GEOB: geobFrames,
   };
 
   return id3Tag;
+}
+
+function buildHeader(
+  version: { minor: number; patch: number },
+  flags: number,
+  size: number,
+  identifier: "ID3" | "3DI" = "ID3"
+): Buffer {
+  const buffer = Buffer.alloc(ID3Frame.HEADER_SIZE);
+
+  let offset = 0;
+
+  // Identifier ["ID3": ascii24]
+  offset += buffer.write(identifier, offset, "ascii");
+
+  // Version [minor: UInt8, patch: UInt8]
+  offset = buffer.writeUInt8(version.minor, offset);
+  offset = buffer.writeUInt8(version.patch, offset);
+
+  // Flags [abcd0000: UInt8]
+  offset = buffer.writeUInt8(flags, offset);
+
+  // Size [UIntSyncSafe32BE]
+  offset = writeUInt32SyncSafeBE(buffer, size, offset);
+
+  return buffer;
+}
+
+function buildFooter(
+  version: { minor: number; patch: number },
+  flags: number,
+  size: number
+) {
+  return buildHeader(version, flags, size, "3DI");
 }
 
 function writeSeratoFrames(frames: GeobFrame[], id3Tag: Id3Tag) {
@@ -142,8 +182,7 @@ function writeSeratoFrames(frames: GeobFrame[], id3Tag: Id3Tag) {
   );
   const totalSizeOfFrames = totalSizeOfNewFrames - totalSizeOfMatchingFrames;
 
-  const remainingPadding =
-    id3Tag.paddingSize - (totalSizeOfNewFrames - totalSizeOfMatchingFrames);
+  const remainingPadding = id3Tag.paddingSize - totalSizeOfFrames;
 
   for (const frame of frames) {
     const matchingOldFrame = id3Tag.GEOB.find(
