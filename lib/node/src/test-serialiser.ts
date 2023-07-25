@@ -601,25 +601,24 @@ async function main() {
 
   // console.log(seratoMarkers2Tag);
 
-  // function seratoMarkers2BufferToMp3TagArray(buffer: Buffer): number[] {
-  //   const lineLength = 72;
+  function base64Encode(buffer: Buffer): Buffer {
+    const lineLength = 72;
 
-  //   const lines: string[] = [];
-  //   let remainder = buffer.toString("base64");
-  //   while (remainder) {
-  //     const line = remainder.slice(0, lineLength);
-  //     lines.push(line);
-  //     remainder = remainder.slice(lineLength);
-  //   }
+    const lines: string[] = [];
+    let remainder = buffer.toString("base64");
+    while (remainder) {
+      const line = remainder.slice(0, lineLength);
+      lines.push(line);
+      remainder = remainder.slice(lineLength);
+    }
 
-  //   const encoded = lines.join("\n");
-  //   // const encodedBuffer = Buffer.from(encoded);
-  //   const encodedBuffer = Buffer.alloc(468);
-  //   encodedBuffer.set(Buffer.from(encoded));
-  //   const encodedArray = [1, 1, ...Array.from(encodedBuffer)];
+    const encoded = lines.join("\n");
+    const encodedBuffer = Buffer.from(encoded, "ascii");
 
-  //   return encodedArray;
-  // }
+    const magic = Buffer.from([0x01, 0x01]);
+
+    return Buffer.concat([magic, encodedBuffer]);
+  }
 
   // const markers = new SeratoMarkers2();
   // markers

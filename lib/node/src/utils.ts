@@ -64,3 +64,22 @@ export function writeUInt32SyncSafeBE(
 ): number {
   return buffer.writeUInt32BE(toSynch(value), offset);
 }
+
+export function base64Encode(buffer: Buffer): Buffer {
+  const lineLength = 72;
+
+  const lines: string[] = [];
+  let remainder = buffer.toString("base64");
+  while (remainder) {
+    const line = remainder.slice(0, lineLength);
+    lines.push(line);
+    remainder = remainder.slice(lineLength);
+  }
+
+  const encoded = lines.join("\n");
+  const encodedBuffer = Buffer.from(encoded, "ascii");
+
+  const magic = Buffer.from([0x01, 0x01]);
+
+  return Buffer.concat([magic, encodedBuffer]);
+}
