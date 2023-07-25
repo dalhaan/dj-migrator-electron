@@ -54,7 +54,7 @@ export function readUint32SyncSafe(view: Buffer, offset: number = 0): number {
  *
  * @param buffer - Buffer to write number to.
  * @param value Number to be written to `buffer`.
- * @param offset Number of bytes to skip before starting to write. Must satisfy 0 <= offset <= buf.length - 4.
+ * @param offset Number of bytes to skip before starting to write. Must satisfy 0 <= `offset` <= `buffer`.length - 4.
  * @returns `offset` plus the number of bytes written.
  */
 export function writeUInt32SyncSafeBE(
