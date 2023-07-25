@@ -45,3 +45,22 @@ export function readUint8SyncSafe(view: Buffer, offset: number = 0): number {
 export function readUint32SyncSafe(view: Buffer, offset: number = 0): number {
   return getSynch(view.readUint32BE(offset));
 }
+
+/**
+ *
+ * Writes value to buf at the specified offset as Sync Safe big-endian. The value
+ * must be a valid unsigned 32-bit integer. Behavior is undefined when value
+ * is anything other than an unsigned 32-bit integer.
+ *
+ * @param buffer - Buffer to write number to.
+ * @param value Number to be written to `buffer`.
+ * @param offset Number of bytes to skip before starting to write. Must satisfy 0 <= offset <= buf.length - 4.
+ * @returns `offset` plus the number of bytes written.
+ */
+export function writeUInt32SyncSafeBE(
+  buffer: Buffer,
+  value: number,
+  offset: number = 0
+): number {
+  return buffer.writeUInt32BE(toSynch(value), offset);
+}
