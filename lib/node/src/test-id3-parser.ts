@@ -183,7 +183,11 @@ function buildFooter(
   return buildHeader(version, flags, size, "3DI");
 }
 
-function writeSeratoFrames(frames: GeobFrame[], id3Tag: Id3Tag) {
+function writeSeratoFrames(
+  frames: GeobFrame[],
+  id3Tag: Id3Tag,
+  paddingSize = 0
+) {
   // Find existing frames that will be replaced
   // const geobFrameDescriptions = frames.map((frame) => frame.description);
   // const matchingFrames = id3Tag.GEOB.filter((frame) =>
@@ -257,10 +261,10 @@ function writeSeratoFrames(frames: GeobFrame[], id3Tag: Id3Tag) {
 
   let newId3TagBuffer: Buffer | undefined;
 
+  // There is enough padding to fit new frames
   if (remainingPadding >= 0) {
     const segmentsBuffer = Buffer.concat(segments);
 
-    // There is enough padding to fit new frames
     newId3TagBuffer = Buffer.alloc(id3Tag.id3TagSize);
 
     segmentsBuffer.copy(newId3TagBuffer);
@@ -276,7 +280,14 @@ function writeSeratoFrames(frames: GeobFrame[], id3Tag: Id3Tag) {
     }
 
     // TODO: Write new ID3 tag to MP3 file buffer
-  } else {
+  }
+  // Not enough room, need to create new buffer for MP3 file.
+  else {
+    // Add padding
+    const padding = Buffer.alloc(paddingSize);
+    segments.push(padding);
+
+    // Calculate new ID3 tag size
     let segmentsBuffer = Buffer.concat(segments);
     const newSize = segmentsBuffer.byteLength - 10;
 
@@ -287,7 +298,6 @@ function writeSeratoFrames(frames: GeobFrame[], id3Tag: Id3Tag) {
 
     segmentsBuffer = Buffer.concat(segments);
 
-    // Not enough room, need to create new buffer for MP3 file.
     newId3TagBuffer = segmentsBuffer;
 
     // Update ID3 tag size
@@ -410,13 +420,14 @@ async function main() {
 
   const updatedID3Tag = writeSeratoFrames(
     [exampleBeatGrid, exampleAnalysis],
-    id3Tag
+    id3Tag,
+    0
   );
   console.log(updatedID3Tag);
-  // await fs.writeFile(
-  //   "/Users/dallanfreemantle/Desktop/updated-id3.octet-stream",
-  //   updatedID3Tag
-  // );
+  await fs.writeFile(
+    "/Users/dallanfreemantle/Desktop/updated-id3-2.octet-stream",
+    updatedID3Tag
+  );
   // const serialized = exampleBeatGrid.serialize(4);
   // const reparsed = GeobFrame.parse(serialized, 4);
   // console.log("example", exampleBeatGrid);
@@ -427,8 +438,8 @@ async function main() {
 
   // console.log(toSynch(203));
   // console.log(getSynch(7725));
-  console.log("old:", getSynch(410667));
-  console.log("new:", getSynch(410925));
+  // console.log("old:", getSynch(410667));
+  // console.log("new:", getSynch(410925));
 }
 
 main();
