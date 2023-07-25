@@ -11,7 +11,7 @@ import { GeobFrame } from "./geob-frame";
 import { ID3Frame } from "./id3-frame";
 import { SeratoMarkers2 } from "./serato-serializer/serialize-serato-markers2";
 
-type Id3Tag = {
+class ID3Tag {
   buffer: Buffer;
   version: {
     minor: number;
@@ -32,123 +32,117 @@ type Id3Tag = {
     value: number;
   };
   GEOB: GeobFrame[];
-};
 
-function parseID3Tag(buffer: Buffer): Id3Tag {
-  let offset = 0;
+  constructor(buffer: Buffer) {
+    let offset = 0;
 
-  // Magic [0x49 0x44 0x33] (ASCII3)
-  assert(
-    buffer
-      .subarray(offset, (offset += 3))
-      .equals(Buffer.from([0x49, 0x44, 0x33])),
-    "Invalid Magic"
-  );
+    this.buffer = buffer;
 
-  // Version (2B)
-  const minorVersion = buffer.readUint8(offset++);
-  const patchVersion = buffer.readUint8(offset++);
-  // offset += 2;
+    // Magic [0x49 0x44 0x33] (ASCII3)
+    assert(
+      buffer
+        .subarray(offset, (offset += 3))
+        .equals(Buffer.from([0x49, 0x44, 0x33])),
+      "Invalid Magic"
+    );
 
-  // Flags (1) (abcd0000)
-  // a - Unsynchronisation
-  // b - Extended header
-  // c - Experimental indicator
-  // d - Footer present
-  // e.g. 11110000 & 00010000 (16) === 00010000 (16)
-  const flags = {
-    unsynchronisation: (buffer.at(offset)! & 0b10000000) !== 0,
-    hasExtendedHeader: (buffer.at(offset)! & 0b01000000) !== 0,
-    experimentalIndicator: (buffer.at(offset)! & 0b00100000) !== 0,
-    hasFooter: (buffer.at(offset)! & 0b00010000) !== 0,
-    value: buffer.at(offset)!,
-  };
+    // Version (2B)
+    this.version = {
+      minor: buffer.readUint8(offset++),
+      patch: buffer.readUint8(offset++),
+    };
+    // offset += 2;
 
-  offset += 1;
+    // Flags (1) (abcd0000)
+    // a - Unsynchronisation
+    // b - Extended header
+    // c - Experimental indicator
+    // d - Footer present
+    // e.g. 11110000 & 00010000 (16) === 00010000 (16)
+    this.flags = {
+      unsynchronisation: (buffer.at(offset)! & 0b10000000) !== 0,
+      hasExtendedHeader: (buffer.at(offset)! & 0b01000000) !== 0,
+      experimentalIndicator: (buffer.at(offset)! & 0b00100000) !== 0,
+      hasFooter: (buffer.at(offset)! & 0b00010000) !== 0,
+      value: buffer.at(offset)!,
+    };
 
-  // Size (SynchsafeInt4)
-  // ID3 body size === Size - (header size (10) + footer size( 10))
-  // [ header ][ extended header ][ body (frames) ][ padding ][ footer ]
-  // <-- 10B -><-------------------- size -------------------><-- 10B ->
-  // const synchSafeSize = buffer.subarray(offset, (offset += 4));
-  const size = readUint32SyncSafe(buffer, offset);
-  offset += 4;
-  const id3TagSize = flags.hasFooter ? size + 20 : size + 10; // header size + size + footer size
-  const endOfBodyOffset = size + 10; // header size + size
+    offset += 1;
 
-  // Extended header
-  let extendedHeader: Id3Tag["extendedHeader"];
-  if (flags.hasExtendedHeader) {
-    // Size (2.4: uint32syncsafebe, 2.3: uint32be)
-    const extendedHeaderSize =
-      minorVersion === 4
-        ? readUint32SyncSafe(buffer, offset)
-        : buffer.readUint32BE(offset);
+    // Size (SynchsafeInt4)
+    // ID3 body size === Size - (header size (10) + footer size( 10))
+    // [ header ][ extended header ][ body (frames) ][ padding ][ footer ]
+    // <-- 10B -><-------------------- size -------------------><-- 10B ->
+    // const synchSafeSize = buffer.subarray(offset, (offset += 4));
+    this.size = readUint32SyncSafe(buffer, offset);
     offset += 4;
 
-    // Body (Size - 4B)
-    const extendedHeaderBody = buffer.subarray(offset, extendedHeaderSize - 4);
-    offset += extendedHeaderSize - 4;
+    this.id3TagSize = this.flags.hasFooter ? this.size + 20 : this.size + 10; // header size + size + footer size
+    const endOfBodyOffset = this.size + 10; // header size + size
 
-    extendedHeader = {
-      size: extendedHeaderSize,
-      body: extendedHeaderBody,
-    };
-  }
+    // Extended header
+    if (this.flags.hasExtendedHeader) {
+      // Size (2.4: uint32syncsafebe, 2.3: uint32be)
+      const extendedHeaderSize =
+        this.version.minor === 4
+          ? readUint32SyncSafe(buffer, offset)
+          : buffer.readUint32BE(offset);
+      offset += 4;
 
-  const startOfFramesOffset = offset;
-  let paddingStartOffset = endOfBodyOffset;
-  const geobFrames: GeobFrame[] = [];
-
-  // Tags (Tag)
-  while (offset < endOfBodyOffset) {
-    // Stop parsing tags when padding is reached
-    if (buffer.readUint8(offset) === 0) {
-      paddingStartOffset = offset;
-      break;
-    }
-
-    // == Tag ==
-    // Type (ASCII4)
-    const type = buffer.subarray(offset, offset + 4).toString("ascii");
-
-    // Size (Uint32BE)
-    const tagSize =
-      minorVersion === 4
-        ? readUint32SyncSafe(buffer, offset + 4)
-        : buffer.readUint32BE(offset + 4);
-
-    console.log(type, tagSize);
-
-    // Body (Tag.Size)
-    if (type === "GEOB") {
-      geobFrames.push(
-        GeobFrame.parse(
-          buffer.subarray(offset, offset + 10 + tagSize),
-          minorVersion,
-          offset
-        )
+      // Body (Size - 4B)
+      const extendedHeaderBody = buffer.subarray(
+        offset,
+        extendedHeaderSize - 4
       );
+      offset += extendedHeaderSize - 4;
+
+      this.extendedHeader = {
+        size: extendedHeaderSize,
+        body: extendedHeaderBody,
+      };
     }
 
-    offset += tagSize + 10;
+    const startOfFramesOffset = offset;
+    let paddingStartOffset = endOfBodyOffset;
+    const geobFrames: GeobFrame[] = [];
+
+    // Tags (Tag)
+    while (offset < endOfBodyOffset) {
+      // Stop parsing tags when padding is reached
+      if (buffer.readUint8(offset) === 0) {
+        paddingStartOffset = offset;
+        break;
+      }
+
+      // == Tag ==
+      // Type (ASCII4)
+      const type = buffer.subarray(offset, offset + 4).toString("ascii");
+
+      // Size (Uint32BE)
+      const tagSize =
+        this.version.minor === 4
+          ? readUint32SyncSafe(buffer, offset + 4)
+          : buffer.readUint32BE(offset + 4);
+
+      console.log(type, tagSize);
+
+      // Body (Tag.Size)
+      if (type === "GEOB") {
+        geobFrames.push(
+          GeobFrame.parse(
+            buffer.subarray(offset, offset + 10 + tagSize),
+            this.version.minor,
+            offset
+          )
+        );
+      }
+
+      offset += tagSize + 10;
+    }
+
+    this.GEOB = geobFrames;
+    this.paddingSize = endOfBodyOffset - paddingStartOffset;
   }
-
-  const id3Tag: Id3Tag = {
-    buffer: buffer.subarray(0, paddingStartOffset),
-    version: {
-      minor: minorVersion,
-      patch: patchVersion,
-    },
-    size,
-    id3TagSize,
-    flags,
-    paddingSize: endOfBodyOffset - paddingStartOffset,
-    extendedHeader,
-    GEOB: geobFrames,
-  };
-
-  return id3Tag;
 }
 
 function buildHeader(
@@ -187,7 +181,7 @@ function buildFooter(
 
 function writeSeratoFrames(
   frames: GeobFrame[],
-  id3Tag: Id3Tag,
+  id3Tag: ID3Tag,
   paddingSize = 0
 ) {
   // Find existing frames that will be replaced
@@ -322,39 +316,15 @@ function writeSeratoFrames(
 }
 
 async function main() {
+  // START
   const file = await fs.readFile(
     "/Users/dallanfreemantle/Desktop/Deadline - Dreamer.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Justin Hawkes - Lift off the Roof.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/New DnB 5/Molecular - Skank.mp3"
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DUBZ/Mefjus & Emperor vs Jam Thieves - Flashizm vs Criminal Thugs (Emperor Edit).mp3"
   );
-  const data = Buffer.from([
-    0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x02, 0x0f, 0x54, 0x49,
-    0x54, 0x32, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x44, 0x72, 0x65,
-    0x61, 0x6d, 0x65, 0x72, 0x54, 0x50, 0x45, 0x31, 0x00, 0x00, 0x00, 0x09,
-    0x00, 0x00, 0x00, 0x44, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x54,
-    0x41, 0x4c, 0x42, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x44, 0x72,
-    0x65, 0x61, 0x6d, 0x65, 0x72, 0x54, 0x43, 0x4f, 0x4e, 0x00, 0x00, 0x00,
-    0x0f, 0x00, 0x00, 0x00, 0x45, 0x6c, 0x65, 0x63, 0x74, 0x72, 0x6f, 0x2f,
-    0x44, 0x61, 0x6e, 0x63, 0x65, 0x00, 0x54, 0x50, 0x55, 0x42, 0x00, 0x00,
-    0x00, 0x09, 0x00, 0x00, 0x00, 0x44, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e,
-    0x65, 0x54, 0x59, 0x45, 0x52, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00,
-    0x32, 0x30, 0x32, 0x30, 0x54, 0x4b, 0x45, 0x59, 0x00, 0x00, 0x00, 0x04,
-    0x00, 0x00, 0x00, 0x45, 0x62, 0x6d, 0x54, 0x58, 0x58, 0x58, 0x00, 0x00,
-    0x00, 0x15, 0x00, 0x00, 0x00, 0x53, 0x45, 0x52, 0x41, 0x54, 0x4f, 0x5f,
-    0x50, 0x4c, 0x41, 0x59, 0x43, 0x4f, 0x55, 0x4e, 0x54, 0x00, 0x31, 0x31,
-    0x00, 0x52, 0x56, 0x41, 0x44, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00,
-    0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x54, 0x42, 0x50,
-    0x4d, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x31, 0x37, 0x34, 0x47,
-    0x45, 0x4f, 0x42, 0x00, 0x00, 0x00, 0x3a, 0x00, 0x00, 0x00, 0x61, 0x70,
-    0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x6f, 0x63,
-    0x74, 0x65, 0x74, 0x2d, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x00, 0x00,
-    0x53, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x20, 0x42, 0x65, 0x61, 0x74, 0x47,
-    0x72, 0x69, 0x64, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x3d, 0x3c,
-    0x3e, 0x82, 0x43, 0x2e, 0x00, 0x00, 0x00,
-  ]);
 
-  const id3Tag = parseID3Tag(file);
+  const id3Tag = new ID3Tag(file);
   console.log(id3Tag);
 
   const markers = new SeratoMarkers2();
@@ -394,6 +364,8 @@ async function main() {
     await fs.writeFile("/Users/dallanfreemantle/Desktop/new-audio.mp3", buffer);
   }
   console.log(updatedID3Tag);
+  // END
+
   // await fs.writeFile(
   //   "/Users/dallanfreemantle/Desktop/updated-id3.octet-stream",
   //   updatedID3Tag.buffer
@@ -410,6 +382,8 @@ async function main() {
   // console.log(getSynch(7725));
   // console.log("old:", getSynch(410667));
   // console.log("new:", getSynch(410925));
+  console.log("old:", getSynch(410667)); // 107051
+  console.log("new:", toSynch(106680)); // 409912
 }
 
 main();
