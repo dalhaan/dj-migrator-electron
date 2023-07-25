@@ -27,8 +27,6 @@ export class ID3Tag {
   constructor(buffer: Buffer) {
     let offset = 0;
 
-    this.buffer = buffer;
-
     // Magic [0x49 0x44 0x33] (ASCII3)
     assert(
       buffer
@@ -131,6 +129,7 @@ export class ID3Tag {
       offset += tagSize + 10;
     }
 
+    this.buffer = buffer.subarray(0, paddingStartOffset);
     this.GEOB = geobFrames;
     this.paddingSize = endOfBodyOffset - paddingStartOffset;
   }
