@@ -52,6 +52,7 @@ async function main() {
 
   id3Tag.addFrame(updatedSeratoMarkers2);
   id3Tag.addFrame(exampleTitleFrame);
+  id3Tag.removeGeobFrame((frame) => frame.description === "Serato Markers_");
 
   // Update ID3 tag with new frames
   const updatedID3Tag = id3Tag.writeFrames(0);
@@ -60,7 +61,7 @@ async function main() {
   if (!updatedID3Tag.needToCreateNewBuffer) {
     updatedID3Tag.buffer.copy(file);
 
-    await fs.writeFile("/Users/dallanfreemantle/Desktop/new-audio.mp3", file);
+    await fs.writeFile("/Users/dallanfreemantle/Desktop/new-audio-r.mp3", file);
   } else {
     // Create new buffer
     const buffer = Buffer.alloc(
@@ -73,7 +74,10 @@ async function main() {
     // Append original MP3 file audio data to new buffer
     file.subarray(id3Tag.id3TagSize).copy(buffer, updatedID3Tag.buffer.length);
 
-    await fs.writeFile("/Users/dallanfreemantle/Desktop/new-audio.mp3", buffer);
+    await fs.writeFile(
+      "/Users/dallanfreemantle/Desktop/new-audio-r.mp3",
+      buffer
+    );
   }
   console.log(updatedID3Tag);
   // END

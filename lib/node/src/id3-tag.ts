@@ -3,6 +3,7 @@ import { GeobFrame } from "./geob-frame";
 import { readUint32SyncSafe, writeUInt32SyncSafeBE } from "./utils";
 import { ID3Frame } from "./id3-frame";
 import { UnknownFrame } from "./unknown-frame";
+import { RemovedFrame } from "./removed-frame";
 
 export class ID3Tag {
   buffer: Buffer;
@@ -25,7 +26,13 @@ export class ID3Tag {
     value: number;
   };
   frames: ID3Frame[] = [];
+
+  // All added frames with `addFrame()`
   addedFrames: ID3Frame[] = [];
+  // Includes replaced & removed frames
+  matchingFrames: [oldFrame: ID3Frame, newFrame: ID3Frame][] = [];
+  // Includes brand new frames
+  newFrames: ID3Frame[] = [];
 
   constructor(buffer: Buffer) {
     let offset = 0;
@@ -170,54 +177,73 @@ export class ID3Tag {
 
   addFrame(frame: ID3Frame) {
     this.addedFrames.push(frame);
+
+    const matchingOldFrame = this.frames.find((oldFrame) => {
+      if (oldFrame instanceof GeobFrame && frame instanceof GeobFrame) {
+        return oldFrame.description === frame.description;
+      }
+
+      return oldFrame.type === frame.type;
+    });
+
+    if (matchingOldFrame) {
+      // Only match first instance (incase there are multiple frames with same description)
+      if (
+        !this.matchingFrames.some(
+          (matchedFrame) =>
+            matchedFrame[0] === matchingOldFrame || matchedFrame[1] === frame
+        )
+      ) {
+        this.matchingFrames.push([matchingOldFrame, frame]);
+      }
+    } else {
+      this.newFrames.push(frame);
+    }
+  }
+
+  removeGeobFrame(matcher: (frame: GeobFrame) => boolean) {
+    const matchingOldFrame = this.frames.find((frame) => {
+      if (frame instanceof GeobFrame) {
+        return matcher(frame);
+      }
+    });
+
+    if (matchingOldFrame) {
+      // Only match first instance (incase there are multiple frames with same description)
+      if (
+        !this.matchingFrames.some(
+          (matchedFrame) => matchedFrame[0] === matchingOldFrame
+        )
+      ) {
+        this.matchingFrames.push([matchingOldFrame, new RemovedFrame()]);
+      }
+    }
   }
 
   writeFrames(paddingSize = 0) {
-    // Find existing frames that will be replaced
-    const matchingFrames: [oldFrame: ID3Frame, newFrame: ID3Frame][] = [];
-    const newFrames: ID3Frame[] = [];
-
-    for (const frame of this.addedFrames) {
-      const matchingOldFrame = this.frames.find((oldFrame) => {
-        if (oldFrame instanceof GeobFrame && frame instanceof GeobFrame) {
-          return oldFrame.description === frame.description;
-        }
-
-        return oldFrame.type === frame.type;
-      });
-
-      if (matchingOldFrame) {
-        // Only match first instance (incase there are multiple frames with same description)
-        if (
-          !matchingFrames.some(
-            (matchedFrame) =>
-              matchedFrame[0] === matchingOldFrame || matchedFrame[1] === frame
-          )
-        ) {
-          matchingFrames.push([matchingOldFrame, frame]);
-        }
-      } else {
-        newFrames.push(frame);
-      }
-    }
-
     // Sort by matching old frame offset
-    matchingFrames.sort(
+    this.matchingFrames.sort(
       ([oldFrameA], [oldFrameB]) =>
         oldFrameA.frameOffset! - oldFrameB.frameOffset!
     );
 
     // Calculate total sizes of new frames and matching frames
-    const totalSizeOfNewFrames = this.addedFrames.reduce(
+    const totalSizeOfAddedFrames = this.addedFrames.reduce(
       (totalSize, frame) => totalSize + frame.size + ID3Frame.HEADER_SIZE,
       0
     );
-    const totalSizeOfMatchingFrames = matchingFrames.reduce(
-      (totalSize, [oldFrame]) =>
-        totalSize + oldFrame.size + ID3Frame.HEADER_SIZE,
+    const totalSizeOfMatchingFrames = this.matchingFrames.reduce(
+      (totalSize, [oldFrame, newFrame]) => {
+        if (newFrame instanceof RemovedFrame) {
+          return totalSize;
+        }
+
+        return totalSize + oldFrame.size + ID3Frame.HEADER_SIZE;
+      },
       0
     );
-    const totalSizeOfFrames = totalSizeOfNewFrames - totalSizeOfMatchingFrames;
+    const totalSizeOfFrames =
+      totalSizeOfAddedFrames - totalSizeOfMatchingFrames; // TODO: this might be wrong. What happens when there are many matched frames and no added frames?
     const remainingPadding = this.paddingSize - totalSizeOfFrames;
 
     // --------------
@@ -228,7 +254,7 @@ export class ID3Tag {
     const segments: Buffer[] = [];
     let offset = 0;
 
-    for (const [oldFrame, newFrame] of matchingFrames) {
+    for (const [oldFrame, newFrame] of this.matchingFrames) {
       const segment = this.buffer.subarray(offset, oldFrame.frameOffset!);
 
       segments.push(segment, newFrame.serialize(this.version.minor));
@@ -240,7 +266,7 @@ export class ID3Tag {
     segments.push(this.buffer.subarray(offset));
 
     // Append new frames
-    for (const frame of newFrames) {
+    for (const frame of this.newFrames) {
       segments.push(frame.serialize(this.version.minor));
     }
 
@@ -288,9 +314,9 @@ export class ID3Tag {
       // TODO: Write new ID3 tag to MP3 file buffer
     }
 
-    console.log("new frames:", newFrames);
-    console.log("matching frames:", matchingFrames);
-    console.log("total size of new frames:", totalSizeOfNewFrames);
+    console.log("new frames:", this.newFrames);
+    console.log("matching frames:", this.matchingFrames);
+    console.log("total size of new frames:", totalSizeOfAddedFrames);
     console.log("total size of matching frames:", totalSizeOfMatchingFrames);
     console.log("original padding:", this.paddingSize);
     console.log("remaining padding:", remainingPadding);
