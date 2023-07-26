@@ -22,9 +22,11 @@ async function main() {
     // "/Users/dallanfreemantle/Desktop/Serato USB Latest/music/DUBZ/Mefjus & Emperor vs Jam Thieves - Flashizm vs Criminal Thugs (Emperor Edit).mp3"
   );
 
+  // Parse ID3 tag from file
   const id3Tag = new ID3Tag(file);
   console.log(id3Tag);
 
+  // Create new frames
   const markers = new SeratoMarkers2();
   markers
     .addColorTag([255, 255, 255])
@@ -48,11 +50,13 @@ async function main() {
     Buffer.from([0x00, 0x54, 0x72, 0x65, 0x61])
   );
 
+  // Update ID3 tag with new frames
   const updatedID3Tag = id3Tag.writeSeratoFrames(
     [updatedSeratoMarkers2, exampleTitleFrame],
     0
   );
 
+  // Write new ID3Tag to file
   if (!updatedID3Tag.needToCreateNewBuffer) {
     updatedID3Tag.buffer.copy(file);
 
