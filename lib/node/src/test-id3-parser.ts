@@ -50,11 +50,11 @@ async function main() {
     Buffer.from([0x00, 0x54, 0x72, 0x65, 0x61])
   );
 
+  id3Tag.addFrame(updatedSeratoMarkers2);
+  id3Tag.addFrame(exampleTitleFrame);
+
   // Update ID3 tag with new frames
-  const updatedID3Tag = id3Tag.writeSeratoFrames(
-    [updatedSeratoMarkers2, exampleTitleFrame],
-    0
-  );
+  const updatedID3Tag = id3Tag.writeFrames(0);
 
   // Write new ID3Tag to file
   if (!updatedID3Tag.needToCreateNewBuffer) {

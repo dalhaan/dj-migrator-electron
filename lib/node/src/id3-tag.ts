@@ -25,6 +25,7 @@ export class ID3Tag {
     value: number;
   };
   frames: ID3Frame[] = [];
+  newFrames: ID3Frame[] = [];
 
   constructor(buffer: Buffer) {
     let offset = 0;
@@ -167,12 +168,16 @@ export class ID3Tag {
     return this.buildHeader(size, "3DI");
   }
 
-  writeSeratoFrames(frames: ID3Frame[], paddingSize = 0) {
+  addFrame(frame: ID3Frame) {
+    this.newFrames.push(frame);
+  }
+
+  writeFrames(paddingSize = 0) {
     // Find existing frames that will be replaced
     const matchingFrames: [oldFrame: ID3Frame, newFrame: ID3Frame][] = [];
     const newFrames: ID3Frame[] = [];
 
-    for (const frame of frames) {
+    for (const frame of this.newFrames) {
       const matchingOldFrame = this.frames.find((oldFrame) => {
         if (oldFrame instanceof GeobFrame && frame instanceof GeobFrame) {
           return oldFrame.description === frame.description;
@@ -203,7 +208,7 @@ export class ID3Tag {
     );
 
     // Calculate total sizes of new frames and matching frames
-    const totalSizeOfNewFrames = frames.reduce(
+    const totalSizeOfNewFrames = this.newFrames.reduce(
       (totalSize, frame) => totalSize + frame.size + ID3Frame.HEADER_SIZE,
       0
     );
@@ -283,7 +288,7 @@ export class ID3Tag {
       // TODO: Write new ID3 tag to MP3 file buffer
     }
 
-    console.log("new frames:", frames);
+    console.log("new frames:", newFrames);
     console.log("matching frames:", matchingFrames);
     console.log("total size of new frames:", totalSizeOfNewFrames);
     console.log("total size of matching frames:", totalSizeOfMatchingFrames);
