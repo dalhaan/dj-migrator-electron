@@ -1,6 +1,9 @@
 {
   "name": "@dj-migrator/node",
   "version": "0.0.0",
+  "scripts": {
+    "test": "jest -c=jest.config.js --no-cache"
+  },
   "dependencies": {
     "@ffmpeg/core": "^0.11.0",
     "@ffmpeg/ffmpeg": "^0.11.6",
@@ -12,6 +15,10 @@
     "xmlbuilder2": "^3.1.1"
   },
   "devDependencies": {
-    "@types/xml2js": "^0.4.11"
+    "@types/jest": "^29.5.3",
+    "@types/xml2js": "^0.4.11",
+    "jest": "^29.6.1",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.1.6"
   }
 }
