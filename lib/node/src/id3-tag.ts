@@ -24,7 +24,7 @@ export class ID3Tag {
     hasFooter: boolean;
     value: number;
   };
-  frames = new Set<ID3Frame>();
+  frames: ID3Frame[] = [];
 
   constructor(buffer: Buffer) {
     let offset = 0;
@@ -118,7 +118,7 @@ export class ID3Tag {
 
       // Body (Tag.Size)
       if (type === "GEOB") {
-        this.frames.add(
+        this.frames.push(
           GeobFrame.parse(
             buffer.subarray(offset, offset + 10 + tagSize),
             this.version.minor,
@@ -126,7 +126,7 @@ export class ID3Tag {
           )
         );
       } else {
-        this.frames.add(
+        this.frames.push(
           UnknownFrame.parse(
             buffer.subarray(offset, offset + 10 + tagSize),
             this.version.minor,

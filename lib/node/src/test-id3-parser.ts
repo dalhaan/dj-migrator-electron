@@ -53,15 +53,11 @@ function writeSeratoFrames(
   paddingSize = 0
 ) {
   // Find existing frames that will be replaced
-  // const geobFrameDescriptions = frames.map((frame) => frame.description);
-  // const matchingFrames = id3Tag.GEOB.filter((frame) =>
-  //   geobFrameDescriptions.includes(frame.description)
-  // ).sort((frameA, frameB) => frameA.frameOffset! - frameB.frameOffset!);
   const matchingFrames: [oldFrame: ID3Frame, newFrame: ID3Frame][] = [];
   const newFrames: ID3Frame[] = [];
 
   for (const frame of frames) {
-    const matchingOldFrame = Array.from(id3Tag.frames).find((oldFrame) => {
+    const matchingOldFrame = id3Tag.frames.find((oldFrame) => {
       if (oldFrame instanceof GeobFrame && frame instanceof GeobFrame) {
         return oldFrame.description === frame.description;
       }
