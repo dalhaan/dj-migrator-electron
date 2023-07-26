@@ -59,19 +59,6 @@ function writeSeratoFrames(
   const matchingFrames: [oldFrame: GeobFrame, newFrame: GeobFrame][] = [];
   const newFrames: GeobFrame[] = [];
 
-  // Calculate total sizes of new frames and matching frames
-  const totalSizeOfNewFrames = frames.reduce(
-    (totalSize, frame) => totalSize + frame.size + ID3Frame.HEADER_SIZE,
-    0
-  );
-  const totalSizeOfMatchingFrames = matchingFrames.reduce(
-    (totalSize, [oldFrame]) => totalSize + oldFrame.size + ID3Frame.HEADER_SIZE,
-    0
-  );
-  const totalSizeOfFrames = totalSizeOfNewFrames - totalSizeOfMatchingFrames;
-
-  const remainingPadding = id3Tag.paddingSize - totalSizeOfFrames;
-
   for (const frame of frames) {
     const matchingOldFrame = id3Tag.GEOB.find(
       (oldFrame) => oldFrame.description === frame.description
@@ -97,6 +84,18 @@ function writeSeratoFrames(
     ([oldFrameA], [oldFrameB]) =>
       oldFrameA.frameOffset! - oldFrameB.frameOffset!
   );
+
+  // Calculate total sizes of new frames and matching frames
+  const totalSizeOfNewFrames = frames.reduce(
+    (totalSize, frame) => totalSize + frame.size + ID3Frame.HEADER_SIZE,
+    0
+  );
+  const totalSizeOfMatchingFrames = matchingFrames.reduce(
+    (totalSize, [oldFrame]) => totalSize + oldFrame.size + ID3Frame.HEADER_SIZE,
+    0
+  );
+  const totalSizeOfFrames = totalSizeOfNewFrames - totalSizeOfMatchingFrames;
+  const remainingPadding = id3Tag.paddingSize - totalSizeOfFrames;
 
   // --------------
   // Update ID3 tag
@@ -174,6 +173,7 @@ function writeSeratoFrames(
   console.log("matching frames:", matchingFrames);
   console.log("total size of new frames:", totalSizeOfNewFrames);
   console.log("total size of matching frames:", totalSizeOfMatchingFrames);
+  console.log("original padding:", id3Tag.paddingSize);
   console.log("remaining padding:", remainingPadding);
 
   return {
