@@ -11,6 +11,7 @@ import { GeobFrame } from "./geob-frame";
 import { ID3Frame } from "./id3-frame";
 import { SeratoMarkers2 } from "./serato-serializer/serialize-serato-markers2";
 import { ID3Tag } from "./id3-tag";
+import { UnknownFrame } from "./unknown-frame";
 
 function buildHeader(
   version: { minor: number; patch: number },
@@ -47,7 +48,7 @@ function buildFooter(
 }
 
 function writeSeratoFrames(
-  frames: GeobFrame[],
+  frames: ID3Frame[],
   id3Tag: ID3Tag,
   paddingSize = 0
 ) {
@@ -56,13 +57,17 @@ function writeSeratoFrames(
   // const matchingFrames = id3Tag.GEOB.filter((frame) =>
   //   geobFrameDescriptions.includes(frame.description)
   // ).sort((frameA, frameB) => frameA.frameOffset! - frameB.frameOffset!);
-  const matchingFrames: [oldFrame: GeobFrame, newFrame: GeobFrame][] = [];
-  const newFrames: GeobFrame[] = [];
+  const matchingFrames: [oldFrame: ID3Frame, newFrame: ID3Frame][] = [];
+  const newFrames: ID3Frame[] = [];
 
   for (const frame of frames) {
-    const matchingOldFrame = id3Tag.GEOB.find(
-      (oldFrame) => oldFrame.description === frame.description
-    );
+    const matchingOldFrame = Array.from(id3Tag.frames).find((oldFrame) => {
+      if (oldFrame instanceof GeobFrame && frame instanceof GeobFrame) {
+        return oldFrame.description === frame.description;
+      }
+
+      return oldFrame.type === frame.type;
+    });
 
     if (matchingOldFrame) {
       // Only match first instance (incase there are multiple frames with same description)
@@ -211,7 +216,17 @@ async function main() {
     base64Encode(markers.serialize())
   );
 
-  const updatedID3Tag = writeSeratoFrames([updatedSeratoMarkers2], id3Tag, 0);
+  const exampleTitleFrame = new UnknownFrame(
+    "TIT2",
+    0,
+    Buffer.from([0x00, 0x54, 0x72, 0x65, 0x61])
+  );
+
+  const updatedID3Tag = writeSeratoFrames(
+    [updatedSeratoMarkers2, exampleTitleFrame],
+    id3Tag,
+    0
+  );
 
   if (!updatedID3Tag.needToCreateNewBuffer) {
     updatedID3Tag.buffer.copy(file);
