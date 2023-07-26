@@ -25,7 +25,7 @@ export class ID3Tag {
     value: number;
   };
   frames: ID3Frame[] = [];
-  newFrames: ID3Frame[] = [];
+  addedFrames: ID3Frame[] = [];
 
   constructor(buffer: Buffer) {
     let offset = 0;
@@ -169,7 +169,7 @@ export class ID3Tag {
   }
 
   addFrame(frame: ID3Frame) {
-    this.newFrames.push(frame);
+    this.addedFrames.push(frame);
   }
 
   writeFrames(paddingSize = 0) {
@@ -177,7 +177,7 @@ export class ID3Tag {
     const matchingFrames: [oldFrame: ID3Frame, newFrame: ID3Frame][] = [];
     const newFrames: ID3Frame[] = [];
 
-    for (const frame of this.newFrames) {
+    for (const frame of this.addedFrames) {
       const matchingOldFrame = this.frames.find((oldFrame) => {
         if (oldFrame instanceof GeobFrame && frame instanceof GeobFrame) {
           return oldFrame.description === frame.description;
@@ -208,7 +208,7 @@ export class ID3Tag {
     );
 
     // Calculate total sizes of new frames and matching frames
-    const totalSizeOfNewFrames = this.newFrames.reduce(
+    const totalSizeOfNewFrames = this.addedFrames.reduce(
       (totalSize, frame) => totalSize + frame.size + ID3Frame.HEADER_SIZE,
       0
     );
