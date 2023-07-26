@@ -9,6 +9,7 @@ export class GeobFrame extends ID3Frame {
   body: Buffer;
 
   constructor(
+    flags: number,
     textEncoding: number,
     mimeType: string,
     fileName: string,
@@ -26,7 +27,7 @@ export class GeobFrame extends ID3Frame {
       1 +
       body.byteLength;
 
-    super("GEOB", size, frameOffset);
+    super("GEOB", size, flags, frameOffset);
 
     this.textEncoding = textEncoding;
     this.mimeType = mimeType;
@@ -51,6 +52,7 @@ export class GeobFrame extends ID3Frame {
     offset += 4;
 
     // Flags (2)
+    const flags = buffer.readUInt16BE(offset);
     offset += 2;
 
     // GEOB frame body
@@ -80,6 +82,7 @@ export class GeobFrame extends ID3Frame {
     const body = buffer.subarray(offset);
 
     return new GeobFrame(
+      flags,
       textEncoding,
       mimeType,
       fileName,
@@ -103,7 +106,7 @@ export class GeobFrame extends ID3Frame {
     );
 
     // Flags
-    offset = buffer.writeUint16BE(0, offset);
+    offset = buffer.writeUint16BE(this.flags, offset);
 
     // Body
     // Text encoding

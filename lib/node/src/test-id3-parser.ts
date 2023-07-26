@@ -204,6 +204,7 @@ async function main() {
 
   const updatedSeratoMarkers2 = new GeobFrame(
     0,
+    0,
     "application/octet-stream",
     "",
     "Serato Markers2",

@@ -1,6 +1,8 @@
 import assert from "assert";
 import { GeobFrame } from "./geob-frame";
 import { readUint32SyncSafe } from "./utils";
+import { ID3Frame } from "./id3-frame";
+import { UnknownFrame } from "./unknown-frame";
 
 export class ID3Tag {
   buffer: Buffer;
@@ -23,6 +25,7 @@ export class ID3Tag {
     value: number;
   };
   GEOB: GeobFrame[];
+  unknown: ID3Frame[] = [];
 
   constructor(buffer: Buffer) {
     let offset = 0;
@@ -119,6 +122,14 @@ export class ID3Tag {
       if (type === "GEOB") {
         geobFrames.push(
           GeobFrame.parse(
+            buffer.subarray(offset, offset + 10 + tagSize),
+            this.version.minor,
+            offset
+          )
+        );
+      } else {
+        this.unknown.push(
+          UnknownFrame.parse(
             buffer.subarray(offset, offset + 10 + tagSize),
             this.version.minor,
             offset

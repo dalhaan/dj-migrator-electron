@@ -3,13 +3,15 @@ export abstract class ID3Frame {
   static HEADER_SIZE = 8;
 
   type: string;
-  size: number;
   frameOffset?: number;
+  size: number;
+  flags: number;
 
-  constructor(type: string, size: number, frameOffset?: number) {
+  constructor(type: string, size: number, flags: number, frameOffset?: number) {
     this.type = type;
-    this.size = size;
     this.frameOffset = frameOffset;
+    this.size = size;
+    this.flags = flags;
   }
 
   static parse: (
