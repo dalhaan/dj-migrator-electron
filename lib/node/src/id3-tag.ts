@@ -247,7 +247,7 @@ export class ID3Tag {
       0
     );
     const totalSizeOfFrames =
-      totalSizeOfAddedFrames - totalSizeOfMatchingFrames; // TODO: this might be wrong. What happens when there are many matched frames and no added frames?
+      totalSizeOfAddedFrames - totalSizeOfMatchingFrames;
     const remainingPadding = this.paddingSize - totalSizeOfFrames;
 
     // --------------

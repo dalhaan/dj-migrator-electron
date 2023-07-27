@@ -72,7 +72,7 @@ const headerPaddingFooter = [
   0x49, 0x44, 0x33, 0x03, 0x00, 0x10, 0x00, 0x00, 0x02, 0x25,
 ];
 const footerPadding = [
-  0x33, 0x49, 0x44, 0x03, 0x00, 0x10, 0x00, 0x00, 0x02, 0x25,
+  0x33, 0x44, 0x49, 0x03, 0x00, 0x10, 0x00, 0x00, 0x02, 0x25,
 ];
 
 const id3v23NoPaddingBuffer = Buffer.from([
@@ -388,6 +388,64 @@ test("ID3v2.3 - padding - replacing text frame", () => {
       ...geobSeratoBeatGridFrame,
       // Padding (34B)
       ...expectedPadding,
+    ])
+  );
+});
+
+test("ID3v2.3 - padding & footer - replacing text frame", () => {
+  const id3Tag = new ID3Tag(id3v23PaddingFooterBuffer);
+
+  const newTit2Frame = new UnknownFrame(
+    "TIT2",
+    0,
+    Buffer.from([0x00, 0x44, 0x72, 0x65, 0x61, 0x6d])
+  );
+  id3Tag.addFrame(newTit2Frame);
+
+  const { buffer, needToCreateNewBuffer } = id3Tag.writeFrames(0);
+
+  const expectedTit2Frame = [
+    0x54, 0x49, 0x54, 0x32, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x44,
+    0x72, 0x65, 0x61, 0x6d,
+  ];
+
+  const expectedPadding = [
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  ];
+
+  // Header
+  expect(needToCreateNewBuffer).toEqual(false);
+  expect(buffer).toEqual(
+    Buffer.from([
+      // Header
+      ...headerPaddingFooter,
+      // TIT2 frame
+      ...expectedTit2Frame,
+      // TPE1 frame
+      ...tpe1Frame,
+      // TALB frame
+      ...talbFrame,
+      // TCON frame
+      ...tconFrame,
+      // TPUB frame
+      ...tpubFrame,
+      // TYER frame
+      ...tyerFrame,
+      // TKEY frame
+      ...tkeyFrame,
+      // TXXX frame
+      ...txxxFrame,
+      // RVAD frame
+      ...rvadFrame,
+      // TBPM frame
+      ...tbpmFrame,
+      // GEOB Serato BeatGrid frame
+      ...geobSeratoBeatGridFrame,
+      // Padding (34B)
+      ...expectedPadding,
+      ...footerPadding,
     ])
   );
 });
