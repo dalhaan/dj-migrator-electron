@@ -201,11 +201,13 @@ export class ID3Tag {
     }
   }
 
-  removeGeobFrame(matcher: (frame: GeobFrame) => boolean) {
+  removeFrame<FrameType extends ID3Frame>(
+    matcher: (frame: FrameType) => boolean
+  ) {
     const matchingOldFrame = this.frames.find((frame) => {
-      if (frame instanceof GeobFrame) {
-        return matcher(frame);
-      }
+      try {
+        return matcher(frame as any);
+      } catch (e) {}
     });
 
     if (matchingOldFrame) {
