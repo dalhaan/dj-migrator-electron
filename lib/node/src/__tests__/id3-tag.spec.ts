@@ -11,7 +11,7 @@ const headerNoPaddingFooter = [
   0x49, 0x44, 0x33, 0x03, 0x00, 0x10, 0x00, 0x00, 0x02, 0x05,
 ];
 const footerNoPadding = [
-  0x33, 0x49, 0x44, 0x03, 0x00, 0x10, 0x00, 0x00, 0x02, 0x05,
+  0x33, 0x44, 0x49, 0x03, 0x00, 0x10, 0x00, 0x00, 0x02, 0x05,
 ];
 
 const tit2Frame = [
@@ -281,239 +281,6 @@ test("ID3v2.3 - no padding - parses", () => {
   testFrames(id3Tag);
 });
 
-test("ID3v2.3 - no padding & footer - parses", () => {
-  const id3Tag = new ID3Tag(id3v23NoPaddingFooterBuffer);
-  // Header
-  expect(id3Tag.id3TagSize).toEqual(281);
-  expect(id3Tag.version.minor).toEqual(3);
-  expect(id3Tag.version.patch).toEqual(0);
-  expect(id3Tag.size).toEqual(261);
-  expect(id3Tag.flags.value).toEqual(0b00010000);
-  expect(id3Tag.flags.experimentalIndicator).toEqual(false);
-  expect(id3Tag.flags.hasExtendedHeader).toEqual(false);
-  expect(id3Tag.flags.hasFooter).toEqual(true);
-  expect(id3Tag.flags.unsynchronisation).toEqual(false);
-  expect(id3Tag.paddingSize).toEqual(0);
-
-  // Frames
-  testFrames(id3Tag);
-});
-
-test("ID3v2.3 - padding - parses", () => {
-  const id3Tag = new ID3Tag(id3v23PaddingBuffer);
-  // Header
-  expect(id3Tag.id3TagSize).toEqual(303);
-  expect(id3Tag.version.minor).toEqual(3);
-  expect(id3Tag.version.patch).toEqual(0);
-  expect(id3Tag.size).toEqual(293);
-  expect(id3Tag.flags.value).toEqual(0);
-  expect(id3Tag.flags.experimentalIndicator).toEqual(false);
-  expect(id3Tag.flags.hasExtendedHeader).toEqual(false);
-  expect(id3Tag.flags.hasFooter).toEqual(false);
-  expect(id3Tag.flags.unsynchronisation).toEqual(false);
-  expect(id3Tag.paddingSize).toEqual(32);
-
-  // Frames
-  testFrames(id3Tag);
-});
-
-test("ID3v2.3 - padding & footer - parses", () => {
-  const id3Tag = new ID3Tag(id3v23PaddingFooterBuffer);
-  // Header
-  expect(id3Tag.id3TagSize).toEqual(313);
-  expect(id3Tag.version.minor).toEqual(3);
-  expect(id3Tag.version.patch).toEqual(0);
-  expect(id3Tag.size).toEqual(293);
-  expect(id3Tag.flags.value).toEqual(0b00010000);
-  expect(id3Tag.flags.experimentalIndicator).toEqual(false);
-  expect(id3Tag.flags.hasExtendedHeader).toEqual(false);
-  expect(id3Tag.flags.hasFooter).toEqual(true);
-  expect(id3Tag.flags.unsynchronisation).toEqual(false);
-  expect(id3Tag.paddingSize).toEqual(32);
-
-  // Frames
-  testFrames(id3Tag);
-});
-
-test("ID3v2.3 - padding - replacing text frame", () => {
-  const id3Tag = new ID3Tag(id3v23PaddingBuffer);
-
-  const newTit2Frame = new UnknownFrame(
-    "TIT2",
-    0,
-    Buffer.from([0x00, 0x44, 0x72, 0x65, 0x61, 0x6d])
-  );
-  id3Tag.addFrame(newTit2Frame);
-
-  const { buffer, needToCreateNewBuffer } = id3Tag.writeFrames(0);
-
-  const expectedTit2Frame = [
-    0x54, 0x49, 0x54, 0x32, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x44,
-    0x72, 0x65, 0x61, 0x6d,
-  ];
-
-  const expectedPadding = [
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  ];
-
-  // Header
-  expect(needToCreateNewBuffer).toEqual(false);
-  expect(buffer).toEqual(
-    Buffer.from([
-      // Header
-      ...headerPadding,
-      // TIT2 frame
-      ...expectedTit2Frame,
-      // TPE1 frame
-      ...tpe1Frame,
-      // TALB frame
-      ...talbFrame,
-      // TCON frame
-      ...tconFrame,
-      // TPUB frame
-      ...tpubFrame,
-      // TYER frame
-      ...tyerFrame,
-      // TKEY frame
-      ...tkeyFrame,
-      // TXXX frame
-      ...txxxFrame,
-      // RVAD frame
-      ...rvadFrame,
-      // TBPM frame
-      ...tbpmFrame,
-      // GEOB Serato BeatGrid frame
-      ...geobSeratoBeatGridFrame,
-      // Padding (34B)
-      ...expectedPadding,
-    ])
-  );
-});
-
-test("ID3v2.3 - padding & footer - replacing text frame", () => {
-  const id3Tag = new ID3Tag(id3v23PaddingFooterBuffer);
-
-  const newTit2Frame = new UnknownFrame(
-    "TIT2",
-    0,
-    Buffer.from([0x00, 0x44, 0x72, 0x65, 0x61, 0x6d])
-  );
-  id3Tag.addFrame(newTit2Frame);
-
-  const { buffer, needToCreateNewBuffer } = id3Tag.writeFrames(0);
-
-  const expectedTit2Frame = [
-    0x54, 0x49, 0x54, 0x32, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x44,
-    0x72, 0x65, 0x61, 0x6d,
-  ];
-
-  const expectedPadding = [
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  ];
-
-  // Header
-  expect(needToCreateNewBuffer).toEqual(false);
-  expect(buffer).toEqual(
-    Buffer.from([
-      // Header
-      ...headerPaddingFooter,
-      // TIT2 frame
-      ...expectedTit2Frame,
-      // TPE1 frame
-      ...tpe1Frame,
-      // TALB frame
-      ...talbFrame,
-      // TCON frame
-      ...tconFrame,
-      // TPUB frame
-      ...tpubFrame,
-      // TYER frame
-      ...tyerFrame,
-      // TKEY frame
-      ...tkeyFrame,
-      // TXXX frame
-      ...txxxFrame,
-      // RVAD frame
-      ...rvadFrame,
-      // TBPM frame
-      ...tbpmFrame,
-      // GEOB Serato BeatGrid frame
-      ...geobSeratoBeatGridFrame,
-      // Padding (34B)
-      ...expectedPadding,
-      ...footerPadding,
-    ])
-  );
-});
-
-test("ID3v2.3 - padding - replacing GEOB frame", () => {
-  const id3Tag = new ID3Tag(id3v23PaddingBuffer);
-
-  const newSeratoBeatGridFrame = new GeobFrame(
-    0,
-    0,
-    "application/octet-stream",
-    "",
-    "Serato BeatGrid",
-    Buffer.from([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-  );
-  id3Tag.addFrame(newSeratoBeatGridFrame);
-
-  const { buffer, needToCreateNewBuffer } = id3Tag.writeFrames(0);
-
-  const expectedGeobFrameBuffer = [
-    0x47, 0x45, 0x4f, 0x42, 0x00, 0x00, 0x00, 0x32, 0x00, 0x00, 0x00, 0x61,
-    0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x6f,
-    0x63, 0x74, 0x65, 0x74, 0x2d, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x00,
-    0x00, 0x53, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x20, 0x42, 0x65, 0x61, 0x74,
-    0x47, 0x72, 0x69, 0x64, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-  ];
-
-  const expectedPadding = [
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00,
-  ];
-
-  // Header
-  expect(needToCreateNewBuffer).toEqual(false);
-  expect(buffer).toEqual(
-    Buffer.from([
-      // Header
-      ...headerPadding,
-      // TIT2 frame
-      ...tit2Frame,
-      // TPE1 frame
-      ...tpe1Frame,
-      // TALB frame
-      ...talbFrame,
-      // TCON frame
-      ...tconFrame,
-      // TPUB frame
-      ...tpubFrame,
-      // TYER frame
-      ...tyerFrame,
-      // TKEY frame
-      ...tkeyFrame,
-      // TXXX frame
-      ...txxxFrame,
-      // RVAD frame
-      ...rvadFrame,
-      // TBPM frame
-      ...tbpmFrame,
-      // GEOB Serato BeatGrid frame
-      ...expectedGeobFrameBuffer,
-      // Padding (41B)
-      ...expectedPadding,
-    ])
-  );
-});
-
 test("ID3v2.3 - no padding - removing frame", () => {
   const id3Tag = new ID3Tag(id3v23NoPaddingBuffer);
 
@@ -626,6 +393,487 @@ test("ID3v2.3 - no padding - adding text frame w/ padding", () => {
       ...expectedNewwFrame,
       // Padding (34B)
       ...expectedPadding,
+    ])
+  );
+});
+
+test("ID3v2.3 - no padding & footer - parses", () => {
+  const id3Tag = new ID3Tag(id3v23NoPaddingFooterBuffer);
+  // Header
+  expect(id3Tag.id3TagSize).toEqual(281);
+  expect(id3Tag.version.minor).toEqual(3);
+  expect(id3Tag.version.patch).toEqual(0);
+  expect(id3Tag.size).toEqual(261);
+  expect(id3Tag.flags.value).toEqual(0b00010000);
+  expect(id3Tag.flags.experimentalIndicator).toEqual(false);
+  expect(id3Tag.flags.hasExtendedHeader).toEqual(false);
+  expect(id3Tag.flags.hasFooter).toEqual(true);
+  expect(id3Tag.flags.unsynchronisation).toEqual(false);
+  expect(id3Tag.paddingSize).toEqual(0);
+
+  // Frames
+  testFrames(id3Tag);
+});
+
+test("ID3v2.3 - no padding & footer - removing frame", () => {
+  const id3Tag = new ID3Tag(id3v23NoPaddingFooterBuffer);
+
+  id3Tag.removeFrame<GeobFrame>(
+    (frame) => frame.description === "Serato BeatGrid"
+  );
+
+  const { buffer, needToCreateNewBuffer } = id3Tag.writeFrames();
+
+  const reparsed = new ID3Tag(buffer);
+
+  const expectedPadding = [
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  ];
+
+  expect(needToCreateNewBuffer).toEqual(false);
+  expect(reparsed.size).toEqual(id3Tag.size);
+  expect(reparsed.id3TagSize).toEqual(id3Tag.id3TagSize);
+  expect(buffer).toEqual(
+    Buffer.from([
+      // Header
+      ...headerNoPaddingFooter,
+      // TIT2 frame
+      ...tit2Frame,
+      // TPE1 frame
+      ...tpe1Frame,
+      // TALB frame
+      ...talbFrame,
+      // TCON frame
+      ...tconFrame,
+      // TPUB frame
+      ...tpubFrame,
+      // TYER frame
+      ...tyerFrame,
+      // TKEY frame
+      ...tkeyFrame,
+      // TXXX frame
+      ...txxxFrame,
+      // RVAD frame
+      ...rvadFrame,
+      // TBPM frame
+      ...tbpmFrame,
+      // Padding
+      ...expectedPadding,
+      ...footerNoPadding,
+    ])
+  );
+});
+
+test("ID3v2.3 - no padding & footer - adding text frame w/ padding", () => {
+  const id3Tag = new ID3Tag(id3v23NoPaddingFooterBuffer);
+
+  const newTit2Frame = new UnknownFrame(
+    "NEWW",
+    0,
+    Buffer.from([0x00, 0x44, 0x72, 0x65, 0x61, 0x6d])
+  );
+  id3Tag.addFrame(newTit2Frame);
+
+  const { buffer, needToCreateNewBuffer } = id3Tag.writeFrames(8);
+
+  const reparsed = new ID3Tag(buffer);
+
+  const expectedHeader = [
+    0x49, 0x44, 0x33, 0x03, 0x00, 0x10, 0x00, 0x00, 0x02, 0x1d,
+  ];
+
+  const expectedNewwFrame = [
+    0x4e, 0x45, 0x57, 0x57, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x44,
+    0x72, 0x65, 0x61, 0x6d,
+  ];
+
+  const expectedPadding = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+
+  const expectedFooter = [
+    0x33, 0x44, 0x49, 0x03, 0x00, 0x10, 0x00, 0x00, 0x02, 0x1d,
+  ];
+
+  // Header
+  expect(needToCreateNewBuffer).toEqual(true);
+  expect(buffer.length).toEqual(reparsed.id3TagSize);
+  expect(reparsed.size).toEqual(285);
+  expect(reparsed.paddingSize).toEqual(8);
+  expect(buffer).toEqual(
+    Buffer.from([
+      // Header
+      ...expectedHeader,
+      // TIT2 frame
+      ...tit2Frame,
+      // TPE1 frame
+      ...tpe1Frame,
+      // TALB frame
+      ...talbFrame,
+      // TCON frame
+      ...tconFrame,
+      // TPUB frame
+      ...tpubFrame,
+      // TYER frame
+      ...tyerFrame,
+      // TKEY frame
+      ...tkeyFrame,
+      // TXXX frame
+      ...txxxFrame,
+      // RVAD frame
+      ...rvadFrame,
+      // TBPM frame
+      ...tbpmFrame,
+      // GEOB Serato BeatGrid frame
+      ...geobSeratoBeatGridFrame,
+      ...expectedNewwFrame,
+      // Padding (34B)
+      ...expectedPadding,
+      ...expectedFooter,
+    ])
+  );
+});
+
+test("ID3v2.3 - padding - parses", () => {
+  const id3Tag = new ID3Tag(id3v23PaddingBuffer);
+  // Header
+  expect(id3Tag.id3TagSize).toEqual(303);
+  expect(id3Tag.version.minor).toEqual(3);
+  expect(id3Tag.version.patch).toEqual(0);
+  expect(id3Tag.size).toEqual(293);
+  expect(id3Tag.flags.value).toEqual(0);
+  expect(id3Tag.flags.experimentalIndicator).toEqual(false);
+  expect(id3Tag.flags.hasExtendedHeader).toEqual(false);
+  expect(id3Tag.flags.hasFooter).toEqual(false);
+  expect(id3Tag.flags.unsynchronisation).toEqual(false);
+  expect(id3Tag.paddingSize).toEqual(32);
+
+  // Frames
+  testFrames(id3Tag);
+});
+
+test("ID3v2.3 - padding - replacing text frame", () => {
+  const id3Tag = new ID3Tag(id3v23PaddingBuffer);
+
+  const newTit2Frame = new UnknownFrame(
+    "TIT2",
+    0,
+    Buffer.from([0x00, 0x44, 0x72, 0x65, 0x61, 0x6d])
+  );
+  id3Tag.addFrame(newTit2Frame);
+
+  const { buffer, needToCreateNewBuffer } = id3Tag.writeFrames(0);
+
+  const expectedTit2Frame = [
+    0x54, 0x49, 0x54, 0x32, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x44,
+    0x72, 0x65, 0x61, 0x6d,
+  ];
+
+  const expectedPadding = [
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  ];
+
+  // Header
+  expect(needToCreateNewBuffer).toEqual(false);
+  expect(buffer).toEqual(
+    Buffer.from([
+      // Header
+      ...headerPadding,
+      // TIT2 frame
+      ...expectedTit2Frame,
+      // TPE1 frame
+      ...tpe1Frame,
+      // TALB frame
+      ...talbFrame,
+      // TCON frame
+      ...tconFrame,
+      // TPUB frame
+      ...tpubFrame,
+      // TYER frame
+      ...tyerFrame,
+      // TKEY frame
+      ...tkeyFrame,
+      // TXXX frame
+      ...txxxFrame,
+      // RVAD frame
+      ...rvadFrame,
+      // TBPM frame
+      ...tbpmFrame,
+      // GEOB Serato BeatGrid frame
+      ...geobSeratoBeatGridFrame,
+      // Padding (34B)
+      ...expectedPadding,
+    ])
+  );
+});
+
+test("ID3v2.3 - padding - adding text frame w/ padding", () => {
+  const id3Tag = new ID3Tag(id3v23PaddingBuffer);
+
+  const newTit2Frame = new UnknownFrame(
+    "NEWW",
+    0,
+    Buffer.from([0x00, 0x44, 0x72, 0x65, 0x61, 0x6d])
+  );
+  id3Tag.addFrame(newTit2Frame);
+
+  const { buffer, needToCreateNewBuffer } = id3Tag.writeFrames(8);
+
+  const reparsed = new ID3Tag(buffer);
+
+  const expectedNewwFrame = [
+    0x4e, 0x45, 0x57, 0x57, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x44,
+    0x72, 0x65, 0x61, 0x6d,
+  ];
+
+  const expectedPadding = [
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+  ];
+
+  // Header
+  expect(needToCreateNewBuffer).toEqual(false);
+  expect(buffer.length).toEqual(reparsed.id3TagSize);
+  expect(reparsed.size).toEqual(293);
+  expect(reparsed.paddingSize).toEqual(16);
+  expect(buffer).toEqual(
+    Buffer.from([
+      // Header
+      ...headerPadding,
+      // TIT2 frame
+      ...tit2Frame,
+      // TPE1 frame
+      ...tpe1Frame,
+      // TALB frame
+      ...talbFrame,
+      // TCON frame
+      ...tconFrame,
+      // TPUB frame
+      ...tpubFrame,
+      // TYER frame
+      ...tyerFrame,
+      // TKEY frame
+      ...tkeyFrame,
+      // TXXX frame
+      ...txxxFrame,
+      // RVAD frame
+      ...rvadFrame,
+      // TBPM frame
+      ...tbpmFrame,
+      // GEOB Serato BeatGrid frame
+      ...geobSeratoBeatGridFrame,
+      ...expectedNewwFrame,
+      // Padding (34B)
+      ...expectedPadding,
+    ])
+  );
+});
+
+test("ID3v2.3 - padding & footer - parses", () => {
+  const id3Tag = new ID3Tag(id3v23PaddingFooterBuffer);
+  // Header
+  expect(id3Tag.id3TagSize).toEqual(313);
+  expect(id3Tag.version.minor).toEqual(3);
+  expect(id3Tag.version.patch).toEqual(0);
+  expect(id3Tag.size).toEqual(293);
+  expect(id3Tag.flags.value).toEqual(0b00010000);
+  expect(id3Tag.flags.experimentalIndicator).toEqual(false);
+  expect(id3Tag.flags.hasExtendedHeader).toEqual(false);
+  expect(id3Tag.flags.hasFooter).toEqual(true);
+  expect(id3Tag.flags.unsynchronisation).toEqual(false);
+  expect(id3Tag.paddingSize).toEqual(32);
+
+  // Frames
+  testFrames(id3Tag);
+});
+
+test("ID3v2.3 - padding & footer - replacing text frame", () => {
+  const id3Tag = new ID3Tag(id3v23PaddingFooterBuffer);
+
+  const newTit2Frame = new UnknownFrame(
+    "TIT2",
+    0,
+    Buffer.from([0x00, 0x44, 0x72, 0x65, 0x61, 0x6d])
+  );
+  id3Tag.addFrame(newTit2Frame);
+
+  const { buffer, needToCreateNewBuffer } = id3Tag.writeFrames(0);
+
+  const expectedTit2Frame = [
+    0x54, 0x49, 0x54, 0x32, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x44,
+    0x72, 0x65, 0x61, 0x6d,
+  ];
+
+  const expectedPadding = [
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  ];
+
+  // Header
+  expect(needToCreateNewBuffer).toEqual(false);
+  expect(buffer).toEqual(
+    Buffer.from([
+      // Header
+      ...headerPaddingFooter,
+      // TIT2 frame
+      ...expectedTit2Frame,
+      // TPE1 frame
+      ...tpe1Frame,
+      // TALB frame
+      ...talbFrame,
+      // TCON frame
+      ...tconFrame,
+      // TPUB frame
+      ...tpubFrame,
+      // TYER frame
+      ...tyerFrame,
+      // TKEY frame
+      ...tkeyFrame,
+      // TXXX frame
+      ...txxxFrame,
+      // RVAD frame
+      ...rvadFrame,
+      // TBPM frame
+      ...tbpmFrame,
+      // GEOB Serato BeatGrid frame
+      ...geobSeratoBeatGridFrame,
+      // Padding (34B)
+      ...expectedPadding,
+      ...footerPadding,
+    ])
+  );
+});
+
+test("ID3v2.3 - padding & footer - replacing GEOB frame", () => {
+  const id3Tag = new ID3Tag(id3v23PaddingFooterBuffer);
+
+  const newSeratoBeatGridFrame = new GeobFrame(
+    0,
+    0,
+    "application/octet-stream",
+    "",
+    "Serato BeatGrid",
+    Buffer.from([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+  );
+  id3Tag.addFrame(newSeratoBeatGridFrame);
+
+  const { buffer, needToCreateNewBuffer } = id3Tag.writeFrames(0);
+
+  const expectedGeobFrameBuffer = [
+    0x47, 0x45, 0x4f, 0x42, 0x00, 0x00, 0x00, 0x32, 0x00, 0x00, 0x00, 0x61,
+    0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x6f,
+    0x63, 0x74, 0x65, 0x74, 0x2d, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x00,
+    0x00, 0x53, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x20, 0x42, 0x65, 0x61, 0x74,
+    0x47, 0x72, 0x69, 0x64, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+  ];
+
+  const expectedPadding = [
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00,
+  ];
+
+  // Header
+  expect(needToCreateNewBuffer).toEqual(false);
+  expect(buffer).toEqual(
+    Buffer.from([
+      // Header
+      ...headerPaddingFooter,
+      // TIT2 frame
+      ...tit2Frame,
+      // TPE1 frame
+      ...tpe1Frame,
+      // TALB frame
+      ...talbFrame,
+      // TCON frame
+      ...tconFrame,
+      // TPUB frame
+      ...tpubFrame,
+      // TYER frame
+      ...tyerFrame,
+      // TKEY frame
+      ...tkeyFrame,
+      // TXXX frame
+      ...txxxFrame,
+      // RVAD frame
+      ...rvadFrame,
+      // TBPM frame
+      ...tbpmFrame,
+      // GEOB Serato BeatGrid frame
+      ...expectedGeobFrameBuffer,
+      // Padding (41B)
+      ...expectedPadding,
+      ...footerPadding,
+    ])
+  );
+});
+
+test("ID3v2.3 - padding & footer - adding text frame w/ padding", () => {
+  const id3Tag = new ID3Tag(id3v23PaddingFooterBuffer);
+
+  const newTit2Frame = new UnknownFrame(
+    "NEWW",
+    0,
+    Buffer.from([0x00, 0x44, 0x72, 0x65, 0x61, 0x6d])
+  );
+  id3Tag.addFrame(newTit2Frame);
+
+  const { buffer, needToCreateNewBuffer } = id3Tag.writeFrames(8);
+
+  const reparsed = new ID3Tag(buffer);
+
+  const expectedNewwFrame = [
+    0x4e, 0x45, 0x57, 0x57, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x44,
+    0x72, 0x65, 0x61, 0x6d,
+  ];
+
+  const expectedPadding = [
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+  ];
+
+  // Header
+  expect(needToCreateNewBuffer).toEqual(false);
+  expect(buffer.length).toEqual(reparsed.id3TagSize);
+  expect(reparsed.size).toEqual(293);
+  expect(reparsed.paddingSize).toEqual(16);
+  expect(buffer).toEqual(
+    Buffer.from([
+      // Header
+      ...headerPaddingFooter,
+      // TIT2 frame
+      ...tit2Frame,
+      // TPE1 frame
+      ...tpe1Frame,
+      // TALB frame
+      ...talbFrame,
+      // TCON frame
+      ...tconFrame,
+      // TPUB frame
+      ...tpubFrame,
+      // TYER frame
+      ...tyerFrame,
+      // TKEY frame
+      ...tkeyFrame,
+      // TXXX frame
+      ...txxxFrame,
+      // RVAD frame
+      ...rvadFrame,
+      // TBPM frame
+      ...tbpmFrame,
+      // GEOB Serato BeatGrid frame
+      ...geobSeratoBeatGridFrame,
+      ...expectedNewwFrame,
+      // Padding (34B)
+      ...expectedPadding,
+      ...footerPadding,
     ])
   );
 });
