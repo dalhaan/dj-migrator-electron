@@ -1,6 +1,6 @@
 export abstract class ID3Frame {
-  // Type (ascii32) + Size (UInt32BE/UIntSyncSafe32BE) = 64bits/8bytes
-  static HEADER_SIZE = 8;
+  // Type (ascii32) + Size (UInt32BE/UIntSyncSafe32BE) + Flags (UInt16BE) = 64bits/8bytes
+  static HEADER_SIZE = 10;
 
   type: string;
   frameOffset?: number;

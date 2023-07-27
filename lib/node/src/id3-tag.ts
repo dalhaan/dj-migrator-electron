@@ -6,6 +6,8 @@ import { UnknownFrame } from "./unknown-frame";
 import { RemovedFrame } from "./removed-frame";
 
 export class ID3Tag {
+  static HEADER_SIZE = 10;
+
   buffer: Buffer;
   version: {
     minor: number;
@@ -151,7 +153,7 @@ export class ID3Tag {
   }
 
   buildHeader(size: number, identifier: "ID3" | "3DI" = "ID3"): Buffer {
-    const buffer = Buffer.alloc(ID3Frame.HEADER_SIZE);
+    const buffer = Buffer.alloc(ID3Tag.HEADER_SIZE);
 
     let offset = 0;
 
@@ -261,7 +263,7 @@ export class ID3Tag {
 
       segments.push(segment, newFrame.serialize(this.version.minor));
 
-      offset = oldFrame.frameOffset! + ID3Frame.HEADER_SIZE + 2 + oldFrame.size;
+      offset = oldFrame.frameOffset! + ID3Frame.HEADER_SIZE + oldFrame.size;
     }
 
     // Add remaining old farmes
