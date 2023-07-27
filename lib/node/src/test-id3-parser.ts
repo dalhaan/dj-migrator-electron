@@ -52,7 +52,9 @@ async function main() {
 
   id3Tag.addFrame(updatedSeratoMarkers2);
   id3Tag.addFrame(exampleTitleFrame);
-  id3Tag.removeGeobFrame((frame) => frame.description === "Serato Markers_");
+  id3Tag.removeFrame<GeobFrame>(
+    (frame) => frame.description === "Serato Markers_"
+  );
 
   // Update ID3 tag with new frames
   const updatedID3Tag = id3Tag.writeFrames(0);
