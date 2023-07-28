@@ -93,7 +93,7 @@ export class ID3Tag {
       // Body (Size - 4B)
       const extendedHeaderBody = buffer.subarray(
         offset,
-        extendedHeaderSize - 4
+        offset + extendedHeaderSize - 4
       );
       offset += extendedHeaderSize - 4;
 
