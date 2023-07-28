@@ -27,7 +27,7 @@ import {
   tpubFrame,
   txxxFrame,
   tyerFrame,
-} from "./fixtures/id3-2-4.fixture";
+} from "./fixtures/id3-2-3.fixture";
 
 console.log(getSynch(0x21d));
 console.log(toSynch(285 + 8).toString(16));
@@ -232,8 +232,23 @@ test("ID3v2.3 - no padding & ext header - removing frame", () => {
   ];
 
   expect(needToCreateNewBuffer).toEqual(false);
+  expect(reparsed.flags.hasExtendedHeader).toEqual(true);
   expect(reparsed.size).toEqual(id3Tag.size);
   expect(reparsed.id3TagSize).toEqual(id3Tag.id3TagSize);
+  expect(reparsed.extendedHeader?.size).toEqual(8);
+  expect(reparsed.extendedHeader?.body).toEqual(
+    Buffer.from([
+      // Num flag bytes
+      0x01,
+      // Extended flags (0bcd0000)
+      0b00010000,
+      // Tag restrictions
+      // Flag data length
+      0x01,
+      // Restrictions (ppqrrstt)
+      0b00001000,
+    ])
+  );
   expect(buffer).toEqual(
     Buffer.from([
       // Header
