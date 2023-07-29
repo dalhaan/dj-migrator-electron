@@ -51,11 +51,11 @@ test("ID3v2.3 - no padding - parses", () => {
   expect(id3Tag.version.minor).toEqual(3);
   expect(id3Tag.version.patch).toEqual(0);
   expect(id3Tag.size).toEqual(261);
-  expect(id3Tag.flags.value).toEqual(0);
-  expect(id3Tag.flags.experimentalIndicator).toEqual(false);
-  expect(id3Tag.flags.hasExtendedHeader).toEqual(false);
-  expect(id3Tag.flags.hasFooter).toEqual(false);
-  expect(id3Tag.flags.unsynchronisation).toEqual(false);
+  expect(id3Tag.flags).toEqual(0);
+  expect(id3Tag.flagExperimentalIndicator).toEqual(false);
+  expect(id3Tag.flagHasExtendedHeader).toEqual(false);
+  expect(id3Tag.flagHasFooter).toEqual(false);
+  expect(id3Tag.flagUnsynchronisation).toEqual(false);
   expect(id3Tag.paddingSize).toEqual(0);
 
   // Frames
@@ -186,11 +186,11 @@ test("ID3v2.3 - no padding & ext header - parses", () => {
   expect(id3Tag.version.minor).toEqual(3);
   expect(id3Tag.version.patch).toEqual(0);
   expect(id3Tag.size).toEqual(269);
-  expect(id3Tag.flags.value).toEqual(0b01000000);
-  expect(id3Tag.flags.experimentalIndicator).toEqual(false);
-  expect(id3Tag.flags.hasExtendedHeader).toEqual(true);
-  expect(id3Tag.flags.hasFooter).toEqual(false);
-  expect(id3Tag.flags.unsynchronisation).toEqual(false);
+  expect(id3Tag.flags).toEqual(0b01000000);
+  expect(id3Tag.flagExperimentalIndicator).toEqual(false);
+  expect(id3Tag.flagHasExtendedHeader).toEqual(true);
+  expect(id3Tag.flagHasFooter).toEqual(false);
+  expect(id3Tag.flagUnsynchronisation).toEqual(false);
   expect(id3Tag.paddingSize).toEqual(0);
   expect(id3Tag.extendedHeader?.size).toEqual(8);
   expect(id3Tag.extendedHeader?.body).toEqual(
@@ -232,7 +232,7 @@ test("ID3v2.3 - no padding & ext header - removing frame", () => {
   ];
 
   expect(needToCreateNewBuffer).toEqual(false);
-  expect(reparsed.flags.hasExtendedHeader).toEqual(true);
+  expect(reparsed.flagHasExtendedHeader).toEqual(true);
   expect(reparsed.size).toEqual(id3Tag.size);
   expect(reparsed.id3TagSize).toEqual(id3Tag.id3TagSize);
   expect(reparsed.extendedHeader?.size).toEqual(8);
@@ -360,11 +360,11 @@ test("ID3v2.3 - no padding & footer - parses", () => {
   expect(id3Tag.version.minor).toEqual(3);
   expect(id3Tag.version.patch).toEqual(0);
   expect(id3Tag.size).toEqual(261);
-  expect(id3Tag.flags.value).toEqual(0b00010000);
-  expect(id3Tag.flags.experimentalIndicator).toEqual(false);
-  expect(id3Tag.flags.hasExtendedHeader).toEqual(false);
-  expect(id3Tag.flags.hasFooter).toEqual(true);
-  expect(id3Tag.flags.unsynchronisation).toEqual(false);
+  expect(id3Tag.flags).toEqual(0b00010000);
+  expect(id3Tag.flagExperimentalIndicator).toEqual(false);
+  expect(id3Tag.flagHasExtendedHeader).toEqual(false);
+  expect(id3Tag.flagHasFooter).toEqual(true);
+  expect(id3Tag.flagUnsynchronisation).toEqual(false);
   expect(id3Tag.paddingSize).toEqual(0);
 
   // Frames
@@ -500,11 +500,11 @@ test("ID3v2.3 - padding - parses", () => {
   expect(id3Tag.version.minor).toEqual(3);
   expect(id3Tag.version.patch).toEqual(0);
   expect(id3Tag.size).toEqual(293);
-  expect(id3Tag.flags.value).toEqual(0);
-  expect(id3Tag.flags.experimentalIndicator).toEqual(false);
-  expect(id3Tag.flags.hasExtendedHeader).toEqual(false);
-  expect(id3Tag.flags.hasFooter).toEqual(false);
-  expect(id3Tag.flags.unsynchronisation).toEqual(false);
+  expect(id3Tag.flags).toEqual(0);
+  expect(id3Tag.flagExperimentalIndicator).toEqual(false);
+  expect(id3Tag.flagHasExtendedHeader).toEqual(false);
+  expect(id3Tag.flagHasFooter).toEqual(false);
+  expect(id3Tag.flagUnsynchronisation).toEqual(false);
   expect(id3Tag.paddingSize).toEqual(32);
 
   // Frames
@@ -637,11 +637,11 @@ test("ID3v2.3 - padding & footer - parses", () => {
   expect(id3Tag.version.minor).toEqual(3);
   expect(id3Tag.version.patch).toEqual(0);
   expect(id3Tag.size).toEqual(293);
-  expect(id3Tag.flags.value).toEqual(0b00010000);
-  expect(id3Tag.flags.experimentalIndicator).toEqual(false);
-  expect(id3Tag.flags.hasExtendedHeader).toEqual(false);
-  expect(id3Tag.flags.hasFooter).toEqual(true);
-  expect(id3Tag.flags.unsynchronisation).toEqual(false);
+  expect(id3Tag.flags).toEqual(0b00010000);
+  expect(id3Tag.flagExperimentalIndicator).toEqual(false);
+  expect(id3Tag.flagHasExtendedHeader).toEqual(false);
+  expect(id3Tag.flagHasFooter).toEqual(true);
+  expect(id3Tag.flagUnsynchronisation).toEqual(false);
   expect(id3Tag.paddingSize).toEqual(32);
 
   // Frames

@@ -13,19 +13,12 @@ export class ID3Tag {
     minor: number;
     patch: number;
   };
+  flags: number;
   size: number;
-  id3TagSize: number;
   paddingSize: number;
   extendedHeader?: {
     size: number;
     body: Buffer;
-  };
-  flags: {
-    unsynchronisation: boolean;
-    hasExtendedHeader: boolean;
-    experimentalIndicator: boolean;
-    hasFooter: boolean;
-    value: number;
   };
   frames: ID3Frame[] = [];
 
@@ -60,13 +53,7 @@ export class ID3Tag {
     // c - Experimental indicator
     // d - Footer present
     // e.g. 11110000 & 00010000 (16) === 00010000 (16)
-    this.flags = {
-      unsynchronisation: (buffer.at(offset)! & 0b10000000) !== 0,
-      hasExtendedHeader: (buffer.at(offset)! & 0b01000000) !== 0,
-      experimentalIndicator: (buffer.at(offset)! & 0b00100000) !== 0,
-      hasFooter: (buffer.at(offset)! & 0b00010000) !== 0,
-      value: buffer.at(offset)!,
-    };
+    this.flags = buffer.at(offset)!;
 
     offset += 1;
 
@@ -78,11 +65,10 @@ export class ID3Tag {
     this.size = readUint32SyncSafe(buffer, offset);
     offset += 4;
 
-    this.id3TagSize = this.flags.hasFooter ? this.size + 20 : this.size + 10; // header size + size + footer size
     const endOfBodyOffset = this.size + 10; // header size + size
 
     // Extended header
-    if (this.flags.hasExtendedHeader) {
+    if (this.flagHasExtendedHeader) {
       // Size (2.4: uint32syncsafebe, 2.3: uint32be)
       const extendedHeaderSize =
         this.version.minor === 4
@@ -152,6 +138,23 @@ export class ID3Tag {
     this.paddingSize = endOfBodyOffset - paddingStartOffset;
   }
 
+  get flagUnsynchronisation(): boolean {
+    return Boolean(this.flags & 0b10000000);
+  }
+  get flagHasExtendedHeader(): boolean {
+    return Boolean(this.flags & 0b01000000);
+  }
+  get flagExperimentalIndicator(): boolean {
+    return Boolean(this.flags & 0b00100000);
+  }
+  get flagHasFooter(): boolean {
+    return Boolean(this.flags & 0b00010000);
+  }
+
+  get id3TagSize(): number {
+    return this.flagHasFooter ? this.size + 20 : this.size + 10; // header size + size + footer size
+  }
+
   buildHeader(size: number, identifier: "ID3" | "3DI" = "ID3"): Buffer {
     const buffer = Buffer.alloc(ID3Tag.HEADER_SIZE);
 
@@ -165,7 +168,7 @@ export class ID3Tag {
     offset = buffer.writeUInt8(this.version.patch, offset);
 
     // Flags [abcd0000: UInt8]
-    offset = buffer.writeUInt8(this.flags.value, offset);
+    offset = buffer.writeUInt8(this.flags, offset);
 
     // Size [UIntSyncSafe32BE]
     offset = writeUInt32SyncSafeBE(buffer, size, offset);
@@ -285,7 +288,7 @@ export class ID3Tag {
       segmentsBuffer.copy(newId3TagBuffer);
 
       // Append footer
-      if (this.flags.hasFooter) {
+      if (this.flagHasFooter) {
         const footer = this.buildFooter(this.size);
         footer.copy(newId3TagBuffer, 10 + this.size);
       }
@@ -303,7 +306,7 @@ export class ID3Tag {
       const newSize = segmentsBuffer.byteLength - 10;
 
       // Append footer
-      if (this.flags.hasFooter) {
+      if (this.flagHasFooter) {
         segments.push(this.buildFooter(newSize));
       }
 
