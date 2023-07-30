@@ -59,7 +59,7 @@ type PropsToType<Tuple extends TupleType> = {
     : never;
 };
 
-function struct<const Tuple extends TupleType>(
+export function struct<const Tuple extends TupleType>(
   buffer: Buffer,
   props: Tuple,
   offset = 0
@@ -72,7 +72,7 @@ function struct<const Tuple extends TupleType>(
   for (const prop of props) {
     const isVariable = Array.isArray(prop);
 
-    switch (isVariable ? prop : prop[0]) {
+    switch (isVariable ? prop[0] : prop) {
       case "uint8": {
         values.push(buffer.readUInt8(offset));
         offset += 1;
@@ -123,7 +123,7 @@ function struct<const Tuple extends TupleType>(
         offset += 4;
         break;
       }
-      case "uint32syncsafebe": {
+      case "usyncsafeint32be": {
         values.push(readUint32SyncSafe(buffer, offset));
         offset += 4;
         break;
