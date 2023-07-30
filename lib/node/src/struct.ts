@@ -59,8 +59,6 @@ type PropsToType<Tuple extends TupleType> = {
     : never;
 };
 
-type aA = PropsToType<["uint8", ["utf8", 4], ["ascii", 3]]>;
-
 function struct<const Tuple extends TupleType>(
   buffer: Buffer,
   props: Tuple,
@@ -330,11 +328,3 @@ function struct<const Tuple extends TupleType>(
 
   return values as any;
 }
-
-const [id3, vmaj, vrev, flags, size, offset] = struct(Buffer.alloc(0), [
-  ["ascii", 3],
-  "B",
-  "B",
-  "B",
-  "usyncsafeint32be",
-]);
