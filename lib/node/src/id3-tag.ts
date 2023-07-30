@@ -138,6 +138,13 @@ export class ID3Tag {
     this.paddingSize = endOfBodyOffset - paddingStartOffset;
   }
 
+  // Flags (1) (abcd0000)
+  // a - Unsynchronisation
+  // b - Extended header
+  // c - Experimental indicator
+  // d - Footer present
+  // e.g. 11110000 & 00010000 (16) === 00010000 (16)
+
   get flagUnsynchronisation(): boolean {
     return Boolean(this.flags & 0b10000000);
   }
