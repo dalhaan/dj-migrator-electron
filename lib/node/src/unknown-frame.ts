@@ -1,5 +1,6 @@
 import { ID3Frame } from "./id3-frame";
-import { readUint32SyncSafe, toSynch } from "./utils";
+import { struct } from "./struct";
+import { toSynch } from "./utils";
 
 export class UnknownFrame extends ID3Frame {
   body: Buffer;
@@ -13,23 +14,15 @@ export class UnknownFrame extends ID3Frame {
   }
 
   static parse(buffer: Buffer, id3Version: number, frameOffset?: number) {
-    let offset = 0;
-
-    // == Tag ==
-    // Type (ASCII4)
-    const type = buffer.subarray(offset, offset + 4).toString("ascii");
-    offset += 4;
-
-    // Size (Uint32BE)
-    const tagSize =
-      id3Version === 4
-        ? readUint32SyncSafe(buffer, offset)
-        : buffer.readUint32BE(offset);
-    offset += 4;
-
-    // Flags (2)
-    const flags = buffer.readUInt16BE(offset);
-    offset += 2;
+    let [type, tagSize, flags, offset] = struct(buffer, [
+      // == Tag ==
+      // Type (ASCII4)
+      ["ascii", 4],
+      // Size (Uint32BE)
+      id3Version === 4 ? "usyncsafeint32be" : "uint32be",
+      // Flags (2)
+      "uint16be",
+    ]);
 
     // Body
     const body = buffer.subarray(offset);

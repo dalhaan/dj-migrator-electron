@@ -1,12 +1,6 @@
 import fs from "fs/promises";
 import assert from "assert";
-import {
-  base64Encode,
-  getSynch,
-  readUint32SyncSafe,
-  toSynch,
-  writeUInt32SyncSafeBE,
-} from "./utils";
+import { base64Encode, getSynch, toSynch } from "./utils";
 import { GeobFrame } from "./geob-frame";
 import { ID3Frame } from "./id3-frame";
 import { SeratoMarkers2 } from "./serato-serializer/serialize-serato-markers2";

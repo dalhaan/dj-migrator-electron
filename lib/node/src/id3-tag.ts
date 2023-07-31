@@ -4,6 +4,7 @@ import { readUint32SyncSafe, writeUInt32SyncSafeBE } from "./utils";
 import { ID3Frame } from "./id3-frame";
 import { UnknownFrame } from "./unknown-frame";
 import { RemovedFrame } from "./removed-frame";
+import { struct } from "./struct";
 
 export class ID3Tag {
   static HEADER_SIZE = 10;
@@ -30,22 +31,27 @@ export class ID3Tag {
   newFrames: ID3Frame[] = [];
 
   constructor(buffer: Buffer) {
-    let offset = 0;
+    assert(
+      buffer.length >= ID3Tag.HEADER_SIZE,
+      "No ID3 tag found: buffer not large enough."
+    );
+
+    let [id3, vMin, vPatch, flags, size, offset] = struct(buffer, [
+      ["ascii", 3],
+      "uint8",
+      "uint8",
+      "B",
+      "usyncsafeint32be",
+    ]);
 
     // Magic [0x49 0x44 0x33] (ASCII3)
-    assert(
-      buffer
-        .subarray(offset, (offset += 3))
-        .equals(Buffer.from([0x49, 0x44, 0x33])),
-      "Invalid Magic"
-    );
+    assert.equal(id3, "ID3", "No ID3 tag found");
 
     // Version (2B)
     this.version = {
-      minor: buffer.readUint8(offset++),
-      patch: buffer.readUint8(offset++),
+      minor: vMin,
+      patch: vPatch,
     };
-    // offset += 2;
 
     // Flags (1) (abcd0000)
     // a - Unsynchronisation
@@ -53,33 +59,32 @@ export class ID3Tag {
     // c - Experimental indicator
     // d - Footer present
     // e.g. 11110000 & 00010000 (16) === 00010000 (16)
-    this.flags = buffer.at(offset)!;
-
-    offset += 1;
+    this.flags = flags;
 
     // Size (SynchsafeInt4)
     // ID3 body size === Size - (header size (10) + footer size( 10))
     // [ header ][ extended header ][ body (frames) ][ padding ][ footer ]
     // <-- 10B -><-------------------- size -------------------><-- 10B ->
     // const synchSafeSize = buffer.subarray(offset, (offset += 4));
-    this.size = readUint32SyncSafe(buffer, offset);
-    offset += 4;
+    this.size = size;
 
     const endOfBodyOffset = this.size + 10; // header size + size
 
     // Extended header
     if (this.flagHasExtendedHeader) {
       // Size (2.4: uint32syncsafebe, 2.3: uint32be)
-      const extendedHeaderSize =
-        this.version.minor === 4
-          ? readUint32SyncSafe(buffer, offset)
-          : buffer.readUint32BE(offset);
+      const [extendedHeaderSize] = struct(
+        buffer,
+        [this.version.minor === 4 ? "usyncsafeint32be" : "uint32be"],
+        offset
+      );
       offset += 4;
 
       // Body (Size - 4B)
-      const extendedHeaderBody = buffer.subarray(
-        offset,
-        offset + extendedHeaderSize - 4
+      const [extendedHeaderBody] = struct(
+        buffer,
+        [["B", extendedHeaderSize - 4]],
+        offset
       );
       offset += extendedHeaderSize - 4;
 
@@ -102,33 +107,25 @@ export class ID3Tag {
 
       // == Tag ==
       // Type (ASCII4)
-      const type = buffer.subarray(offset, offset + 4).toString("ascii");
-
       // Size (Uint32BE)
-      const tagSize =
-        this.version.minor === 4
-          ? readUint32SyncSafe(buffer, offset + 4)
-          : buffer.readUint32BE(offset + 4);
+      const [type, tagSize] = struct(
+        buffer,
+        [
+          ["ascii", 4],
+          this.version.minor === 4 ? "usyncsafeint32be" : "uint32be",
+        ],
+        offset
+      );
+
+      // Body (Tag.Size)
+      const [body] = struct(buffer, [["B", 10 + tagSize]], offset);
 
       console.log(type, tagSize);
 
-      // Body (Tag.Size)
       if (type === "GEOB") {
-        this.frames.push(
-          GeobFrame.parse(
-            buffer.subarray(offset, offset + 10 + tagSize),
-            this.version.minor,
-            offset
-          )
-        );
+        this.frames.push(GeobFrame.parse(body, this.version.minor, offset));
       } else {
-        this.frames.push(
-          UnknownFrame.parse(
-            buffer.subarray(offset, offset + 10 + tagSize),
-            this.version.minor,
-            offset
-          )
-        );
+        this.frames.push(UnknownFrame.parse(body, this.version.minor, offset));
       }
 
       offset += tagSize + 10;

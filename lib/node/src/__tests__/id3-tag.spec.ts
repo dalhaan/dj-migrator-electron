@@ -47,15 +47,15 @@ test("UInt32BE -> USyncSafeInt32BE", () => {
 test("ID3v2.3 - no padding - parses", () => {
   const id3Tag = new ID3Tag(id3v23NoPaddingBuffer);
   // Header
-  expect(id3Tag.id3TagSize).toEqual(271);
   expect(id3Tag.version.minor).toEqual(3);
   expect(id3Tag.version.patch).toEqual(0);
-  expect(id3Tag.size).toEqual(261);
   expect(id3Tag.flags).toEqual(0);
   expect(id3Tag.flagExperimentalIndicator).toEqual(false);
   expect(id3Tag.flagHasExtendedHeader).toEqual(false);
   expect(id3Tag.flagHasFooter).toEqual(false);
   expect(id3Tag.flagUnsynchronisation).toEqual(false);
+  expect(id3Tag.size).toEqual(261);
+  expect(id3Tag.id3TagSize).toEqual(271);
   expect(id3Tag.paddingSize).toEqual(0);
 
   // Frames

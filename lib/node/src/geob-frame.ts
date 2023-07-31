@@ -1,5 +1,6 @@
 import { ID3Frame } from "./id3-frame";
-import { readUint32SyncSafe, toSynch } from "./utils";
+import { struct } from "./struct";
+import { toSynch } from "./utils";
 
 export class GeobFrame extends ID3Frame {
   textEncoding: number;
@@ -37,46 +38,33 @@ export class GeobFrame extends ID3Frame {
   }
 
   static parse(buffer: Buffer, id3Version: number, frameOffset?: number) {
-    let offset = 0;
-
-    // == Tag ==
-    // Type (ASCII4)
-    const type = buffer.subarray(offset, offset + 4).toString("ascii");
-    offset += 4;
-
-    // Size (Uint32BE)
-    const tagSize =
-      id3Version === 4
-        ? readUint32SyncSafe(buffer, offset)
-        : buffer.readUint32BE(offset);
-    offset += 4;
-
-    // Flags (2)
-    const flags = buffer.readUInt16BE(offset);
-    offset += 2;
-
-    // GEOB frame body
-    // Text encoding (1)
-    const textEncoding = buffer.readUInt8(offset);
-    offset += 1;
-
-    // Mime type (null-terminated ascii string)
-    const mimeType = buffer
-      .subarray(offset, (offset = buffer.indexOf(0, offset)))
-      .toString("ascii");
-    offset += 1;
-
-    // Filename (null-terminated ascii string)
-    const fileName = buffer
-      .subarray(offset, (offset = buffer.indexOf(0, offset)))
-      .toString("ascii");
-    offset += 1;
-
-    // Description (null-terminated ascii string)
-    const description = buffer
-      .subarray(offset, (offset = buffer.indexOf(0x00, offset)))
-      .toString("ascii");
-    offset += 1;
+    let [
+      type,
+      tagSize,
+      flags,
+      textEncoding,
+      mimeType,
+      fileName,
+      description,
+      offset,
+    ] = struct(buffer, [
+      // == Tag ==
+      // Type (ASCII4)
+      ["ascii", 4],
+      // Size (Uint32BE)
+      id3Version === 4 ? "usyncsafeint32be" : "uint32be",
+      // Flags (2)
+      "uint16be",
+      // GEOB frame body
+      // Text encoding (1)
+      "uint8",
+      // Mime type (null-terminated ascii string)
+      "asciiz",
+      // Filename (null-terminated ascii string)
+      "asciiz",
+      // Description (null-terminated ascii string)
+      "asciiz",
+    ]);
 
     // Body
     const body = buffer.subarray(offset);
