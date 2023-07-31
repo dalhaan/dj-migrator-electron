@@ -20,6 +20,7 @@ type FixedSizeType = {
   ascii: string;
   asciiz: string;
   latin1: string;
+  latin1z: string;
   ucs2: string;
   hex: string;
   base64: string;
@@ -186,6 +187,17 @@ export function struct<const Tuple extends TupleType>(
           buffer.subarray(offset, offset + length).toString("latin1")
         );
         offset += length;
+
+        break;
+      }
+      case "latin1z": {
+        values.push(
+          buffer
+            .subarray(offset, (offset = buffer.indexOf(0, offset)))
+            .toString("latin1")
+        );
+
+        offset += 1;
 
         break;
       }
