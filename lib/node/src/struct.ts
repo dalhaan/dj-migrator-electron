@@ -168,7 +168,7 @@ export function struct<const Tuple extends TupleType>(
       case "asciiz": {
         values.push(
           buffer
-            .subarray(offset, (offset = buffer.indexOf(0, offset)))
+            .subarray(offset, (offset = buffer.indexOf(0x00, offset)))
             .toString("ascii")
         );
 
@@ -193,7 +193,7 @@ export function struct<const Tuple extends TupleType>(
       case "latin1z": {
         values.push(
           buffer
-            .subarray(offset, (offset = buffer.indexOf(0, offset)))
+            .subarray(offset, (offset = buffer.indexOf(0x00, offset)))
             .toString("latin1")
         );
 
@@ -255,7 +255,7 @@ export function struct<const Tuple extends TupleType>(
       case "utf8z": {
         values.push(
           buffer
-            .subarray(offset, (offset = buffer.indexOf(0, offset)))
+            .subarray(offset, (offset = buffer.indexOf(0x00, offset)))
             .toString("utf8")
         );
 
@@ -379,8 +379,7 @@ export function struct<const Tuple extends TupleType>(
           length = prop[1];
           values.push(buffer.subarray(offset, offset + length));
         } else {
-          const byte = buffer.at(offset);
-          if (byte === undefined) throw new Error();
+          const byte = buffer.readUInt8(offset);
           values.push(byte);
         }
 
