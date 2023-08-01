@@ -1,29 +1,48 @@
-type StructType<Name extends string, Type, Output> = StructObject<
-  { [key in Name]: Type } & Output
->;
+import { readUint32SyncSafe } from "./utils";
+
+type StructOutput = Record<string, any> & { offset: number };
+
+type StructType<
+  Name extends string,
+  Type,
+  Output extends StructOutput
+> = StructObject<{ [key in Name]: Type } & Output>;
 
 type StructStringTypes = "ascii";
+type StructFixedSizeTypes = {
+  uint8: number;
+  uint32be: number;
+  usafesyncint32be: number;
+};
+type StructDynamicSizeTypes = {
+  uint: number;
+};
 // "utf8" |
 // "latin1" |
 // "utf16be" |
 // "utf16le";
 
-type StructTypes = { [key in StructStringTypes]: string } & {
-  uint: number;
-  // uintbe: number;
-  // uintle: number;
-  uint8: number;
-  // uint16be: number;
-  // uint16le: number;
-  // uint32be: number;
-  // uint32le: number;
-  // int: number;
-  // int8: number;
-  // int16be: number;
-  // int16le: number;
-  // int32be: number;
-  // int32le: number;
-};
+type StructTypes = {
+  [key in StructStringTypes]: string;
+} & StructFixedSizeTypes &
+  StructDynamicSizeTypes;
+//  {
+//     uint: number;
+// uintbe: number;
+// uintle: number;
+// uint8: number;
+// uint16be: number;
+// uint16le: number;
+// uint32be: number;
+// uint32le: number;
+// usafesyncint32be: number;
+// int: number;
+// int8: number;
+// int16be: number;
+// int16le: number;
+// int32be: number;
+// int32le: number;
+// };
 
 type OptionsString = {
   nullTerminated?: boolean;
@@ -31,23 +50,53 @@ type OptionsString = {
 
 type Endianness = "BE" | "LE";
 
-type Root<Output> = {
+type Root<Output extends StructOutput> = {
   [Key in keyof Output]: Output[Key];
 };
 
-type OptionsVariableLength<Output> = {
-  size?: number | ((root: Root<Output>) => number);
+type Size<Output extends StructOutput> =
+  | number
+  | ((root: Root<Output>) => number);
+
+type OptionsVariableLength<Output extends StructOutput> = {
+  size?: Size<Output>;
 };
 
-export class StructObject<Output = { offset: number }> {
+type ByteOptionsFixedSizeTypes = {
+  as?: keyof StructFixedSizeTypes;
+};
+
+type ByteOptionsDynamicSizeTypes<Output extends StructOutput> = {
+  as?: keyof StructDynamicSizeTypes;
+} & OptionsVariableLength<Output>;
+
+type ByteOptionsStringTypes<Output extends StructOutput> = {
+  as?: StructStringTypes;
+} & OptionsVariableLength<Output> &
+  OptionsString;
+
+type ByteOptions<Output extends StructOutput> =
+  | ByteOptionsFixedSizeTypes
+  | ByteOptionsDynamicSizeTypes<Output>
+  | ByteOptionsStringTypes<Output>;
+
+type Test<Options extends ByteOptions<{ offset: number }>> = Options extends {
+  as: infer Type;
+}
+  ? Type
+  : Buffer;
+
+type No = Test<{}>;
+
+export class StructObject<Output extends StructOutput = { offset: number }> {
   private _buffer: Buffer;
   private _root: Root<Output>;
   private _endianness: Endianness | undefined;
-  private _offset: number;
+  // private _offset: number;
 
   constructor(buffer: Buffer, offset = 0) {
     this._buffer = buffer;
-    this._offset = offset;
+    // this._root.offset = offset;
     this._root = { offset } as any;
   }
 
@@ -75,23 +124,28 @@ export class StructObject<Output = { offset: number }> {
     }
   ): StructType<Name, StructTypes["uint"], Output> {
     const endianness = options?.endianness || this._endianness;
-    if (endianness === undefined) {
-      throw new Error("Endianness must be defined when using `uint`");
-    }
 
     const size = this.calculateSize(options);
 
-    if (endianness === "BE") {
-      const value = this._buffer.readUIntBE(this._offset, size);
-      // @ts-expect-error This is valid
-      this._root[name] = value;
-    } else if (endianness === "LE") {
-      const value = this._buffer.readUIntLE(this._offset, size);
-      // @ts-expect-error This is valid
-      this._root[name] = value;
+    if (size > 1 && endianness === undefined) {
+      throw new Error("Endianness must be defined when using `uint`");
     }
 
-    this._offset += size;
+    if (endianness === "BE") {
+      const value = this._buffer.readUIntBE(this._root.offset, size);
+
+      this._root[name] = value as Output[Name];
+    } else if (endianness === "LE") {
+      const value = this._buffer.readUIntLE(this._root.offset, size);
+
+      this._root[name] = value as Output[Name];
+    } else {
+      const value = this._buffer.readUInt8(this._root.offset);
+
+      this._root[name] = value as Output[Name];
+    }
+
+    this._root.offset += size;
 
     return this as StructType<Name, StructTypes["uint"], Output>;
   }
@@ -101,14 +155,41 @@ export class StructObject<Output = { offset: number }> {
   ): StructType<Name, StructTypes["uint8"], Output> {
     const size = 1;
 
-    const value = this._buffer.readUInt8(this._offset);
+    const value = this._buffer.readUInt8(this._root.offset);
 
-    // @ts-expect-error This is valid
-    this._root[name] = value;
+    this._root[name] = value as Output[Name];
 
-    this._offset += size;
+    this._root.offset += size;
 
     return this as StructType<Name, StructTypes["uint8"], Output>;
+  }
+
+  uint32be<Name extends string>(
+    name: Name
+  ): StructType<Name, StructTypes["uint32be"], Output> {
+    const size = 4;
+
+    const value = this._buffer.readUInt32BE(this._root.offset);
+
+    this._root[name] = value as Output[Name];
+
+    this._root.offset += size;
+
+    return this as StructType<Name, StructTypes["uint32be"], Output>;
+  }
+
+  usafesyncint32be<Name extends string>(
+    name: Name
+  ): StructType<Name, StructTypes["usafesyncint32be"], Output> {
+    const size = 4;
+
+    const value = readUint32SyncSafe(this._buffer, this._root.offset);
+
+    this._root[name] = value as Output[Name];
+
+    this._root.offset += size;
+
+    return this as StructType<Name, StructTypes["usafesyncint32be"], Output>;
   }
 
   ascii<Name extends string>(
@@ -118,58 +199,80 @@ export class StructObject<Output = { offset: number }> {
     const size = this.calculateSize(options);
 
     if (options?.nullTerminated) {
-      const nullIndex = this._buffer.indexOf(0x00, this._offset);
-      const value = this._buffer.subarray(this._offset, nullIndex);
+      const nullIndex = this._buffer.indexOf(0x00, this._root.offset);
+      const value = this._buffer
+        .subarray(this._root.offset, nullIndex)
+        .toString("ascii");
 
-      // @ts-expect-error This is valid
-      this._root[name] = value;
+      this._root[name] = value as Output[Name];
 
-      this._offset = nullIndex + 1;
+      this._root.offset = nullIndex + 1;
     } else {
-      const value = this._buffer.subarray(this._offset, size);
+      const value = this._buffer
+        .subarray(this._root.offset, this._root.offset + size)
+        .toString("ascii");
 
-      // @ts-expect-error This is valid
-      this._root[name] = value;
+      this._root[name] = value as Output[Name];
 
-      this._offset += size;
+      this._root.offset += size;
     }
 
     return this as StructType<Name, StructTypes["ascii"], Output>;
   }
 
-  byte<Name extends string, Type extends keyof StructTypes = "uint8">(
-    name: Name,
-    options?:
-      | ({ as?: StructStringTypes } & OptionsVariableLength<Output> &
-          OptionsString)
-      | ({
-          as?: Type;
-        } & OptionsVariableLength<Output>)
-  ): StructType<Name, StructTypes[Type], Output> {
-    const size = this.calculateSize(options);
+  byte<
+    Name extends string,
+    Options extends ByteOptions<Output>,
+    Type = Options extends { as: infer As extends keyof StructTypes }
+      ? StructTypes[As]
+      : Options extends { size: Size<Output> }
+      ? Buffer
+      : number
+  >(name: Name, options?: Options): StructType<Name, Type, Output> {
+    if (!options || (options && !("as" in options))) {
+      let size = 1;
 
-    if (!options?.as) {
-      const value = this._buffer.subarray(this._offset, this._offset + size);
-      // @ts-expect-error This is valid
-      this._root[name] = value;
+      if (options && "size" in options) {
+        size = this.calculateSize(options);
 
-      this._offset += size;
-    } else {
+        const value = this._buffer.subarray(
+          this._root.offset,
+          this._root.offset + size
+        );
+
+        this._root[name] = value as Output[Name];
+      } else {
+        const value = this._buffer.readUInt8(this._root.offset);
+
+        this._root[name] = value as Output[Name];
+      }
+
+      this._root.offset += size;
+    } else if ("as" in options && options.as) {
       const { as, ...rest } = options;
 
       this[options.as](name, rest);
     }
 
-    return this as StructType<Name, StructTypes[Type], Output>;
+    return this;
   }
 
   parse(): {
     [key in keyof Output]: Output[key];
   } {
-    return this._root;
+    const rootCopy = { ...this._root };
+
+    // Reset root and retain offset
+    this._root = { offset: this._root.offset } as any;
+
+    return rootCopy;
   }
 }
 
 export function struct(buffer: Buffer) {
   return new StructObject(buffer);
 }
+
+// struct(Buffer.alloc(0)).uint("test", {
+//   size: 5,
+// });
