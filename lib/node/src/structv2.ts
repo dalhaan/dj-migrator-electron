@@ -44,10 +44,6 @@ type StructTypes = {
 // int32le: number;
 // };
 
-type OptionsString = {
-  nullTerminated?: boolean;
-};
-
 type Endianness = "BE" | "LE";
 
 type Root<Output extends StructOutput> = {
@@ -58,11 +54,19 @@ type Size<Output extends StructOutput> =
   | number
   | ((root: Root<Output>) => number);
 
-type OptionsVariableLength<Output extends StructOutput> = {
+type OptionsBase = {
+  peek?: number;
+};
+
+type OptionsString = OptionsBase & {
+  nullTerminated?: boolean;
+};
+
+type OptionsVariableLength<Output extends StructOutput> = OptionsBase & {
   size?: Size<Output>;
 };
 
-type ByteOptionsFixedSizeTypes = {
+type ByteOptionsFixedSizeTypes = OptionsBase & {
   as?: keyof StructFixedSizeTypes;
 };
 
@@ -197,24 +201,28 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
     options?: OptionsVariableLength<Output> & OptionsString
   ): StructType<Name, StructTypes["ascii"], Output> {
     const size = this.calculateSize(options);
+    const offset =
+      options?.peek === undefined ? this._root.offset : options.peek;
 
     if (options?.nullTerminated) {
-      const nullIndex = this._buffer.indexOf(0x00, this._root.offset);
-      const value = this._buffer
-        .subarray(this._root.offset, nullIndex)
-        .toString("ascii");
+      const nullIndex = this._buffer.indexOf(0x00, offset);
+      const value = this._buffer.subarray(offset, nullIndex).toString("ascii");
 
       this._root[name] = value as Output[Name];
 
-      this._root.offset = nullIndex + 1;
+      if (options.peek === undefined) {
+        this._root.offset = nullIndex + 1;
+      }
     } else {
       const value = this._buffer
-        .subarray(this._root.offset, this._root.offset + size)
+        .subarray(offset, offset + size)
         .toString("ascii");
 
       this._root[name] = value as Output[Name];
 
-      this._root.offset += size;
+      if (options?.peek === undefined) {
+        this._root.offset += size;
+      }
     }
 
     return this as StructType<Name, StructTypes["ascii"], Output>;
@@ -229,25 +237,27 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
       ? Buffer
       : number
   >(name: Name, options?: Options): StructType<Name, Type, Output> {
+    const offset =
+      options?.peek === undefined ? this._root.offset : options.peek;
+
     if (!options || (options && !("as" in options))) {
       let size = 1;
 
       if (options && "size" in options) {
         size = this.calculateSize(options);
 
-        const value = this._buffer.subarray(
-          this._root.offset,
-          this._root.offset + size
-        );
+        const value = this._buffer.subarray(offset, offset + size);
 
         this._root[name] = value as Output[Name];
       } else {
-        const value = this._buffer.readUInt8(this._root.offset);
+        const value = this._buffer.readUInt8(offset);
 
         this._root[name] = value as Output[Name];
       }
 
-      this._root.offset += size;
+      if (options?.peek === undefined) {
+        this._root.offset += size;
+      }
     } else if ("as" in options && options.as) {
       const { as, ...rest } = options;
 

@@ -1,4 +1,4 @@
-import { struct } from "../structv2";
+import { StructObject, struct } from "../structv2";
 
 test("Struct V2 - calculate size", () => {
   const buf = Buffer.from("HelloThe", "ascii");
@@ -97,4 +97,52 @@ test("Struct V2 - uint", () => {
   expect(thirdBE).toEqual(0x0004);
   // uint with size > 1 needs to have endianness defined
   expect(() => struct(buf).uint("throwMe", { size: 2 }).parse()).toThrow();
+});
+
+test("Struct V2 - peek", () => {
+  const buf = Buffer.from([0x48, 0x45, 0x59, 0x54, 0x48, 0x45, 0x52, 0x45]);
+
+  const { hey, eyt, there, heythere, offset } = struct(buf)
+    .ascii("hey", {
+      size: 3,
+      peek: 0,
+    })
+    .ascii("eyt", {
+      size: 3,
+      peek: 1,
+    })
+    .ascii("there", {
+      size: 5,
+      peek: 3,
+    })
+    .ascii("heythere", {
+      size: 8,
+    })
+    .parse();
+
+  expect(hey).toEqual("HEY");
+  expect(eyt).toEqual("EYT");
+  expect(there).toEqual("THERE");
+  expect(heythere).toEqual("HEYTHERE");
+  expect(offset).toEqual(8);
+});
+
+test("Struct V2 - retain index on extra structs", () => {
+  const buf = Buffer.from([0x48, 0x45, 0x59, 0x54, 0x48, 0x45, 0x52, 0x45]);
+
+  const testStruct = new StructObject(buf);
+  const { hey, offset: offset1 } = testStruct
+    .ascii("hey", {
+      size: 3,
+    })
+    .parse();
+
+  const { there, offset: offset2 } = testStruct
+    .ascii("there", { size: 5 })
+    .parse();
+
+  expect(hey).toEqual("HEY");
+  expect(there).toEqual("THERE");
+  expect(offset1).toEqual(3);
+  expect(offset2).toEqual(8);
 });
