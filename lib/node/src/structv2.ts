@@ -13,7 +13,7 @@ type StructFixedSizeTypes = {
   uint8: number;
   uint16be: number;
   uint32be: number;
-  usafesyncint32be: number;
+  usyncsafeint32be: number;
 };
 type StructDynamicSizeTypes = {
   uint: number;
@@ -36,7 +36,7 @@ type StructTypes = {
 // uint16le: number;
 // uint32be: number;
 // uint32le: number;
-// usafesyncint32be: number;
+// usyncsafeint32be: number;
 // int: number;
 // int8: number;
 // int16be: number;
@@ -228,10 +228,10 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
     return this as StructType<Name, StructTypes["uint32be"], Output>;
   }
 
-  usafesyncint32be<Name extends string>(
+  usyncsafeint32be<Name extends string>(
     name: Name,
     options?: OptionsBase<Output>
-  ): StructType<Name, StructTypes["usafesyncint32be"], Output> {
+  ): StructType<Name, StructTypes["usyncsafeint32be"], Output> {
     const size = 4;
     const offset = this.calculateOffset(options);
 
@@ -243,7 +243,7 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
       this._root.offset += size;
     }
 
-    return this as StructType<Name, StructTypes["usafesyncint32be"], Output>;
+    return this as StructType<Name, StructTypes["usyncsafeint32be"], Output>;
   }
 
   ascii<Name extends string>(
