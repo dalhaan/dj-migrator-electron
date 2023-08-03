@@ -54,21 +54,23 @@ type Size<Output extends StructOutput> =
   | number
   | ((root: Root<Output>) => number);
 
-type OptionsBase = {
-  peek?: (offset: number) => number;
+type OptionsBase<Output extends StructOutput> = {
+  peek?: (root: Root<Output>) => number;
 };
 
-type OptionsString = OptionsBase & {
+type OptionsString<Output extends StructOutput> = OptionsBase<Output> & {
   nullTerminated?: boolean;
 };
 
-type OptionsVariableLength<Output extends StructOutput> = OptionsBase & {
-  size?: Size<Output>;
-};
+type OptionsVariableLength<Output extends StructOutput> =
+  OptionsBase<Output> & {
+    size?: Size<Output>;
+  };
 
-type ByteOptionsFixedSizeTypes = OptionsBase & {
-  as?: keyof StructFixedSizeTypes;
-};
+type ByteOptionsFixedSizeTypes<Output extends StructOutput> =
+  OptionsBase<Output> & {
+    as?: keyof StructFixedSizeTypes;
+  };
 
 type ByteOptionsDynamicSizeTypes<Output extends StructOutput> = {
   as?: keyof StructDynamicSizeTypes;
@@ -77,10 +79,10 @@ type ByteOptionsDynamicSizeTypes<Output extends StructOutput> = {
 type ByteOptionsStringTypes<Output extends StructOutput> = {
   as?: StructStringTypes;
 } & OptionsVariableLength<Output> &
-  OptionsString;
+  OptionsString<Output>;
 
 type ByteOptions<Output extends StructOutput> =
-  | ByteOptionsFixedSizeTypes
+  | ByteOptionsFixedSizeTypes<Output>
   | ByteOptionsDynamicSizeTypes<Output>
   | ByteOptionsStringTypes<Output>;
 
@@ -115,11 +117,11 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
     return size;
   }
 
-  calculateOffset(options?: OptionsBase) {
+  calculateOffset(options?: OptionsBase<Output>) {
     const offset =
       options?.peek === undefined
         ? this._root.offset
-        : options.peek(this._root.offset);
+        : options.peek(this._root);
 
     return offset;
   }
@@ -167,7 +169,7 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
 
   uint8<Name extends string>(
     name: Name,
-    options?: OptionsBase
+    options?: OptionsBase<Output>
   ): StructType<Name, StructTypes["uint8"], Output> {
     const size = 1;
     const offset = this.calculateOffset(options);
@@ -185,7 +187,7 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
 
   uint32be<Name extends string>(
     name: Name,
-    options?: OptionsBase
+    options?: OptionsBase<Output>
   ): StructType<Name, StructTypes["uint32be"], Output> {
     const size = 4;
     const offset = this.calculateOffset(options);
@@ -203,7 +205,7 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
 
   usafesyncint32be<Name extends string>(
     name: Name,
-    options?: OptionsBase
+    options?: OptionsBase<Output>
   ): StructType<Name, StructTypes["usafesyncint32be"], Output> {
     const size = 4;
     const offset = this.calculateOffset(options);
@@ -221,7 +223,7 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
 
   ascii<Name extends string>(
     name: Name,
-    options?: OptionsVariableLength<Output> & OptionsString
+    options?: OptionsVariableLength<Output> & OptionsString<Output>
   ): StructType<Name, StructTypes["ascii"], Output> {
     const size = this.calculateSize(options);
     const offset = this.calculateOffset(options);
