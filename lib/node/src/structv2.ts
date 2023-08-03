@@ -7,7 +7,7 @@ type StructType<
   Name extends string,
   Type,
   Output extends StructOutput
-> = StructObject<{ [key in Name]: Type } & Output>;
+> = StructObject<Output & { [key in Name]: Type }>;
 
 type StructStringTypes = "ascii";
 type StructFixedSizeTypes = {
