@@ -1,3 +1,4 @@
+import assert from "assert";
 import { readUint32SyncSafe } from "./utils";
 
 type StructOutput = Record<string, any> & { offset: number };
@@ -56,45 +57,47 @@ type Size<Output extends StructOutput> =
   | ((root: Root<Output>) => number)
   | "EOS";
 
-type OptionsBase<Output extends StructOutput> = {
+type OptionsBase<Output extends StructOutput, ParsedType> = {
   peek?: number | ((root: Root<Output>) => number);
+  /**
+   * Runtime assertion of parsed value.
+   */
+  assert?: ParsedType;
 };
 
-type OptionsString<Output extends StructOutput> = OptionsBase<Output> & {
+type OptionsString = {
   nullTerminated?: boolean;
 };
 
-type OptionsVariableLength<Output extends StructOutput> =
-  OptionsBase<Output> & {
-    size?: Size<Output>;
-  };
+type OptionsVariableLength<Output extends StructOutput> = {
+  size?: Size<Output>;
+};
 
-type ByteOptionsFixedSizeTypes<Output extends StructOutput> =
-  OptionsBase<Output> & {
-    as?: keyof StructFixedSizeTypes;
-  };
+type ByteOptionsFixedSizeTypes<
+  Output extends StructOutput,
+  As extends keyof StructFixedSizeTypes = keyof StructFixedSizeTypes
+> = OptionsBase<Output, StructFixedSizeTypes[As]> & {
+  as?: keyof StructFixedSizeTypes;
+};
 
-type ByteOptionsDynamicSizeTypes<Output extends StructOutput> = {
-  as?: keyof StructDynamicSizeTypes;
-} & OptionsVariableLength<Output>;
+type ByteOptionsDynamicSizeTypes<
+  Output extends StructOutput,
+  As extends keyof StructDynamicSizeTypes = keyof StructDynamicSizeTypes
+> = {
+  as?: As;
+} & OptionsBase<Output, StructDynamicSizeTypes[As]> &
+  OptionsVariableLength<Output>;
 
 type ByteOptionsStringTypes<Output extends StructOutput> = {
   as?: StructStringTypes;
-} & OptionsVariableLength<Output> &
-  OptionsString<Output>;
+} & OptionsBase<Output, string> &
+  OptionsVariableLength<Output> &
+  OptionsString;
 
 type ByteOptions<Output extends StructOutput> =
   | ByteOptionsFixedSizeTypes<Output>
   | ByteOptionsDynamicSizeTypes<Output>
   | ByteOptionsStringTypes<Output>;
-
-type Test<Options extends ByteOptions<{ offset: number }>> = Options extends {
-  as: infer Type;
-}
-  ? Type
-  : Buffer;
-
-type No = Test<{}>;
 
 export class StructObject<Output extends StructOutput = { offset: number }> {
   private _buffer: Buffer;
@@ -121,7 +124,7 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
     return size;
   }
 
-  calculateOffset(options?: OptionsBase<Output>) {
+  calculateOffset(options?: Pick<OptionsBase<Output, any>, "peek">) {
     let offset = this._root.offset;
 
     if (typeof options?.peek === "function") {
@@ -140,32 +143,39 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
 
   uint<Name extends string>(
     name: Name,
-    options?: OptionsVariableLength<Output> & {
-      endianness?: Endianness;
-    }
+    options?: OptionsBase<Output, number> &
+      OptionsVariableLength<Output> & {
+        endianness?: Endianness;
+      }
   ): StructType<Name, StructTypes["uint"], Output> {
-    const endianness = options?.endianness || this._endianness;
+    let value: number | undefined;
 
     const size = this.calculateSize(options);
     const offset = this.calculateOffset(options);
+
+    const endianness = options?.endianness || this._endianness;
 
     if (size > 1 && endianness === undefined) {
       throw new Error("Endianness must be defined when using `uint`");
     }
 
     if (endianness === "BE") {
-      const value = this._buffer.readUIntBE(offset, size);
-
-      this._root[name] = value as Output[Name];
+      value = this._buffer.readUIntBE(offset, size);
     } else if (endianness === "LE") {
-      const value = this._buffer.readUIntLE(offset, size);
-
-      this._root[name] = value as Output[Name];
+      value = this._buffer.readUIntLE(offset, size);
     } else {
-      const value = this._buffer.readUInt8(offset);
-
-      this._root[name] = value as Output[Name];
+      value = this._buffer.readUInt8(offset);
     }
+
+    if (options?.assert) {
+      assert.strictEqual(
+        value,
+        options.assert,
+        `${name} !== ${options.assert}`
+      );
+    }
+
+    this._root[name] = value as Output[Name];
 
     if (options?.peek === undefined) {
       this._root.offset += size;
@@ -176,12 +186,20 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
 
   uint8<Name extends string>(
     name: Name,
-    options?: OptionsBase<Output>
+    options?: OptionsBase<Output, number>
   ): StructType<Name, StructTypes["uint8"], Output> {
     const size = 1;
     const offset = this.calculateOffset(options);
 
     const value = this._buffer.readUInt8(offset);
+
+    if (options?.assert) {
+      assert.strictEqual(
+        value,
+        options.assert,
+        `${name} !== ${options.assert}`
+      );
+    }
 
     this._root[name] = value as Output[Name];
 
@@ -194,12 +212,20 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
 
   uint16be<Name extends string>(
     name: Name,
-    options?: OptionsBase<Output>
+    options?: OptionsBase<Output, number>
   ): StructType<Name, StructTypes["uint16be"], Output> {
     const size = 2;
     const offset = this.calculateOffset(options);
 
     const value = this._buffer.readUInt16BE(offset);
+
+    if (options?.assert) {
+      assert.strictEqual(
+        value,
+        options.assert,
+        `${name} !== ${options.assert}`
+      );
+    }
 
     this._root[name] = value as Output[Name];
 
@@ -212,12 +238,20 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
 
   uint32be<Name extends string>(
     name: Name,
-    options?: OptionsBase<Output>
+    options?: OptionsBase<Output, number>
   ): StructType<Name, StructTypes["uint32be"], Output> {
     const size = 4;
     const offset = this.calculateOffset(options);
 
     const value = this._buffer.readUInt32BE(offset);
+
+    if (options?.assert) {
+      assert.strictEqual(
+        value,
+        options.assert,
+        `${name} !== ${options.assert}`
+      );
+    }
 
     this._root[name] = value as Output[Name];
 
@@ -230,12 +264,20 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
 
   usyncsafeint32be<Name extends string>(
     name: Name,
-    options?: OptionsBase<Output>
+    options?: OptionsBase<Output, number>
   ): StructType<Name, StructTypes["usyncsafeint32be"], Output> {
     const size = 4;
     const offset = this.calculateOffset(options);
 
     const value = readUint32SyncSafe(this._buffer, offset);
+
+    if (options?.assert) {
+      assert.strictEqual(
+        value,
+        options.assert,
+        `${name} !== ${options.assert}`
+      );
+    }
 
     this._root[name] = value as Output[Name];
 
@@ -248,14 +290,18 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
 
   ascii<Name extends string>(
     name: Name,
-    options?: OptionsVariableLength<Output> & OptionsString<Output>
+    options?: OptionsBase<Output, string> &
+      OptionsVariableLength<Output> &
+      OptionsString
   ): StructType<Name, StructTypes["ascii"], Output> {
+    let value: string | undefined;
+
     const size = this.calculateSize(options);
     const offset = this.calculateOffset(options);
 
     if (options?.nullTerminated) {
       const nullIndex = this._buffer.indexOf(0x00, offset);
-      const value = this._buffer.subarray(offset, nullIndex).toString("ascii");
+      value = this._buffer.subarray(offset, nullIndex).toString("ascii");
 
       this._root[name] = value as Output[Name];
 
@@ -263,15 +309,21 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
         this._root.offset = nullIndex + 1;
       }
     } else {
-      const value = this._buffer
-        .subarray(offset, offset + size)
-        .toString("ascii");
+      value = this._buffer.subarray(offset, offset + size).toString("ascii");
 
       this._root[name] = value as Output[Name];
 
       if (options?.peek === undefined) {
         this._root.offset += size;
       }
+    }
+
+    if (options?.assert) {
+      assert.strictEqual(
+        value,
+        options.assert,
+        `${name} !== ${options.assert}`
+      );
     }
 
     return this as StructType<Name, StructTypes["ascii"], Output>;
@@ -309,7 +361,7 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
     } else if ("as" in options && options.as) {
       const { as, ...rest } = options;
 
-      this[options.as](name, rest);
+      this[options.as](name, rest as any);
     }
 
     return this;

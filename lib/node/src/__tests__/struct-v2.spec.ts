@@ -83,6 +83,12 @@ test("Struct V2 - uint", () => {
     .uint("fourth")
     .parse();
 
+  expect(first).toEqual(0x00);
+  expect(second).toEqual(0x02c8);
+  expect(third).toEqual(0x0064);
+  expect(fourth).toEqual(0x04);
+  expect(offset).toEqual(6);
+
   const { firstBE, secondLE, thirdBE } = struct(buf)
     .endianness("BE")
     .uint("firstBE", {
@@ -97,17 +103,39 @@ test("Struct V2 - uint", () => {
     })
     .parse();
 
-  expect(first).toEqual(0x00);
-  expect(second).toEqual(0x02c8);
-  expect(third).toEqual(0x0064);
-  expect(fourth).toEqual(0x04);
-  expect(offset).toEqual(6);
-
   expect(firstBE).toEqual(0x0002);
   expect(secondLE).toEqual(0x64c8);
   expect(thirdBE).toEqual(0x0004);
   // uint with size > 1 needs to have endianness defined
   expect(() => struct(buf).uint("throwMe", { size: 2 }).parse()).toThrow();
+
+  // Assert
+
+  expect(() =>
+    struct(buf)
+      .uint("firstAssert", {
+        assert: 0x00,
+      })
+      .uint("secondAssert", {
+        endianness: "BE",
+        size: 2,
+        assert: 0x02c8,
+      })
+      .uint("thirdAssert", {
+        endianness: "BE",
+        size: "EOS",
+        assert: 0x640004,
+      })
+      .parse()
+  ).not.toThrow();
+
+  expect(() =>
+    struct(buf)
+      .uint("firstAssert", {
+        assert: 0xff,
+      })
+      .parse()
+  ).toThrow();
 });
 
 test("Struct V2 - peek", () => {
