@@ -11,6 +11,7 @@ type StructType<
 type StructStringTypes = "ascii";
 type StructFixedSizeTypes = {
   uint8: number;
+  uint16be: number;
   uint32be: number;
   usafesyncint32be: number;
 };
@@ -186,6 +187,24 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
     }
 
     return this as StructType<Name, StructTypes["uint8"], Output>;
+  }
+
+  uint16be<Name extends string>(
+    name: Name,
+    options?: OptionsBase<Output>
+  ): StructType<Name, StructTypes["uint16be"], Output> {
+    const size = 2;
+    const offset = this.calculateOffset(options);
+
+    const value = this._buffer.readUInt16BE(offset);
+
+    this._root[name] = value as Output[Name];
+
+    if (options?.peek === undefined) {
+      this._root.offset += size;
+    }
+
+    return this as StructType<Name, StructTypes["uint16be"], Output>;
   }
 
   uint32be<Name extends string>(
