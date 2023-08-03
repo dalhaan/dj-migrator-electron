@@ -103,7 +103,6 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
   private _buffer: Buffer;
   private _root: Root<Output>;
   private _endianness: Endianness | undefined;
-  // private _offset: number;
 
   constructor(buffer: Buffer, offset = 0) {
     this._buffer = buffer;
@@ -382,7 +381,3 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
 export function struct(buffer: Buffer) {
   return new StructObject(buffer);
 }
-
-// struct(Buffer.alloc(0)).uint("test", {
-//   size: 5,
-// });
