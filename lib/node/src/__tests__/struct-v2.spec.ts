@@ -1,42 +1,53 @@
 import { StructObject, struct } from "../structv2";
 
 test("Struct V2 - calculate size", () => {
-  const buf = Buffer.from("HelloThe", "ascii");
+  const buf = Buffer.from("HelloTheMate", "ascii");
 
   const st = struct(buf)
     .ascii("hello", {
       size: 5,
     })
-    .ascii("there", {
+    .ascii("the", {
       size: 3,
+    })
+    .ascii("mate", {
+      size: "EOS",
     });
 
   const helloSize = st.calculateSize({ size: (root) => root.hello.length });
-  const thereSize = st.calculateSize({ size: (root) => root.there.length });
+  const theSize = st.calculateSize({ size: (root) => root.the.length });
+  const mateSize = st.calculateSize({ size: (root) => root.mate.length });
   const fixedSize = st.calculateSize({ size: 10 });
   const defaultSize = st.calculateSize();
 
   expect(helloSize).toEqual(5);
-  expect(thereSize).toEqual(3);
+  expect(theSize).toEqual(3);
+  expect(mateSize).toEqual(4);
   expect(fixedSize).toEqual(10);
   expect(defaultSize).toEqual(1);
 });
 
 test("Struct V2 - ascii", () => {
-  const buf = Buffer.from("HelloThere", "ascii");
+  const buf = Buffer.from("HelloThereMate", "ascii");
 
-  const { hello, there, offset } = struct(buf)
+  // Size
+
+  const { hello, there, mate, offset } = struct(buf)
     .ascii("hello", {
       size: 5,
     })
     .ascii("there", {
       size: (root) => root.hello.length,
     })
+    .ascii("mate", {
+      size: "EOS",
+    })
     .parse();
 
   expect(hello).toEqual("Hello");
   expect(there).toEqual("There");
-  expect(offset).toEqual(10);
+  expect(mate).toEqual("Mate");
+  expect(offset).toEqual(14);
 });
 
 test("Struct V2 - uint8", () => {
@@ -109,7 +120,7 @@ test("Struct V2 - peek", () => {
     })
     .ascii("eyt", {
       size: 3,
-      peek: 1,
+      peek: (_root) => _root.offset + 1,
     })
     .ascii("there", {
       size: 5,
@@ -144,5 +155,63 @@ test("Struct V2 - retain index on extra structs", () => {
   expect(hey).toEqual("HEY");
   expect(there).toEqual("THERE");
   expect(offset1).toEqual(3);
+  expect(offset2).toEqual(8);
+});
+
+test("Struct V2 - byte", () => {
+  const buf = Buffer.from([0x48, 0x45, 0x59, 0x54, 0x48, 0x45, 0x52, 0x45]);
+
+  const testStruct = new StructObject(buf);
+
+  const {
+    firstByte,
+    firstAscii,
+    firstInt,
+    offset: offset1,
+  } = testStruct
+    .byte("firstByte", {
+      peek: () => 0,
+    })
+    .byte("firstAscii", {
+      as: "ascii",
+      peek: () => 0,
+    })
+    .byte("firstInt", {
+      as: "uint8",
+      peek: () => 0,
+    })
+    .parse();
+
+  expect(firstByte).toEqual(0x48);
+  expect(firstAscii).toEqual("H");
+  expect(firstInt).toEqual(0x48);
+  expect(offset1).toEqual(0);
+});
+
+test("Struct V2 - size: EOS", () => {
+  const { first, offset } = struct(Buffer.from([0x1]))
+    .uint("first", {
+      size: "EOS",
+    })
+    .parse();
+
+  expect(first).toEqual(1);
+  expect(offset).toEqual(1);
+
+  const {
+    hey,
+    there,
+    offset: offset2,
+  } = struct(Buffer.from("HEYTHERE", "ascii"))
+    .ascii("hey", {
+      size: 3,
+    })
+    .ascii("there", {
+      size: "EOS",
+    })
+    .parse();
+
+  expect(hey).toEqual("HEY");
+  expect(there).toEqual("THERE");
   expect(offset2).toEqual(8);
 });

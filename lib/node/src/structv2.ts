@@ -53,7 +53,8 @@ type Root<Output extends StructOutput> = {
 
 type Size<Output extends StructOutput> =
   | number
-  | ((root: Root<Output>) => number);
+  | ((root: Root<Output>) => number)
+  | "EOS";
 
 type OptionsBase<Output extends StructOutput> = {
   peek?: number | ((root: Root<Output>) => number);
@@ -113,6 +114,8 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
       size = options.size(this._root);
     } else if (typeof options?.size === "number") {
       size = options.size;
+    } else if (options?.size === "EOS") {
+      size = this._buffer.length - this._root.offset;
     }
 
     return size;
