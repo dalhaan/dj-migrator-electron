@@ -55,7 +55,7 @@ type Size<Output extends StructOutput> =
   | ((root: Root<Output>) => number);
 
 type OptionsBase<Output extends StructOutput> = {
-  peek?: (root: Root<Output>) => number;
+  peek?: number | ((root: Root<Output>) => number);
 };
 
 type OptionsString<Output extends StructOutput> = OptionsBase<Output> & {
@@ -118,10 +118,13 @@ export class StructObject<Output extends StructOutput = { offset: number }> {
   }
 
   calculateOffset(options?: OptionsBase<Output>) {
-    const offset =
-      options?.peek === undefined
-        ? this._root.offset
-        : options.peek(this._root);
+    let offset = this._root.offset;
+
+    if (typeof options?.peek === "function") {
+      offset = options.peek(this._root);
+    } else if (typeof options?.peek === "number") {
+      offset = options.peek;
+    }
 
     return offset;
   }
